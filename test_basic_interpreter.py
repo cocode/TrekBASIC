@@ -1,6 +1,6 @@
 from unittest import TestCase
 from basic_interpreter import tokenize_line, statement, statements, Keywords, smart_split
-from basic_interpreter import load_program, format_program, tokenize, Execution
+from basic_interpreter import load_program, format_program, tokenize, Executor, BasicSyntaxError
 
 
 class Test(TestCase):
@@ -113,8 +113,39 @@ class Test(TestCase):
     def test_assignment(self):
         program = tokenize(['100 Z$="Fred"'])
         self.assertEqual(1, len(program))
-        executor = Execution(program)
+        executor = Executor(program)
         executor.run_program()
         symbols = executor.get_symbols()
         self.assertEqual(1, len(symbols))
-        self.assertEqual('"Fred"', executor.get_symbol("Z$"))
+        self.assertEqual('Fred', executor.get_symbol("Z$"))
+
+    def test_dim(self):
+        program = tokenize(['100 DIM A(8), C(1,8)'])
+        self.assertEqual(1, len(program))
+        executor = Executor(program)
+        executor.run_program()
+        symbols = executor.get_symbols()
+        self.assertEqual(2, len(symbols))
+        A = executor.get_symbol("A")
+        C = executor.get_symbol("C")
+        self.assertEqual(8, len(A))
+        self.assertEqual(1, len(C))
+        self.assertEqual(8, len(C[0]))
+
+
+    def test_suite_dim(self):
+        """
+        Tests with "suite" in the name test for errors.
+        :return:
+        """
+        program = tokenize(['100 DIM A(8'])
+        self.assertEqual(1, len(program))
+        executor = Executor(program)
+        self.assertRaises(BasicSyntaxError, executor.run_program)
+
+        # Assert they gave it a dim May not be right, som edialoects of basic assume 10
+        program = tokenize(['100 DIM C'])
+        self.assertEqual(1, len(program))
+        executor = Executor(program)
+        self.assertRaises(BasicSyntaxError, executor.run_program)
+

@@ -11,11 +11,24 @@ statements = namedtuple("Statement", "line stmts next")
 from enum import Enum, auto
 
 
-def smart_split(line, enquote='"', dequote = '"', split_char=":"):
+class BasicSyntaxError(Exception):
+    def __init__(self, message,):
+        super(BasicSyntaxError, self).__init__(message)
+
+
+def assert_syntax(value, line, message):
+    if not value:
+        raise BasicSyntaxError(F"SyntaxError in line {line}: {message}")
+
+
+def smart_split(line:str, enquote:str = '"', dequote:str = '"', split_char:str = ":") -> list[str]:
     """
     Colons split a line up into separate statements. But not if the colon is within quotes.
     Adding comma split, for DIM G(8,8),C(9,2),K(3,3),N(3),Z(8,8),D(8)
-    :param input:
+    :param line:
+    :param enquote: The open quote character.
+    :param dequote: The close quote character.
+    :param split_char: The character to split on, if not in quotes.
     :return:
     """
 
@@ -60,6 +73,7 @@ def stmt_exp(executor, stmt):
         variable, value = stmt.args.split("=", 1)
     except Exception as e:
         print(e)
+        raise BasicSyntaxError(F"Error detected in line {executor._current}. Probably something not implemented.")
     if variable.endswith("$"):
         value = value[1:-1]
     executor._symbols[variable] = value
@@ -67,13 +81,29 @@ def stmt_exp(executor, stmt):
 def stmt_dim(executor, stmt):
     stmts = smart_split(stmt.args.strip(), "(", ")", ",")
     for s in stmts:
+        s = s.strip()
+        # TODO a 'get_identifier' function
         name = s[0]
+        assert_syntax(len(s) > 1, executor._current, "Missing dimensions")
         if s[1] in "0123456789]":
             name += s[1]
         if s[len(name)] == "$":
             name += "$"
         dimensions = s[len(name):]
-        executor.put_symbol(name, dimensions) # Not right, but for now.
+        # TODO This should be part of Executor. Then assert_syntax would know the line number.
+        assert_syntax(dimensions[0] == '(', executor._current, "Missing (")
+        assert_syntax(dimensions[-1] == ')', executor._current, "Missing (")
+        dimensions = dimensions[1:-1] # Remove parens
+        dimensions = dimensions.split(",")
+        assert len(dimensions) <= 2 and len(dimensions) > 0
+        if len(dimensions) == 1:
+            size = int(dimensions[0])
+            value = [0] * size
+        if len(dimensions) == 2:
+            size_x = int(dimensions[0].replace("(",''))
+            size_y = int(dimensions[1].replace(")",''))
+            value = [[0] * size_y] * size_x
+        executor.put_symbol(name, value) # Not right, but for now.
 
 def stmt_goto(executor, stmt):
     pass
@@ -185,7 +215,7 @@ def load_program(program_filename):
     return program
 
 
-class Execution:
+class Executor:
     def __init__(self, program):
         self._program = program
         self._current = program[0]
@@ -265,7 +295,7 @@ def print_formatted(program, f = sys.stdout):
 
 if __name__ == "__main__":
     program = load_program("superstartrek.bas")
-    executor = Execution(program)
+    executor = Executor(program)
     executor.run_program()
     import pprint
     pprint.pprint(executor.get_symbols())
