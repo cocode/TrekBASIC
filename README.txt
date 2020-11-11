@@ -17,3 +17,5 @@ TODO on interpreter.
 1. Expressions will probably be the hardest
 2. Convert the program execution to a class.
 3. Write smaller test programs.
+4. Implement functions (RAND)
+5. Implement subroutines (GOSUB)
