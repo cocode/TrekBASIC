@@ -9,6 +9,7 @@ It's not intended (yet) to run ANY basic program.
 statement = namedtuple("Subs", "keyword args")
 # Statements has a line number, and a list of statement.
 statements = namedtuple("Statement", "line stmts next")
+lexer_token = namedtuple("Token", "token type")
 from enum import Enum, auto
 
 NUMBERS="0123456789]"
@@ -245,14 +246,14 @@ class Lexer:
                     token = ""
                     while (c := cur()) is not None and (c in LETTERS or c in NUMBERS or c == '$'):
                         token += consume()
-                    tokens.append(token)
+                    tokens.append(lexer_token(token, "id"))
                 elif c in "+-*/()=":
-                    tokens.append(consume())
+                    tokens.append(lexer_token(consume(), "op"))
                 elif c in NUMBERS or c == '.':
                     token = ""
                     while (c := cur()) is not None and (c in NUMBERS or c == '.'):
                         token += consume()
-                    tokens.append(token)
+                    tokens.append(lexer_token(token, "num"))
                 else:
                     raise BasicSyntaxError(F"Unexpected char {c}")
 
