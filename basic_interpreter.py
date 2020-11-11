@@ -60,6 +60,8 @@ def stmt_exp(executor, stmt):
         variable, value = stmt.args.split("=", 1)
     except Exception as e:
         print(e)
+    if variable.endswith("$"):
+        value = value[1:-1]
     executor._symbols[variable] = value
 
 def stmt_dim(executor, stmt):
@@ -77,17 +79,46 @@ def stmt_goto(executor, stmt):
     pass
 def stmt_next(executor, stmt):
     pass
-def stmt_nop(executor, stmt):
+def stmt_if(executor, stmt):
+    pass
+def stmt_gosub(executor, stmt):
+    pass
+def stmt_input(executor, stmt):
+    pass
+def stmt_on(executor, stmt):
+    pass
+def stmt_end(executor, stmt):
+    print("Halting")
+    executor.halt()
+
+
+def stmt_def(executor, stmt):
+    try:
+        variable, value = stmt.args.split("=", 1)
+    except Exception as e:
+        print(e)
+    variable = variable.strip()
+    value = value.strip()
+    executor._symbols[variable] = value
+
+def stmt_return(executor, stmt):
     pass
 
 class Keywords(Enum):
+    DEF = stmt_def, # User defined functions
     DIM = stmt_dim,
+    END = stmt_end,
     EXP = stmt_exp,
     FOR = stmt_for,
     GOTO = stmt_goto,
+    GOSUB = stmt_gosub,
+    IF = stmt_if,
+    INPUT = stmt_input,
     NEXT = stmt_next,
+    ON = stmt_on, # Computed gotos
     PRINT = stmt_print,
     REM = stmt_rem,
+    RETURN= stmt_return,
 
 
 def tokenize_line(program_line: object) -> statements:
@@ -159,12 +190,16 @@ class Execution:
         self._program = program
         self._current = program[0]
         self._symbols = {}
+        self._run = False
+
+    def halt(self):
+        self._run = False
 
     def run_program(self):
         #program = load_program(program_filename)
-        run = True
+        self._run = True
         trace = False
-        while run:
+        while self._run:
             if trace:
                 print(F"{self._current.line}: ")
             # Get the statements on the current line
@@ -179,7 +214,7 @@ class Execution:
             if self._current.next != -1:
                 self._current = self._program[self._current.next]
             else:
-                run = False
+                self._run = False
 
     def get_symbols(self):
         return self._symbols.copy()
