@@ -13,3 +13,7 @@ Two options:
 
 2 sounds like more fun
 
+TODO on interpreter.
+1. Expressions will probably be the hardest
+2. Convert the program execution to a class.
+3. Write smaller test programs.

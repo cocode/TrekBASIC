@@ -1,16 +1,14 @@
 from collections import namedtuple
+import sys
+
+"""
+Basic interpreter to run superstartrek.
+"""
 
 statement = namedtuple("Subs", "keyword args")
 # Statements has a line number, and a list of statement.
-statements = namedtuple("Statement", "line stmts")
+statements = namedtuple("Statement", "line stmts next")
 from enum import Enum, auto
-
-
-class Keywords(Enum):
-    EXP = auto(),
-    FOR = auto(),
-    PRINT = auto(),
-    REM = auto(),
 
 
 def smart_split(line):
@@ -41,12 +39,29 @@ def smart_split(line):
 
 
 # For now, don't tokenize in advance
-def stmt_rem(line):
-    return
+def stmt_rem(program, stmt):
+    """
+    Does nothing.
+    :return:
+    """
+    return None
 
 
-def stmt_print(line_number:int, stmt, remainder):
-    print(remainder)
+def stmt_print(program, stmt):
+    print(stmt.args[1:-1])
+    return None
+
+def stmt_for(program, stmt):
+    raise Exception("Not implmented")
+
+def stmt_exp(program, stmt):
+    raise Exception("Not implmented")
+
+class Keywords(Enum):
+    EXP = stmt_exp,
+    FOR = stmt_for,
+    PRINT = stmt_print,
+    REM = stmt_rem,
 
 
 def tokenize_line(program_line: object) -> statements:
@@ -84,7 +99,7 @@ def tokenize_line(program_line: object) -> statements:
             args = command # No keyword at the front, so include all
         p = statement(found, args)
         parsed.append(p)
-    s = statements(number, parsed)
+    s = statements(number, parsed, -1)
     return s
 
 
@@ -93,7 +108,16 @@ def tokenize(program_lines:list[str]) -> list[statements]:
     for line in program_lines:
         tokenized_line = tokenize_line(line)
         tokenized_lines.append(tokenized_line)
-    return tokenized_lines
+
+    # Set default execution of next line.
+    finished_lines = []
+    if len(tokenized_lines): # Deal with zero length files.
+        for i in range(len(tokenized_lines)-1):
+            finished_lines.append(statements(tokenized_lines[i].line,
+                                             tokenized_lines[i].stmts,
+                                             i+1))
+        finished_lines.append(tokenized_lines[-1])
+    return finished_lines
 
 
 def interpret(lines):
@@ -113,31 +137,67 @@ def load_program(program_filename):
 def run_program(program_filename:str):
     program = load_program(program_filename)
     run = True
+    current = program[0]
+    trace = False
     while run:
-        current = program[0]
-        run = False
+        if trace:
+            print(F"{current.line}: ")
+        # Get the statements on the current line
+        stmts = current.stmts
+        for s in stmts:
+            if trace:
+                print("\t", s.keyword, s.args)
+            execution_function = s.keyword.value
+            # Not sure why execution function is coming back a tuple
+            execution_function[0](program, s)
+            # TODO Handle goto, loops, and other control transfers
+        if current.next != -1:
+            current = program[current.next]
+        else:
+            run = False
+
+def format_line(line):
+    """
+    Format a single line of the program. Should match the input exactly
+    :param line:
+    :return:
+    """
+    current = str(line.line) + " "
+    for i in range(len(line.stmts)):
+        if i:
+            current += ":"
+        stmt = line.stmts[i]
+        if stmt.keyword == Keywords.EXP:
+            name = ""
+        else:
+            name = stmt.keyword.name
+        current += F"{name}{stmt.args}"
+    return current
 
 
 def format_program(program):
     lines = []
     for line in program:
-        current = str(line.line) + " "
-        for i in range(len(line.stmts)):
-            if i:
-                current += ":"
-            stmt = line.stmts[i]
-            if stmt.keyword == Keywords.EXP:
-                name=""
-            else:
-                name = stmt.keyword.name
-            current += F"{name}{stmt.args}"
+        current = format_line(line)
+        # current = str(line.line) + " "
+        # for i in range(len(line.stmts)):
+        #     if i:
+        #         current += ":"
+        #     stmt = line.stmts[i]
+        #     if stmt.keyword == Keywords.EXP:
+        #         name=""
+        #     else:
+        #         name = stmt.keyword.name
+        #     current += F"{name}{stmt.args}"
         lines.append(current)
     return lines
 
-def print_formatted(program):
+
+def print_formatted(program, f = sys.stdout):
     lines = format_program(program)
     for line in lines:
         print(line)
 
-if __file__ == "__main__":
+
+if __name__ == "__main__":
     run_program("superstartrek.bas")

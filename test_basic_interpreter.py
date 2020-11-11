@@ -65,4 +65,5 @@ class Test(TestCase):
     def test_load_program(self):
         program = load_program("superstartrek.bas")
         self.assertEqual(425, len(program))
-        print_formatted(program)
+        with open("test_output.txt", 'w') as f:
+            print_formatted(program, f)
