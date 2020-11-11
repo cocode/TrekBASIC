@@ -3,6 +3,7 @@ import sys
 
 """
 Basic interpreter to run superstartrek.
+It's not intended (yet) to run ANY basic program.
 """
 
 statement = namedtuple("Subs", "keyword args")
@@ -10,6 +11,8 @@ statement = namedtuple("Subs", "keyword args")
 statements = namedtuple("Statement", "line stmts next")
 from enum import Enum, auto
 
+NUMBERS="0123456789]"
+LETTERS="ABCDEGHIJKLMNOPQRSTUVWXYZ"
 
 class BasicSyntaxError(Exception):
     def __init__(self, message,):
@@ -85,7 +88,7 @@ def stmt_dim(executor, stmt):
         # TODO a 'get_identifier' function
         name = s[0]
         assert_syntax(len(s) > 1, executor._current, "Missing dimensions")
-        if s[1] in "0123456789]":
+        if s[1] in NUMBERS:
             name += s[1]
         if s[len(name)] == "$":
             name += "$"
@@ -213,6 +216,49 @@ def load_program(program_filename):
     lines = [line.strip() for line in lines]
     program = tokenize(lines)
     return program
+
+class Lexer:
+    def __init__(self):
+        pass
+
+    def lex(self, text):
+        state = None
+        token = ""
+        tokens = []
+        back = None
+        index = 0
+
+        def cur():
+            if index == len(text):
+                return None
+            return text[index]
+
+        def consume():
+            nonlocal index
+            current = text[index]
+            index += 1
+            return current # So we can get and consume in one operation.
+
+        while (c := cur()) is not None:
+            if state is None:
+                if c in LETTERS:
+                    token = ""
+                    while (c := cur()) is not None and (c in LETTERS or c in NUMBERS or c == '$'):
+                        token += consume()
+                    tokens.append(token)
+                elif c in "+-*/()=":
+                    tokens.append(consume())
+                elif c in NUMBERS or c == '.':
+                    token = ""
+                    while (c := cur()) is not None and (c in NUMBERS or c == '.'):
+                        token += consume()
+                    tokens.append(token)
+                else:
+                    raise BasicSyntaxError(F"Unexpected char {c}")
+
+        return tokens
+
+
 
 
 class Executor:

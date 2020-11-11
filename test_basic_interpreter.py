@@ -1,6 +1,7 @@
 from unittest import TestCase
 from basic_interpreter import tokenize_line, statement, statements, Keywords, smart_split
 from basic_interpreter import load_program, format_program, tokenize, Executor, BasicSyntaxError
+from basic_interpreter import Lexer
 
 
 class Test(TestCase):
@@ -132,6 +133,14 @@ class Test(TestCase):
         self.assertEqual(1, len(C))
         self.assertEqual(8, len(C[0]))
 
+    def test_lex(self):
+        lexer = Lexer()
+
+        tokens = lexer.lex("X")
+        self.assertEqual(1, len(tokens))
+
+        tokens = lexer.lex("D(R1)=D(R1)-H/S-.5*RND(1)")
+        self.assertEqual(20, len(tokens))
 
     def test_suite_dim(self):
         """
