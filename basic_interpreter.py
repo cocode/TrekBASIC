@@ -11,10 +11,10 @@ statements = namedtuple("Statement", "line stmts next")
 from enum import Enum, auto
 
 
-def smart_split(line):
+def smart_split(line, enquote='"', dequote = '"', split_char=":"):
     """
     Colons split a line up into separate statements. But not if the colon is within quotes.
-
+    Adding comma split, for DIM G(8,8),C(9,2),K(3,3),N(3),Z(8,8),D(8)
     :param input:
     :return:
     """
@@ -24,22 +24,22 @@ def smart_split(line):
     start = 0
     for x in range(len(line)):
         c = line[x]
-        if c == '"':
-            if quoted:
-                quoted = False
-            else:
-                quoted = True
-        else:
-            if not quoted and c == ":":
-                stuff.append(line[start:x])
-                start = x + 1
+        if not quoted and c == enquote:
+            quoted = True
+            continue
+        if quoted and c == dequote:
+            quoted = False
+            continue
+        if not quoted and c == split_char:
+            stuff.append(line[start:x])
+            start = x + 1
     if start < len(line):
         stuff.append(line[start:x+1])
     return stuff
 
 
 # For now, don't tokenize in advance
-def stmt_rem(program, stmt):
+def stmt_rem(executor, stmt):
     """
     Does nothing.
     :return:
@@ -47,19 +47,45 @@ def stmt_rem(program, stmt):
     return None
 
 
-def stmt_print(program, stmt):
+def stmt_print(executor, stmt):
     print(stmt.args[1:-1])
     return None
 
-def stmt_for(program, stmt):
-    raise Exception("Not implmented")
+def stmt_for(executor, stmt):
+    pass
+    #raise Exception("Not implmented")
 
-def stmt_exp(program, stmt):
-    raise Exception("Not implmented")
+def stmt_exp(executor, stmt):
+    try:
+        variable, value = stmt.args.split("=", 1)
+    except Exception as e:
+        print(e)
+    executor._symbols[variable] = value
+
+def stmt_dim(executor, stmt):
+    stmts = smart_split(stmt.args.strip(), "(", ")", ",")
+    for s in stmts:
+        name = s[0]
+        if s[1] in "0123456789]":
+            name += s[1]
+        if s[len(name)] == "$":
+            name += "$"
+        dimensions = s[len(name):]
+        executor.put_symbol(name, dimensions) # Not right, but for now.
+
+def stmt_goto(executor, stmt):
+    pass
+def stmt_next(executor, stmt):
+    pass
+def stmt_nop(executor, stmt):
+    pass
 
 class Keywords(Enum):
+    DIM = stmt_dim,
     EXP = stmt_exp,
     FOR = stmt_for,
+    GOTO = stmt_goto,
+    NEXT = stmt_next,
     PRINT = stmt_print,
     REM = stmt_rem,
 
@@ -120,12 +146,6 @@ def tokenize(program_lines:list[str]) -> list[statements]:
     return finished_lines
 
 
-def interpret(lines):
-    for line in lines:
-        number, partial = line.split(" ", 1)
-        print(number, partial)
-
-
 def load_program(program_filename):
     with open(program_filename) as f:
         lines = f.readlines()
@@ -134,27 +154,46 @@ def load_program(program_filename):
     return program
 
 
-def run_program(program_filename:str):
-    program = load_program(program_filename)
-    run = True
-    current = program[0]
-    trace = False
-    while run:
-        if trace:
-            print(F"{current.line}: ")
-        # Get the statements on the current line
-        stmts = current.stmts
-        for s in stmts:
+class Execution:
+    def __init__(self, program):
+        self._program = program
+        self._current = program[0]
+        self._symbols = {}
+
+    def run_program(self):
+        #program = load_program(program_filename)
+        run = True
+        trace = False
+        while run:
             if trace:
-                print("\t", s.keyword, s.args)
-            execution_function = s.keyword.value
-            # Not sure why execution function is coming back a tuple
-            execution_function[0](program, s)
-            # TODO Handle goto, loops, and other control transfers
-        if current.next != -1:
-            current = program[current.next]
-        else:
-            run = False
+                print(F"{self._current.line}: ")
+            # Get the statements on the current line
+            stmts = self._current.stmts
+            for s in stmts:
+                if trace:
+                    print("\t", s.keyword, s.args)
+                execution_function = s.keyword.value
+                # Not sure why execution function is coming back a tuple
+                execution_function[0](self, s)
+                # TODO Handle goto, loops, and other control transfers
+            if self._current.next != -1:
+                self._current = self._program[self._current.next]
+            else:
+                run = False
+
+    def get_symbols(self):
+        return self._symbols.copy()
+
+    def put_symbol(self, symbol, value):
+        self._symbols[symbol] = value
+
+    def get_symbol(self, symbol):
+        """
+        This function is just for testing.
+        :param symbol:
+        :return:
+        """
+        return self._symbols[symbol]
 
 def format_line(line):
     """
@@ -179,16 +218,6 @@ def format_program(program):
     lines = []
     for line in program:
         current = format_line(line)
-        # current = str(line.line) + " "
-        # for i in range(len(line.stmts)):
-        #     if i:
-        #         current += ":"
-        #     stmt = line.stmts[i]
-        #     if stmt.keyword == Keywords.EXP:
-        #         name=""
-        #     else:
-        #         name = stmt.keyword.name
-        #     current += F"{name}{stmt.args}"
         lines.append(current)
     return lines
 
@@ -200,4 +229,10 @@ def print_formatted(program, f = sys.stdout):
 
 
 if __name__ == "__main__":
-    run_program("superstartrek.bas")
+    program = load_program("superstartrek.bas")
+    executor = Execution(program)
+    executor.run_program()
+    import pprint
+    pprint.pprint(executor.get_symbols())
+
+

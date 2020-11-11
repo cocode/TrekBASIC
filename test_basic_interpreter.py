@@ -1,6 +1,6 @@
 from unittest import TestCase
 from basic_interpreter import tokenize_line, statement, statements, Keywords, smart_split
-from basic_interpreter import load_program, print_formatted
+from basic_interpreter import load_program, format_program, tokenize, Execution
 
 
 class Test(TestCase):
@@ -55,6 +55,40 @@ class Test(TestCase):
         self.assertEqual(Keywords.PRINT, result.keyword)
         self.assertEqual('"AND ENDS"', result.args)
 
+    def test_multiple_for(self):
+        line = "530 NEXTI"
+        results = tokenize_line(line)
+        self.assertTrue(isinstance(results, statements))
+        self.assertEqual(530, results.line)
+        self.assertEqual(1, len(results.stmts))
+
+        result = results.stmts[0]
+        self.assertEqual(Keywords.NEXT, result.keyword)
+        self.assertEqual('I', result.args)
+
+        line = "530 FORI=1TO9:C(I,1)=0:C(I,2)=0:NEXTI"
+        results = tokenize_line(line)
+        self.assertTrue(isinstance(results, statements))
+        self.assertEqual(530, results.line)
+        self.assertEqual(4, len(results.stmts))
+
+        result = results.stmts[0]
+        self.assertEqual(Keywords.FOR, result.keyword)
+        self.assertEqual('I=1TO9', result.args)
+
+        result = results.stmts[1]
+        self.assertEqual(Keywords.EXP, result.keyword)
+        self.assertEqual('C(I,1)=0', result.args)
+
+        result = results.stmts[2]
+        self.assertEqual(Keywords.EXP, result.keyword)
+        self.assertEqual('C(I,2)=0', result.args)
+
+        result = results.stmts[3]
+        self.assertEqual(Keywords.NEXT, result.keyword)
+        self.assertEqual('I', result.args)
+
+
     def test_smart_split(self):
         line = 'PRINT"YOUR MISSION: BEGINS":PRINT"AND ENDS"'
         results = smart_split(line)
@@ -62,8 +96,25 @@ class Test(TestCase):
         self.assertEqual('PRINT"YOUR MISSION: BEGINS"', results[0])
         self.assertEqual('PRINT"AND ENDS"', results[1])
 
+        line = "G(8,8),C(9,2),K(3,3),N(3),Z(8,8),D(8)"
+        results = smart_split(line, "(", ")", ",")
+        self.assertEqual(6, len(results))
+        self.assertEqual('G(8,8)', results[0])
+        self.assertEqual('C(9,2)', results[1])
+
     def test_load_program(self):
         program = load_program("superstartrek.bas")
         self.assertEqual(425, len(program))
         with open("test_output.txt", 'w') as f:
-            print_formatted(program, f)
+            for line in format_program(program):
+                print(line, file=f)
+            # TODO Compare output to source
+
+    def test_assignment(self):
+        program = tokenize(['100 Z$="Fred"'])
+        self.assertEqual(1, len(program))
+        executor = Execution(program)
+        executor.run_program()
+        symbols = executor.get_symbols()
+        self.assertEqual(1, len(symbols))
+        self.assertEqual('"Fred"', executor.get_symbol("Z$"))
