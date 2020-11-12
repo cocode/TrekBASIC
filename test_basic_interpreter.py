@@ -236,8 +236,7 @@ class Test(TestCase):
     #     self.assertEqual(1, executor.get_symbol_count())
     #     A = executor.get_symbol("A")
     #     self.assertEqual(1, A)
-    #     self.assertEqual(730, Z)
-    #
+
 
     def test_expressions(self):
         listing = [

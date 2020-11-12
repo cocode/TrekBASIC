@@ -7,6 +7,18 @@ from basic_symbols import SymbolTable
 
 
 class Expression:
+    def one_op(self, op_stack, data_stack, line):
+        from basic_operators import get_op, get_precedence
+
+        top = op_stack.pop()
+        m = get_op(top, line)  # An instance of OP
+        value = m.value
+        top_op_function = value
+        result = top_op_function.eval(data_stack, op=top)
+        # Some operators, like parens, don't return a result
+        if result is not None:
+            data_stack.append(result)
+
     def eval(self, tokens:list[lexer_token], *, symbols=None, line=0):
         """
         evalulates an expression, like "2+3*5-A+RND()"
@@ -15,9 +27,10 @@ class Expression:
         :params line: The line number, for error messages only.
         :return:
         """
+        from basic_operators import get_op, get_precedence # Import it in two places, so the IDE knows it's there.
+
         assert type(symbols) != dict
         # Had to iport here, to avoid circular dependencies.
-        from basic_operators import get_op, get_precedence
         if symbols is None:
             symbols = SymbolTable()
 
@@ -41,14 +54,15 @@ class Expression:
                         print("Found a function")
                     # This makes everything left associative. I think that's ok. Might be wrong for exponentiation
                     if top.token != "(" and get_precedence(top, line) >= get_precedence(current, line): # Check operator precedence
-                        top = op_stack.pop()
-                        m = get_op(top, line)  # An instance of OP
-                        value = m.value
-                        top_op_function = value
-                        result = top_op_function.eval(data_stack, op=top)
-                        # Some operators, like parens, don't return a result
-                        if result is not None:
-                            data_stack.append(result)
+                        self.one_op(op_stack, data_stack, line)
+                        # top = op_stack.pop()
+                        # m = get_op(top, line)  # An instance of OP
+                        # value = m.value
+                        # top_op_function = value
+                        # result = top_op_function.eval(data_stack, op=top)
+                        # # Some operators, like parens, don't return a result
+                        # if result is not None:
+                        #     data_stack.append(result)
                     else:
                         break
                 if current.token != ")":
@@ -80,13 +94,14 @@ class Expression:
 
         # Do anything left on the stack
         while len(op_stack):
-            top = op_stack.pop()
-            m = get_op(top, line) # An instance of OP
-            value = m.value
-            top_op_function = value
-            result = top_op_function.eval(data_stack, op=top)
-            if result is not None:
-                data_stack.append(result)
+            self.one_op(op_stack, data_stack, line)
+            # top = op_stack.pop()
+            # m = get_op(top, line) # An instance of OP
+            # value = m.value
+            # top_op_function = value
+            # result = top_op_function.eval(data_stack, op=top)
+            # if result is not None:
+            #     data_stack.append(result)
 
         assert_syntax(len(op_stack) == 0, line, F"Expression not completed.")
         assert_syntax(len(data_stack) == 1, line, F"Data not consumed.")
