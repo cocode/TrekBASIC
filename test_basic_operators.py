@@ -32,10 +32,10 @@ class Test(TestCase):
         answer = binop.eval(stack)
         self.assertEqual(70, answer.token)
 
-        tokens = lexer.lex('5/10')
+        tokens = lexer.lex('"A " + "B"')
         self.assertEqual(3, len(tokens))
         stack.append(tokens[0])
         stack.append(tokens[2])
         binop = OP_MAP[tokens[1].token].value[0]
         answer = binop.eval(stack)
-        self.assertEqual(0.5, answer.token)
+        self.assertEqual("A B", answer.token)

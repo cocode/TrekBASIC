@@ -1,28 +1,13 @@
-from collections import namedtuple
-import sys
-
 """
 Basic interpreter to run superstartrek.
 It's not intended (yet) to run ANY basic program.
 """
-
-statement = namedtuple("Subs", "keyword args")
-# Statements has a line number, and a list of statement.
-statements = namedtuple("Statement", "line stmts next")
-lexer_token = namedtuple("Token", "token type")
+from collections import namedtuple
+import sys
 from enum import Enum, auto
 
-NUMBERS="0123456789]"
-LETTERS="ABCDEGHIJKLMNOPQRSTUVWXYZ"
-
-class BasicSyntaxError(Exception):
-    def __init__(self, message,):
-        super(BasicSyntaxError, self).__init__(message)
-
-
-def assert_syntax(value, line, message):
-    if not value:
-        raise BasicSyntaxError(F"SyntaxError in line {line}: {message}")
+from basic_types import statement, statements, lexer_token, BasicSyntaxError, assert_syntax
+from basic_lexer import lexer_token, Lexer, NUMBERS
 
 
 def smart_split(line:str, enquote:str = '"', dequote:str = '"', split_char:str = ":") -> list[str]:
@@ -82,6 +67,7 @@ def stmt_exp(executor, stmt):
         value = value[1:-1]
     executor._symbols[variable] = value
 
+
 def stmt_dim(executor, stmt):
     stmts = smart_split(stmt.args.strip(), "(", ")", ",")
     for s in stmts:
@@ -135,8 +121,10 @@ def stmt_def(executor, stmt):
     value = value.strip()
     executor._symbols[variable] = value
 
+
 def stmt_return(executor, stmt):
     pass
+
 
 class Keywords(Enum):
     DEF = stmt_def, # User defined functions
@@ -218,49 +206,6 @@ def load_program(program_filename):
     program = tokenize(lines)
     return program
 
-class Lexer:
-    def __init__(self):
-        pass
-
-    def lex(self, text):
-        state = None
-        token = ""
-        tokens = []
-        back = None
-        index = 0
-
-        def cur():
-            if index == len(text):
-                return None
-            return text[index]
-
-        def consume():
-            nonlocal index
-            current = text[index]
-            index += 1
-            return current # So we can get and consume in one operation.
-
-        while (c := cur()) is not None:
-            if state is None:
-                if c in LETTERS:
-                    token = ""
-                    while (c := cur()) is not None and (c in LETTERS or c in NUMBERS or c == '$'):
-                        token += consume()
-                    tokens.append(lexer_token(token, "id"))
-                elif c in "+-*/()=":
-                    tokens.append(lexer_token(consume(), "op"))
-                elif c in NUMBERS or c == '.':
-                    token = ""
-                    while (c := cur()) is not None and (c in NUMBERS or c == '.'):
-                        token += consume()
-                    tokens.append(lexer_token(token, "num"))
-                else:
-                    raise BasicSyntaxError(F"Unexpected char {c}")
-
-        return tokens
-
-
-
 
 class Executor:
     def __init__(self, program):
@@ -306,6 +251,7 @@ class Executor:
         :return:
         """
         return self._symbols[symbol]
+
 
 def format_line(line):
     """

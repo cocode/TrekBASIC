@@ -45,7 +45,16 @@ class Expression:
 
                 op_stack.append(tokens[token_index])
             else:
-                data_stack.append(tokens[token_index])
+                if current.type == "id":
+                    # If it's a symbol, look it up, and replace with it's value.
+                    assert_syntax(current.token in symbols, line, F"Undefined variable: '{current.token}")
+                    value = symbols.get(current.token)
+                    if current.token.endswith("$"):
+                        data_stack.append(lexer_token(value, "str"))
+                    else:
+                        data_stack.append(lexer_token(value, "num"))
+                else:
+                    data_stack.append(current)
             token_index += 1
 
         # Do anything left on the stack

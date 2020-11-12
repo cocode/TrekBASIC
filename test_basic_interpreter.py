@@ -1,7 +1,8 @@
 from unittest import TestCase
 from basic_interpreter import tokenize_line, statement, statements, Keywords, smart_split
 from basic_interpreter import load_program, format_program, tokenize, Executor, BasicSyntaxError
-from basic_interpreter import Lexer
+from basic_lexer import Lexer
+from basic_expressions import Expression
 
 
 class Test(TestCase):
@@ -106,7 +107,7 @@ class Test(TestCase):
     def test_load_program(self):
         program = load_program("superstartrek.bas")
         self.assertEqual(425, len(program))
-        with open("test_output.txt", 'w') as f:
+        with open("sample_output.txt", 'w') as f:
             for line in format_program(program):
                 print(line, file=f)
             # TODO Compare output to source
@@ -132,26 +133,6 @@ class Test(TestCase):
         self.assertEqual(8, len(A))
         self.assertEqual(1, len(C))
         self.assertEqual(8, len(C[0]))
-
-    def test_lex(self):
-        lexer = Lexer()
-
-        tokens = lexer.lex("X")
-        self.assertEqual(1, len(tokens))
-        self.assertEqual("id", tokens[0].type)
-        self.assertEqual("X", tokens[0].token)
-
-        tokens = lexer.lex("D(R1)=D(R1)-H/S-.5*RND(1)")
-        self.assertEqual(20, len(tokens))
-        self.assertEqual("id", tokens[0].type)
-        self.assertEqual("D", tokens[0].token)
-        self.assertEqual("op", tokens[9].type)
-        self.assertEqual("-", tokens[9].token)
-        self.assertEqual("num", tokens[14].type)
-        self.assertEqual(".5", tokens[14].token) # TODO should I cast numbers to floats in lex?
-        self.assertEqual("id", tokens[16].type)
-        self.assertEqual("RND", tokens[16].token) # TODO should I cast numbers to floats in lex?
-
 
     def test_suite_dim(self):
         """
