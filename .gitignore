@@ -1,3 +1,4 @@
 .idea
 sample_output.txt
 venv
+__pycache__
