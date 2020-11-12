@@ -10,6 +10,9 @@ lexer_token = namedtuple("Token", "token type")
 statement = namedtuple("Subs", "keyword args")
 # Statements has a line number, and a list of statement.
 statements = namedtuple("Statement", "line stmts next")
+# Symbol table entry
+ste = namedtuple("Symbol", "value type")
+
 
 class BasicSyntaxError(Exception):
     def __init__(self, message,):

@@ -48,7 +48,8 @@ class Expression:
                 if current.type == "id":
                     # If it's a symbol, look it up, and replace with it's value.
                     assert_syntax(current.token in symbols, line, F"Undefined variable: '{current.token}")
-                    value = symbols.get(current.token)
+                    entry = symbols.get(current.token)
+                    value = entry.value
                     if current.token.endswith("$"):
                         data_stack.append(lexer_token(value, "str"))
                     else:

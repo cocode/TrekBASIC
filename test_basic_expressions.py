@@ -1,6 +1,7 @@
 from unittest import TestCase
 from basic_expressions import Expression
 from basic_lexer import Lexer
+from basic_types import ste
 
 class TestExpression(TestCase):
     def test_eval(self):
@@ -45,11 +46,13 @@ class TestExpression(TestCase):
         tokens = lexer.lex(" 1 + A")
         self.assertEqual(3, len(tokens))
         expression = Expression()
-        value = expression.eval({"A":22}, tokens, 0)
+        entry = ste(22, "variable")
+        value = expression.eval({"A":entry}, tokens, 0)
         self.assertEqual(23, value)
 
         tokens = lexer.lex('"AB" + A$')
         self.assertEqual(3, len(tokens))
         expression = Expression()
-        value = expression.eval({"A$":"C"}, tokens, 0)
+        entry = ste("C", "variable")
+        value = expression.eval({"A$":entry}, tokens, 0)
         self.assertEqual('ABC', value)

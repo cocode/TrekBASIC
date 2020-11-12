@@ -6,9 +6,10 @@ from collections import namedtuple
 import sys
 from enum import Enum, auto
 
-from basic_types import statement, statements, lexer_token, BasicSyntaxError, assert_syntax
+from basic_types import statement, statements, lexer_token, BasicSyntaxError, assert_syntax, ste
 from basic_lexer import lexer_token, Lexer, NUMBERS
 from basic_expressions import Expression
+
 
 
 def smart_split(line:str, enquote:str = '"', dequote:str = '"', split_char:str = ":") -> list[str]:
@@ -72,7 +73,7 @@ def stmt_exp(executor, stmt):
     # if variable.endswith("$"):
     #     value = value[1:-1]
 
-    executor.put_symbol(variable, result)
+    executor.put_symbol(variable, result, "variable")
 
 
 def stmt_dim(executor, stmt):
@@ -100,7 +101,7 @@ def stmt_dim(executor, stmt):
             size_x = int(dimensions[0].replace("(",''))
             size_y = int(dimensions[1].replace(")",''))
             value = [[0] * size_y] * size_x
-        executor.put_symbol(name, value) # Not right, but for now.
+        executor.put_symbol(name, value, "array") # Not right, but for now.
 
 def stmt_goto(executor, stmt):
     pass
@@ -126,7 +127,7 @@ def stmt_def(executor, stmt):
         print(e)
     variable = variable.strip()
     value = value.strip()
-    executor.put_symbol(variable, value)
+    executor.put_symbol(variable, value, "function")
 
 
 def stmt_return(executor, stmt):
@@ -248,19 +249,25 @@ class Executor:
     def get_symbols(self):
         return self._symbols.copy()
 
-    def put_symbol(self, symbol, value):
-        self._symbols[symbol] = value
+    def put_symbol(self, symbol, value, var_type):
+        self._symbols[symbol] = ste(value, type)
 
     def get_line(self):
         return self._current
 
     def get_symbol(self, symbol):
         """
-        This function is just for testing.
         :param symbol:
         :return:
         """
-        return self._symbols[symbol]
+        return self._symbols[symbol].value
+
+    def get_symbol_type(self, symbol):
+        """
+        :param symbol:
+        :return:
+        """
+        return self._symbols[symbol].type
 
 
 def format_line(line):

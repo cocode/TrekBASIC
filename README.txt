@@ -15,9 +15,13 @@ Two options:
 
 TODO on interpreter.
 1. Expressions will probably be the hardest
-    a. Expression evaulation
-    b. Expression assignment
-    c. Array assignment.
+    a. Expression evaulation DONE
+    b. Expression assignment DONE - mostly,
+        c. Array assignment.
+2. Built in functions.
+    INT, RND
+    currently, we pass symbols in to the Expression, but that means they bypass get_symbol, which
+    can hide format changes in the symbol table, like I just made.
 2. Convert the program execution to a class.
 3. Write smaller test programs.
 4. Implement functions (RAND)
