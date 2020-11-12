@@ -18,6 +18,8 @@ TODO on interpreter.
     a. Expression evaulation DONE
     b. Expression assignment DONE - mostly,
         c. Array assignment.
+    c. Support parens!
+    d. Unary minus
 2. Built in functions.
     INT, RND
     currently, we pass symbols in to the Expression, but that means they bypass get_symbol, which

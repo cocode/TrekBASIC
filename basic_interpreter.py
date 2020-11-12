@@ -123,6 +123,9 @@ def stmt_end(executor, stmt):
 def stmt_def(executor, stmt):
     """
     Define a user-defined function.
+
+    470 DEF FND(D)=SQR((K(I,1)-S1)^2+(K(I,2)-S2)^2)
+
     :param executor:
     :param stmt:
     :return:
@@ -132,6 +135,10 @@ def stmt_def(executor, stmt):
     except Exception as e:
         print(e)
     variable = variable.strip()
+    assert_syntax(len(variable)==6 and variable.startswith("FN") and variable[3]=='(' and variable[5]==')',
+                  executor.get_line(), "Function definition error")
+    arg = variable[4]
+    variable = variable[:3]
     value = value.strip()
     executor.put_symbol(variable, value, "function")
 
@@ -154,7 +161,7 @@ class Keywords(Enum):
     ON = stmt_on, # Computed gotos
     PRINT = stmt_print,
     REM = stmt_rem,
-    RETURN= stmt_return,
+    RETURN = stmt_return,
 
 
 def tokenize_line(program_line: object) -> statements:
@@ -255,8 +262,8 @@ class Executor:
     def get_symbols(self):
         return self._symbols.copy()
 
-    def put_symbol(self, symbol, value, symbol_type):
-        self._symbols[symbol] = ste(value, symbol_type)
+    def put_symbol(self, symbol, value, symbol_type, arg=None):
+        self._symbols[symbol] = ste(value, symbol_type, arg)
 
     def get_line(self):
         return self._current

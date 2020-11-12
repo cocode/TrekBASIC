@@ -134,6 +134,30 @@ class Test(TestCase):
         self.assertEqual(1, len(C))
         self.assertEqual(8, len(C[0]))
 
+    def test_def(self):
+        program = tokenize(['100 DEF FNA(X)=X^2+1'])
+        self.assertEqual(1, len(program))
+        executor = Executor(program)
+        executor.run_program()
+        symbols = executor.get_symbols()
+        self.assertEqual(1, len(symbols))
+        A = executor.get_symbol("FNA")
+        AT = executor.get_symbol_type("FNA")
+        self.assertEqual("X^2+1", A)
+        self.assertEqual("function", AT)
+
+    def test_def2(self):
+        listing = [
+            '100 DEF FNA(X)=X^2+1',
+            '110 Y=FNA(3)',
+        ]
+        program = tokenize(listing)
+        self.assertEqual(len(listing), len(program))
+        executor = Executor(program)
+        executor.run_program()
+        symbols = executor.get_symbols()
+        self.assertEqual(2, len(symbols))
+
     def test_expressions(self):
         listing = [
             '100 A =2+1',

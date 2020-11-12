@@ -11,7 +11,10 @@ statement = namedtuple("Subs", "keyword args")
 # Statements has a line number, and a list of statement.
 statements = namedtuple("Statement", "line stmts next")
 # Symbol table entry
-ste = namedtuple("Symbol", "value type")
+# Value - Value of the variable
+# Type - "function", "variable"
+# Arg - only used for "function". The X in DEF FNA(X)=X*X
+ste = namedtuple("Symbol", "value type arg")
 
 
 class BasicSyntaxError(Exception):

@@ -9,7 +9,7 @@ from enum import Enum, auto
 from basic_types import lexer_token, BasicSyntaxError, assert_syntax
 
 NUMBERS = "0123456789]"
-LETTERS = "ABCDEGHIJKLMNOPQRSTUVWXYZ"
+LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 OPERATORS = "()^*/+-="
 
 

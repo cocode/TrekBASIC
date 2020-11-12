@@ -11,8 +11,8 @@ from basic_types import lexer_token, assert_syntax
 
 
 class OP:
-    def eval(self):
-        pass
+    def eval(self, stack):
+        return None
 
 
 class BINOP(OP):
@@ -80,14 +80,14 @@ class BINOP_EXP(BINOP_NUM):
 
 
 class Operators(Enum):
-    CLOSE = 1,
-    EQUALS = 2,
-    MINUS = BINOP_MINUS(),
-    PLUS = BINOP_PLUS(),
-    DIV = BINOP_DIV(),
-    MUL = BINOP_MUL(),
-    EXP = BINOP_EXP(),
-    OPEN = 3
+    CLOSE = OP() # NOP
+    EQUALS = 2
+    MINUS = BINOP_MINUS()
+    PLUS = BINOP_PLUS()
+    DIV = BINOP_DIV()
+    MUL = BINOP_MUL()
+    EXP = BINOP_EXP()
+    OPEN = OP() # NOP
 
 
 OP_MAP = {
@@ -104,14 +104,14 @@ OP_MAP = {
 
 def get_precedence(op_char, line):
     PREC_MAP = {
-        ")": 0,
+        "(": 7,
         "=": 1,
         "-": 2,
         "+": 3,
         "/": 4,
         "*": 5,
         "^": 6,
-        "(": 7
+        ")": 0,
     }
     assert_syntax(op_char in PREC_MAP, line, "Invalid operator {op_char}")
     return PREC_MAP[op_char]

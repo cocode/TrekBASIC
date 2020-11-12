@@ -28,7 +28,7 @@ class Test(TestCase):
         self.assertEqual(3, len(tokens))
         stack.append(tokens[0])
         stack.append(tokens[2])
-        binop = OP_MAP[tokens[1].token].value[0]
+        binop = OP_MAP[tokens[1].token].value
         answer = binop.eval(stack)
         self.assertEqual(70, answer.token)
 
@@ -36,6 +36,6 @@ class Test(TestCase):
         self.assertEqual(3, len(tokens))
         stack.append(tokens[0])
         stack.append(tokens[2])
-        binop = OP_MAP[tokens[1].token].value[0]
+        binop = OP_MAP[tokens[1].token].value
         answer = binop.eval(stack)
         self.assertEqual("A B", answer.token)
