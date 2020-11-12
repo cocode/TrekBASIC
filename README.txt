@@ -14,18 +14,18 @@ Two options:
 2 sounds like more fun
 
 TODO on interpreter.
-0. SHould probably split symbol table from executor. It would cut circular references.
-1. Expressions will probably be the hardest
+1. Should probably split symbol table from executor. It would cut circular references. DONE
+2. Expressions will probably be the hardest
     a. Expression evaulation DONE
     b. Expression assignment DONE - mostly,
         c. Array assignment.
-    c. Support parens!
-    d. Unary minus
-2. Built in functions.
-    INT, RND
+    c. Support parens! DONE
+    d. Unary minus - Currently causing problems.
+3. Built in functions.
+    INT, RND - DONE
     currently, we pass symbols in to the Expression, but that means they bypass get_symbol, which
     can hide format changes in the symbol table, like I just made.
-2. Convert the program execution to a class.
-3. Write smaller test programs.
-4. Implement functions (RAND)
-5. Implement subroutines (GOSUB)
+4. Convert the program execution to a class.
+5. Write smaller test programs.
+6. Implement subroutines (GOTO)
+7. Implement FOR loops
