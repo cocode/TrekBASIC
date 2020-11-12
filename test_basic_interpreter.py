@@ -149,7 +149,7 @@ class Test(TestCase):
     def test_def2(self):
         listing = [
             '100 DEF FNA(X)=X^2+1',
-            '110 Y=FNA(3)',
+            '110 Y=FNA(5)',
         ]
         program = tokenize(listing)
         self.assertEqual(len(listing), len(program))
@@ -157,6 +157,9 @@ class Test(TestCase):
         executor.run_program()
         symbols = executor.get_symbols()
         self.assertEqual(2, len(symbols))
+        Y = executor.get_symbol("Y")
+        self.assertEqual(10, Y)
+
 
     def test_expressions(self):
         listing = [

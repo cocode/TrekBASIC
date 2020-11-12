@@ -135,7 +135,7 @@ def stmt_def(executor, stmt):
     except Exception as e:
         print(e)
     variable = variable.strip()
-    assert_syntax(len(variable)==6 and variable.startswith("FN") and variable[3]=='(' and variable[5]==')',
+    assert_syntax(len(variable) == 6 and variable.startswith("FN") and variable[3]=='(' and variable[5]==')',
                   executor.get_line(), "Function definition error")
     arg = variable[4]
     variable = variable[:3]

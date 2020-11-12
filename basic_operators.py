@@ -7,12 +7,30 @@ from collections import namedtuple
 import sys
 from enum import Enum, auto
 
-from basic_types import lexer_token, assert_syntax
+from basic_types import lexer_token, assert_syntax, assert_internal
 
 
 class OP:
-    def eval(self, stack):
+    def eval(self, stack, *, op):
         return None
+
+
+class MONO_OP:
+    def check_args(self, stack):
+        assert_syntax(len(stack) >= 1, -1, "Not enough operands for binary operator")
+
+    def eval1(self, first):
+        return None
+
+    def eval(self, stack, *, op):
+        self.check_args(stack)
+        first = stack.pop()
+        answer = self.eval1(first.token)
+        return lexer_token(answer, "num")
+
+class FUNC_MONO_OP(MONO_OP):
+    def eval1(self, first):
+        return 10
 
 
 class BINOP(OP):
@@ -22,7 +40,7 @@ class BINOP(OP):
     def eval2(self, first, second):
         pass
 
-    def eval(self, stack):
+    def eval(self, stack, *, op):
         self.check_args(stack)
         second = stack.pop()
         first = stack.pop()
@@ -88,23 +106,32 @@ class Operators(Enum):
     MUL = BINOP_MUL()
     EXP = BINOP_EXP()
     OPEN = OP() # NOP
+    FUNC = FUNC_MONO_OP()
 
 
-OP_MAP = {
-    ")": Operators.CLOSE,
-    "=": Operators.EQUALS,
-    "-": Operators.MINUS,
-    "+": Operators.PLUS,
-    "/": Operators.DIV,
-    "*": Operators.MUL,
-    "^": Operators.EXP,
-    "(": Operators.OPEN
-}
+def get_op(token:lexer_token, line):
+    OP_MAP = {
+        ")": Operators.CLOSE,
+        "=": Operators.EQUALS,
+        "-": Operators.MINUS,
+        "+": Operators.PLUS,
+        "/": Operators.DIV,
+        "*": Operators.MUL,
+        "^": Operators.EXP,
+        "(": Operators.OPEN,
+        "∫": Operators.FUNC  # Not found in source code, used as an indicator.
+    }
+    if token.type == "function" and token.token.startswith("FN"):
+        return OP_MAP["∫"]
+    op_char = token.token
+    assert_internal(len(op_char) == 1, line, F"Unexpected operator {op_char}")
+    assert_syntax(op_char in OP_MAP, line, "Invalid operator {op_char}")
+    return OP_MAP[op_char]
 
 
-def get_precedence(op_char, line):
+def get_precedence(token:lexer_token, line):
     PREC_MAP = {
-        "(": 7,
+        "(": 8,
         "=": 1,
         "-": 2,
         "+": 3,
@@ -112,9 +139,16 @@ def get_precedence(op_char, line):
         "*": 5,
         "^": 6,
         ")": 0,
+        "∫": 7, # Has to be lower than "OPEN", so we will eval the arguments, THEN call the func.
     }
+
+    if token.type == "function" and token.token.startswith("FN"):
+        return PREC_MAP["∫"]
+    op_char = token.token
+    assert_internal(len(op_char) == 1, line, F"Unexpected operator {op_char}")
     assert_syntax(op_char in PREC_MAP, line, "Invalid operator {op_char}")
     return PREC_MAP[op_char]
+
 
 if __name__ == "__main__":
     pass

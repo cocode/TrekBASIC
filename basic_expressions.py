@@ -4,9 +4,8 @@ Basic support for expressions.
 from collections import namedtuple
 import sys
 from enum import Enum, auto
-from basic_types import lexer_token, BasicSyntaxError, assert_syntax
-from basic_operators import Operators, OP_MAP, get_precedence
-
+from basic_types import lexer_token, BasicSyntaxError, assert_syntax, OP_TOKEN
+from basic_operators import Operators, get_op, get_precedence
 
 class Expression:
     def eval(self, symbols, tokens:list[lexer_token], line):
@@ -25,7 +24,7 @@ class Expression:
             return tokens[0].token
 
         data_stack = []
-        op_stack = []
+        op_stack:OP_TOKEN = []
         token_index = 0
         while token_index < len(tokens):
             current = tokens[token_index]
@@ -33,22 +32,24 @@ class Expression:
                 # Do anything on the stack that has higher precedence.
                 while len(op_stack):
                     top = op_stack[-1]
+                    if top.type == 'function':
+                        print("Found a function")
                     # This makes everything left associative. I think that's ok. Might be wrong for exponentiation
-                    if top.token != "(" and get_precedence(top.token, line) >= get_precedence(current.token, line): # Check operator precedence
+                    if top.token != "(" and get_precedence(top, line) >= get_precedence(current, line): # Check operator precedence
                         top = op_stack.pop()
-                        m = OP_MAP[top.token]  # An instance of OP
+                        m = get_op(top, line)  # An instance of OP
                         value = m.value
                         top_op_function = value
-                        result = top_op_function.eval(data_stack)
+                        result = top_op_function.eval(data_stack, op=top)
                         # Some operators, like parens, don't return a result
                         if result is not None:
                             data_stack.append(result)
                     else:
                         break
                 if current.token != ")":
-                    op_stack.append(current)
+                    op_stack.append(OP_TOKEN(current.token, current.type, None, None))
                 else:
-                    assert_syntax(top.token=="(", line, F"Unbalanced parens.")
+                    assert_syntax(top.token == "(", line, F"Unbalanced parens.")
                     op_stack.pop()
             else:
                 if current.type == "id":
@@ -63,12 +64,14 @@ class Expression:
                         else:
                             data_stack.append(lexer_token(value, "num"))
                     elif symbol_type == "function":
-                        pass
-                        # value = entry.value
-                        # arg = entry.arg
-                        # fn_exp = Expression()
-                        # local_symbols = symbols.copy() # Way inefficient, but easy
-                        # local_symbols[arg]=symbols.get[]
+                        # Handle function as operators. Lower priority than "(", but higher than everything else.
+                        # So don't append this to the data stack, append it to the op stack as a function.
+                        value = entry.value
+                        arg = entry.arg
+                        fn_exp = Expression()
+                        local_symbols = symbols.copy() # Way inefficient, but easy
+                        op_stack.append(OP_TOKEN(current.token, "function", arg, value))
+                        # TODO local_symbols[arg]=symbols.get[]
                     else:
                         raise BasicSyntaxError(F"InternalError: Unknown symbol type: '{symbol_type}")
                 else:
@@ -78,10 +81,10 @@ class Expression:
         # Do anything left on the stack
         while len(op_stack):
             top = op_stack.pop()
-            m = OP_MAP[top.token] # An instance of OP
+            m = get_op(top, line) # An instance of OP
             value = m.value
             top_op_function = value
-            result = top_op_function.eval(data_stack)
+            result = top_op_function.eval(data_stack, op=top)
             if result is not None:
                 data_stack.append(result)
 
