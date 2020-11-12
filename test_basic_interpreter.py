@@ -176,6 +176,68 @@ class Test(TestCase):
         self.assertEqual(126, Y)
         self.assertEqual(730, Z)
 
+    def test_def4(self):
+        listing = [
+            '100 DEF FNA(X)=X^2',
+            '110 DEF FNB(X)=2*X+3',
+            '110 DEF FNC(X)=FNA(3*X)+FNB(X+1)',
+            '110 Z=FNC(3)'
+        ]
+        program = tokenize(listing)
+        self.assertEqual(len(listing), len(program))
+        executor = Executor(program)
+        executor.set_trace(True)
+        executor.run_program()
+        self.assertEqual(4, executor.get_symbol_count())
+        Z = executor.get_symbol("Z")
+        self.assertEqual(92, Z)
+
+    def test_def5(self):
+        listing = [
+            '100 DEF FNA(X)=X^2', # 16, 36
+            '110 DEF FNB(X)=2*FNA(X)+3', # 35, 75
+            '110 X=FNB(4)',
+            '120 Y=FNB(6)', # 110
+            '110 Z=X+Y'
+        ]
+        program = tokenize(listing)
+        self.assertEqual(len(listing), len(program))
+        executor = Executor(program)
+        executor.set_trace(True)
+        executor.run_program()
+        self.assertEqual(5, executor.get_symbol_count())
+        Z = executor.get_symbol("Z")
+        self.assertEqual(110, Z)
+
+    def test_def6(self):
+        listing = [
+            '100 DEF FNA(X)=X^2', # 16, 36
+            '110 DEF FNB(X)=2*FNA(X)+3', # 35, 75
+            '110 DEF FNC(X)=FNB(X+1)+FNB(X*2)', # 110
+            '110 Z=FNC(3)'
+        ]
+        program = tokenize(listing)
+        self.assertEqual(len(listing), len(program))
+        executor = Executor(program)
+        executor.set_trace(True)
+        executor.run_program()
+        self.assertEqual(4, executor.get_symbol_count())
+        Z = executor.get_symbol("Z")
+        self.assertEqual(110, Z)
+
+    # def test_builtin(self):
+    #     listing = [
+    #         '90 A=INT(1.99)',
+    #     ]
+    #     program = tokenize(listing)
+    #     self.assertEqual(len(listing), len(program))
+    #     executor = Executor(program)
+    #     executor.run_program()
+    #     self.assertEqual(1, executor.get_symbol_count())
+    #     A = executor.get_symbol("A")
+    #     self.assertEqual(1, A)
+    #     self.assertEqual(730, Z)
+    #
 
     def test_expressions(self):
         listing = [

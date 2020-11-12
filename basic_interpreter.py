@@ -232,6 +232,11 @@ class Executor:
         self._current = program[0]
         self._symbols = SymbolTable()
         self._run = False
+        self._trace = False
+
+        # executor.put_symbol("INT", "⌊", "function", arg)
+    def set_trace(self, value):
+        self._trace = value
 
     def halt(self):
         self._run = False
@@ -239,14 +244,13 @@ class Executor:
     def run_program(self):
         #program = load_program(program_filename)
         self._run = True
-        trace = False
         while self._run:
-            if trace:
+            if self._trace:
                 print(F"{self._current.line}: ")
             # Get the statements on the current line
             stmts = self._current.stmts
             for s in stmts:
-                if trace:
+                if self._trace:
                     print("\t", s.keyword, s.args)
                 execution_function = s.keyword.value
                 # Not sure why execution function is coming back a tuple
