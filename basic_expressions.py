@@ -49,11 +49,17 @@ class Expression:
                     # If it's a symbol, look it up, and replace with it's value.
                     assert_syntax(current.token in symbols, line, F"Undefined variable: '{current.token}")
                     entry = symbols.get(current.token)
-                    value = entry.value
-                    if current.token.endswith("$"):
-                        data_stack.append(lexer_token(value, "str"))
+                    symbol_type = entry.type
+                    if symbol_type == "variable":
+                        value = entry.value
+                        if current.token.endswith("$"):
+                            data_stack.append(lexer_token(value, "str"))
+                        else:
+                            data_stack.append(lexer_token(value, "num"))
+                    elif symbol_type == "function":
+                        pass
                     else:
-                        data_stack.append(lexer_token(value, "num"))
+                        raise BasicSyntaxError(F"InternalError: Unknown symbol type: '{symbol_type}")
                 else:
                     data_stack.append(current)
             token_index += 1

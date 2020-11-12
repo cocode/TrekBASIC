@@ -121,6 +121,12 @@ def stmt_end(executor, stmt):
 
 
 def stmt_def(executor, stmt):
+    """
+    Define a user-defined function.
+    :param executor:
+    :param stmt:
+    :return:
+    """
     try:
         variable, value = stmt.args.split("=", 1)
     except Exception as e:
@@ -249,8 +255,8 @@ class Executor:
     def get_symbols(self):
         return self._symbols.copy()
 
-    def put_symbol(self, symbol, value, var_type):
-        self._symbols[symbol] = ste(value, type)
+    def put_symbol(self, symbol, value, symbol_type):
+        self._symbols[symbol] = ste(value, symbol_type)
 
     def get_line(self):
         return self._current
