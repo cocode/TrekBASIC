@@ -8,6 +8,7 @@ from enum import Enum, auto
 
 from basic_types import lexer_token, assert_syntax, assert_internal
 import basic_expressions
+from basic_lexer import Lexer
 
 
 class OP:
@@ -32,8 +33,11 @@ class FUNC_MONO_OP(MONO_OP):
     def eval1(self, first, *, op):
         e = basic_expressions.Expression()
         symbols = op.symbols # Gets a COPY. We will mutate.
-        #e.eval()
-        return 100
+        symbols.put_symbol(op.arg, first, "variable", arg=None)
+        lexer = Lexer()
+        tokens = lexer.lex(op.value)
+        result = e.eval(tokens, symbols=symbols)
+        return result
 
 
 class BINOP(OP):

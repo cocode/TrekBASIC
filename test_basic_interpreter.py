@@ -147,21 +147,24 @@ class Test(TestCase):
         listing = [
             '100 DEF FNA(X)=X^2+1',
             '110 Y=FNA(5)',
+            '110 Z=FNA(7*7)',
         ]
         program = tokenize(listing)
         self.assertEqual(len(listing), len(program))
         executor = Executor(program)
         executor.run_program()
-        self.assertEqual(2, executor.get_symbol_count())
+        self.assertEqual(3, executor.get_symbol_count())
         Y = executor.get_symbol("Y")
-        self.assertEqual(10, Y)
+        self.assertEqual(26, Y)
+        Z = executor.get_symbol("Z")
+        self.assertEqual(2402, Z)
 
     def test_def3(self):
         listing = [
             '90 A=2+1',
             '100 DEF FNA(X)=X^A+1',
             '110 Y=FNA(5)',
-            '110 Z=FNA(Y*Y)',
+            '110 Z=FNA(A*A)',
         ]
         program = tokenize(listing)
         self.assertEqual(len(listing), len(program))
@@ -169,7 +172,9 @@ class Test(TestCase):
         executor.run_program()
         self.assertEqual(4, executor.get_symbol_count())
         Y = executor.get_symbol("Y")
-        self.assertEqual(28, Y)
+        Z = executor.get_symbol("Z")
+        self.assertEqual(126, Y)
+        self.assertEqual(730, Z)
 
 
     def test_expressions(self):
