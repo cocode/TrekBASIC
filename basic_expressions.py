@@ -55,14 +55,6 @@ class Expression:
                     # This makes everything left associative. I think that's ok. Might be wrong for exponentiation
                     if top.token != "(" and get_precedence(top, line) >= get_precedence(current, line): # Check operator precedence
                         self.one_op(op_stack, data_stack, line)
-                        # top = op_stack.pop()
-                        # m = get_op(top, line)  # An instance of OP
-                        # value = m.value
-                        # top_op_function = value
-                        # result = top_op_function.eval(data_stack, op=top)
-                        # # Some operators, like parens, don't return a result
-                        # if result is not None:
-                        #     data_stack.append(result)
                     else:
                         break
                 if current.token != ")":
@@ -95,13 +87,6 @@ class Expression:
         # Do anything left on the stack
         while len(op_stack):
             self.one_op(op_stack, data_stack, line)
-            # top = op_stack.pop()
-            # m = get_op(top, line) # An instance of OP
-            # value = m.value
-            # top_op_function = value
-            # result = top_op_function.eval(data_stack, op=top)
-            # if result is not None:
-            #     data_stack.append(result)
 
         assert_syntax(len(op_stack) == 0, line, F"Expression not completed.")
         assert_syntax(len(data_stack) == 1, line, F"Data not consumed.")
