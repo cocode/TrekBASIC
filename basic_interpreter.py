@@ -245,6 +245,8 @@ class Executor:
         #program = load_program(program_filename)
         self.put_symbol("INT", "⌊", "function", arg=lambda x : int(x))
         self._builtin_count += 1
+        self.put_symbol("RND", "⌊", "function", arg=lambda x : int(x))
+        self._builtin_count += 1
 
         self._run = True
         while self._run:

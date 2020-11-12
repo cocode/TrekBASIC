@@ -5,6 +5,7 @@ Implementation for basic operators, such as add, subtract, etc.
 
 
 from enum import Enum, auto
+import random
 
 from basic_types import lexer_token, assert_syntax, assert_internal
 import basic_expressions
@@ -48,10 +49,29 @@ class FUNC_MONO_OP(MONO_OP):
 
 class FUNC_MONO_OP_INT(MONO_OP):
     """
-    handles user defined functions.
+    Handles the built-in INT function
     """
     def eval1(self, first, *, op):
         return int(first)
+
+class ZERO_OP:
+    def eval0(self):
+        return None
+
+    def eval(self, stack, *, op):
+        answer = self.eval0()
+        return lexer_token(answer, "num")
+
+
+class FUNC_MONO_OP_RND(MONO_OP):
+    """
+    Handles the built-in RND function. I'm not certain what the behavior should be,
+    I think he's always passing RND(1), and gets a number between 0 and 1.0. On some
+    versions of BASIC RND(10) still generates from 0 to 1.0, on others in generate 0 to 10.0
+    I'll assume always 1.0 for now.
+    """
+    def eval1(self, first, *, op):
+        return random.random()
 
 class HELPER:
     def __init__(self, x):
@@ -148,6 +168,8 @@ def get_op(token:lexer_token, line):
     if token.type == "function":# and token.token.startswith("FN"):
         if token.token == "INT":
             return HELPER(FUNC_MONO_OP_INT()) # Handles the built-in INT function
+        if token.token == "RND":
+            return HELPER(FUNC_MONO_OP_RND()) # Handles the built-in RND function
         return OP_MAP["∫"] # Handles user defined functions.
     op_char = token.token
     assert_internal(len(op_char) == 1, line, F"Unexpected operator {op_char}")

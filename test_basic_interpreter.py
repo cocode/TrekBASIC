@@ -225,7 +225,7 @@ class Test(TestCase):
         Z = executor.get_symbol("Z")
         self.assertEqual(110, Z)
 
-    def test_builtin(self):
+    def test_builtin_int(self):
         listing = [
             '90 A=INT(1.99)',
         ]
@@ -236,6 +236,18 @@ class Test(TestCase):
         self.assertEqual(1, executor.get_symbol_count()-executor._builtin_count)
         A = executor.get_symbol("A")
         self.assertEqual(1, A)
+
+    def test_builtin_rnd(self):
+        listing = [
+            '90 A=RND(1)',
+        ]
+        program = tokenize(listing)
+        self.assertEqual(len(listing), len(program))
+        executor = Executor(program)
+        executor.run_program()
+        self.assertEqual(1, executor.get_symbol_count()-executor._builtin_count)
+        A = executor.get_symbol("A")
+        self.assertTrue(A > 0 and A < 1.0)
 
 
     def test_expressions(self):
