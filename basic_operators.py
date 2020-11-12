@@ -3,11 +3,11 @@ Implementation for basic operators, such as add, subtract, etc.
 """
 # TODO Unary Minus!
 
-from collections import namedtuple
-import sys
+
 from enum import Enum, auto
 
 from basic_types import lexer_token, assert_syntax, assert_internal
+import basic_expressions
 
 
 class OP:
@@ -25,12 +25,15 @@ class MONO_OP:
     def eval(self, stack, *, op):
         self.check_args(stack)
         first = stack.pop()
-        answer = self.eval1(first.token)
+        answer = self.eval1(first.token, op=op)
         return lexer_token(answer, "num")
 
 class FUNC_MONO_OP(MONO_OP):
-    def eval1(self, first):
-        return 10
+    def eval1(self, first, *, op):
+        e = basic_expressions.Expression()
+        symbols = op.symbols # Gets a COPY. We will mutate.
+        #e.eval()
+        return 100
 
 
 class BINOP(OP):
@@ -149,6 +152,3 @@ def get_precedence(token:lexer_token, line):
     assert_syntax(op_char in PREC_MAP, line, "Invalid operator {op_char}")
     return PREC_MAP[op_char]
 
-
-if __name__ == "__main__":
-    pass

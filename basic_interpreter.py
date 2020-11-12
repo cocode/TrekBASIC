@@ -9,6 +9,7 @@ from enum import Enum, auto
 from basic_types import statement, statements, lexer_token, BasicSyntaxError, assert_syntax, ste
 from basic_lexer import lexer_token, Lexer, NUMBERS
 from basic_expressions import Expression
+from basic_symbols import SymbolTable
 
 
 
@@ -69,11 +70,8 @@ def stmt_exp(executor, stmt):
     lexer = Lexer()
     tokens = lexer.lex(value)
     e = Expression()
-    result = e.eval(executor.get_symbols(), tokens, executor.get_line())
-    # if variable.endswith("$"):
-    #     value = value[1:-1]
-
-    executor.put_symbol(variable, result, "variable")
+    result = e.eval(tokens, symbols=executor._symbols.get_copy())
+    executor.put_symbol(variable, result, symbol_type="variable", arg=None)
 
 
 def stmt_dim(executor, stmt):
@@ -101,7 +99,7 @@ def stmt_dim(executor, stmt):
             size_x = int(dimensions[0].replace("(",''))
             size_y = int(dimensions[1].replace(")",''))
             value = [[0] * size_y] * size_x
-        executor.put_symbol(name, value, "array") # Not right, but for now.
+        executor.put_symbol(name, value, "array", arg=None) # Not right, but for now.
 
 def stmt_goto(executor, stmt):
     pass
@@ -140,7 +138,7 @@ def stmt_def(executor, stmt):
     arg = variable[4]
     variable = variable[:3]
     value = value.strip()
-    executor.put_symbol(variable, value, "function")
+    executor.put_symbol(variable, value, "function", arg)
 
 
 def stmt_return(executor, stmt):
@@ -232,7 +230,7 @@ class Executor:
     def __init__(self, program):
         self._program = program
         self._current = program[0]
-        self._symbols = {}
+        self._symbols = SymbolTable()
         self._run = False
 
     def halt(self):
@@ -259,11 +257,22 @@ class Executor:
             else:
                 self._run = False
 
-    def get_symbols(self):
-        return self._symbols.copy()
+    def get_symbol_count(self):
+        """
+        Get number of defined symbols. Used for testing.
+        :return:
+        """
+        return len(self._symbols)
 
-    def put_symbol(self, symbol, value, symbol_type, arg=None):
-        self._symbols[symbol] = ste(value, symbol_type, arg)
+    # def get_active_symbols(self):
+    #     """
+    #     Gets the active symbol table, not a copy. If you want copy, call this, and then call get_copy.
+    #     :return:
+    #     """
+    #     return self._symbols
+
+    def put_symbol(self, symbol, value, symbol_type, arg):
+        self._symbols.put_symbol(symbol, value, symbol_type, arg)
 
     def get_line(self):
         return self._current
@@ -273,14 +282,14 @@ class Executor:
         :param symbol:
         :return:
         """
-        return self._symbols[symbol].value
+        return self._symbols.get_symbol(symbol)
 
     def get_symbol_type(self, symbol):
         """
         :param symbol:
         :return:
         """
-        return self._symbols[symbol].type
+        return self._symbols.get_symbol_type(symbol)
 
 
 def format_line(line):

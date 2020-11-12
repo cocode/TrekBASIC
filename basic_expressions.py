@@ -1,14 +1,13 @@
 """
 Basic support for expressions.
 """
-from collections import namedtuple
-import sys
-from enum import Enum, auto
+
 from basic_types import lexer_token, BasicSyntaxError, assert_syntax, OP_TOKEN
-from basic_operators import Operators, get_op, get_precedence
+from basic_symbols import SymbolTable
+
 
 class Expression:
-    def eval(self, symbols, tokens:list[lexer_token], line):
+    def eval(self, tokens:list[lexer_token], *, symbols=None, line=0):
         """
         evalulates an expression, like "2+3*5-A+RND()"
         :param symbols: a COPY!!! of the symbol table from the Executor
@@ -16,6 +15,12 @@ class Expression:
         :params line: The line number, for error messages only.
         :return:
         """
+        assert type(symbols) != dict
+        # Had to iport here, to avoid circular dependencies.
+        from basic_operators import get_op, get_precedence
+        if symbols is None:
+            symbols = SymbolTable()
+
         if len(tokens) == 0:
             raise BasicSyntaxError(F"No expression.")
 
@@ -47,31 +52,26 @@ class Expression:
                     else:
                         break
                 if current.token != ")":
-                    op_stack.append(OP_TOKEN(current.token, current.type, None, None))
+                    op_stack.append(OP_TOKEN(current.token, current.type, None, None, symbols=None))
                 else:
                     assert_syntax(top.token == "(", line, F"Unbalanced parens.")
                     op_stack.pop()
             else:
                 if current.type == "id":
-                    # If it's a symbol, look it up, and replace with it's value.
-                    assert_syntax(current.token in symbols, line, F"Undefined variable: '{current.token}")
-                    entry = symbols.get(current.token)
-                    symbol_type = entry.type
+                    assert_syntax(current.token in symbols.get_symbol_names(), line, F"Undefined variable: '{current.token}'")
+                    symbol_value = symbols.get_symbol(current.token)
+                    symbol_type = symbols.get_symbol_type(current.token)
                     if symbol_type == "variable":
-                        value = entry.value
                         if current.token.endswith("$"):
-                            data_stack.append(lexer_token(value, "str"))
+                            data_stack.append(lexer_token(symbol_value, "str"))
                         else:
-                            data_stack.append(lexer_token(value, "num"))
+                            data_stack.append(lexer_token(symbol_value, "num"))
                     elif symbol_type == "function":
                         # Handle function as operators. Lower priority than "(", but higher than everything else.
                         # So don't append this to the data stack, append it to the op stack as a function.
-                        value = entry.value
-                        arg = entry.arg
+                        arg = symbols.get_symbol_arg(current.token)
                         fn_exp = Expression()
-                        local_symbols = symbols.copy() # Way inefficient, but easy
-                        op_stack.append(OP_TOKEN(current.token, "function", arg, value))
-                        # TODO local_symbols[arg]=symbols.get[]
+                        op_stack.append(OP_TOKEN(current.token, "function", arg, symbol_value, symbols=symbols))
                     else:
                         raise BasicSyntaxError(F"InternalError: Unknown symbol type: '{symbol_type}")
                 else:

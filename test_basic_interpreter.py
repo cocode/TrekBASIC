@@ -117,8 +117,7 @@ class Test(TestCase):
         self.assertEqual(1, len(program))
         executor = Executor(program)
         executor.run_program()
-        symbols = executor.get_symbols()
-        self.assertEqual(1, len(symbols))
+        self.assertEqual(1, executor.get_symbol_count())
         self.assertEqual('Fred', executor.get_symbol("Z$"))
 
     def test_dim(self):
@@ -126,8 +125,7 @@ class Test(TestCase):
         self.assertEqual(1, len(program))
         executor = Executor(program)
         executor.run_program()
-        symbols = executor.get_symbols()
-        self.assertEqual(2, len(symbols))
+        self.assertEqual(2, executor.get_symbol_count())
         A = executor.get_symbol("A")
         C = executor.get_symbol("C")
         self.assertEqual(8, len(A))
@@ -139,8 +137,7 @@ class Test(TestCase):
         self.assertEqual(1, len(program))
         executor = Executor(program)
         executor.run_program()
-        symbols = executor.get_symbols()
-        self.assertEqual(1, len(symbols))
+        self.assertEqual(1, executor.get_symbol_count())
         A = executor.get_symbol("FNA")
         AT = executor.get_symbol_type("FNA")
         self.assertEqual("X^2+1", A)
@@ -155,10 +152,24 @@ class Test(TestCase):
         self.assertEqual(len(listing), len(program))
         executor = Executor(program)
         executor.run_program()
-        symbols = executor.get_symbols()
-        self.assertEqual(2, len(symbols))
+        self.assertEqual(2, executor.get_symbol_count())
         Y = executor.get_symbol("Y")
         self.assertEqual(10, Y)
+
+    def test_def3(self):
+        listing = [
+            '90 A=2+1',
+            '100 DEF FNA(X)=X^A+1',
+            '110 Y=FNA(5)',
+            '110 Z=FNA(Y*Y)',
+        ]
+        program = tokenize(listing)
+        self.assertEqual(len(listing), len(program))
+        executor = Executor(program)
+        executor.run_program()
+        self.assertEqual(4, executor.get_symbol_count())
+        Y = executor.get_symbol("Y")
+        self.assertEqual(28, Y)
 
 
     def test_expressions(self):
@@ -173,8 +184,7 @@ class Test(TestCase):
         self.assertEqual(len(listing), len(program))
         executor = Executor(program)
         executor.run_program()
-        symbols = executor.get_symbols()
-        self.assertEqual(5, len(symbols))
+        self.assertEqual(5, executor.get_symbol_count())
         A = executor.get_symbol("A")
         B = executor.get_symbol("B")
         C = executor.get_symbol("C")
@@ -185,6 +195,22 @@ class Test(TestCase):
         self.assertEqual(C, 7)
         self.assertEqual(D, "ABC")
         self.assertEqual(E, "ABCDEF")
+
+    def test_expressions(self):
+        listing = [
+            '100 A =2+1',
+            '110 B=A/2',
+        ]
+        program = tokenize(listing)
+        self.assertEqual(len(listing), len(program))
+        executor = Executor(program)
+        executor.run_program()
+        self.assertEqual(2, executor.get_symbol_count())
+        A = executor.get_symbol("A")
+        B = executor.get_symbol("B")
+        self.assertEqual(A, 3)
+        self.assertEqual(B, 1.5)
+
 
     def test_suite_dim(self):
         """

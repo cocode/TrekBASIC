@@ -14,6 +14,7 @@ Two options:
 2 sounds like more fun
 
 TODO on interpreter.
+0. SHould probably split symbol table from executor. It would cut circular references.
 1. Expressions will probably be the hardest
     a. Expression evaulation DONE
     b. Expression assignment DONE - mostly,

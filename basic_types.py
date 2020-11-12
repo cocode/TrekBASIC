@@ -31,10 +31,13 @@ def assert_syntax(value, line, message):
     if not value:
         raise BasicSyntaxError(F"SyntaxError in line {line}: {message}")
 
+
 def assert_internal(value, line, message):
     if not value:
         raise BasicInternalError(F"InternalError in line {line}: {message}")
 
+
 # We had been using a lexical token for the operators, but function calls need more data.
 # This what we will push on the op stack, and also pass to the eval function.
-OP_TOKEN = namedtuple("OPERATION", "token type arg value")
+# arg, value, and exec are only required for user defined functions.
+OP_TOKEN = namedtuple("OPERATION", "token type arg value symbols")
