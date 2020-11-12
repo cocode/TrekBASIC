@@ -117,7 +117,7 @@ class Test(TestCase):
         self.assertEqual(1, len(program))
         executor = Executor(program)
         executor.run_program()
-        self.assertEqual(1, executor.get_symbol_count())
+        self.assertEqual(1, executor.get_symbol_count()-executor._builtin_count)
         self.assertEqual('Fred', executor.get_symbol("Z$"))
 
     def test_dim(self):
@@ -125,7 +125,7 @@ class Test(TestCase):
         self.assertEqual(1, len(program))
         executor = Executor(program)
         executor.run_program()
-        self.assertEqual(2, executor.get_symbol_count())
+        self.assertEqual(2, executor.get_symbol_count()-executor._builtin_count)
         A = executor.get_symbol("A")
         C = executor.get_symbol("C")
         self.assertEqual(8, len(A))
@@ -137,7 +137,7 @@ class Test(TestCase):
         self.assertEqual(1, len(program))
         executor = Executor(program)
         executor.run_program()
-        self.assertEqual(1, executor.get_symbol_count())
+        self.assertEqual(1, executor.get_symbol_count()-executor._builtin_count)
         A = executor.get_symbol("FNA")
         AT = executor.get_symbol_type("FNA")
         self.assertEqual("X^2+1", A)
@@ -153,7 +153,7 @@ class Test(TestCase):
         self.assertEqual(len(listing), len(program))
         executor = Executor(program)
         executor.run_program()
-        self.assertEqual(3, executor.get_symbol_count())
+        self.assertEqual(3, executor.get_symbol_count()-executor._builtin_count)
         Y = executor.get_symbol("Y")
         self.assertEqual(26, Y)
         Z = executor.get_symbol("Z")
@@ -170,7 +170,7 @@ class Test(TestCase):
         self.assertEqual(len(listing), len(program))
         executor = Executor(program)
         executor.run_program()
-        self.assertEqual(4, executor.get_symbol_count())
+        self.assertEqual(4, executor.get_symbol_count()-executor._builtin_count)
         Y = executor.get_symbol("Y")
         Z = executor.get_symbol("Z")
         self.assertEqual(126, Y)
@@ -186,9 +186,9 @@ class Test(TestCase):
         program = tokenize(listing)
         self.assertEqual(len(listing), len(program))
         executor = Executor(program)
-        executor.set_trace(True)
+        #executor.set_trace(True)
         executor.run_program()
-        self.assertEqual(4, executor.get_symbol_count())
+        self.assertEqual(4, executor.get_symbol_count()-executor._builtin_count)
         Z = executor.get_symbol("Z")
         self.assertEqual(92, Z)
 
@@ -203,9 +203,9 @@ class Test(TestCase):
         program = tokenize(listing)
         self.assertEqual(len(listing), len(program))
         executor = Executor(program)
-        executor.set_trace(True)
+        #executor.set_trace(True)
         executor.run_program()
-        self.assertEqual(5, executor.get_symbol_count())
+        self.assertEqual(5, executor.get_symbol_count()-executor._builtin_count)
         Z = executor.get_symbol("Z")
         self.assertEqual(110, Z)
 
@@ -219,23 +219,23 @@ class Test(TestCase):
         program = tokenize(listing)
         self.assertEqual(len(listing), len(program))
         executor = Executor(program)
-        executor.set_trace(True)
+        #executor.set_trace(True)
         executor.run_program()
-        self.assertEqual(4, executor.get_symbol_count())
+        self.assertEqual(4, executor.get_symbol_count()-executor._builtin_count)
         Z = executor.get_symbol("Z")
         self.assertEqual(110, Z)
 
-    # def test_builtin(self):
-    #     listing = [
-    #         '90 A=INT(1.99)',
-    #     ]
-    #     program = tokenize(listing)
-    #     self.assertEqual(len(listing), len(program))
-    #     executor = Executor(program)
-    #     executor.run_program()
-    #     self.assertEqual(1, executor.get_symbol_count())
-    #     A = executor.get_symbol("A")
-    #     self.assertEqual(1, A)
+    def test_builtin(self):
+        listing = [
+            '90 A=INT(1.99)',
+        ]
+        program = tokenize(listing)
+        self.assertEqual(len(listing), len(program))
+        executor = Executor(program)
+        executor.run_program()
+        self.assertEqual(1, executor.get_symbol_count()-executor._builtin_count)
+        A = executor.get_symbol("A")
+        self.assertEqual(1, A)
 
 
     def test_expressions(self):
@@ -271,7 +271,7 @@ class Test(TestCase):
         self.assertEqual(len(listing), len(program))
         executor = Executor(program)
         executor.run_program()
-        self.assertEqual(2, executor.get_symbol_count())
+        self.assertEqual(2, executor.get_symbol_count()-executor._builtin_count)
         A = executor.get_symbol("A")
         B = executor.get_symbol("B")
         self.assertEqual(A, 3)

@@ -30,6 +30,9 @@ class MONO_OP:
         return lexer_token(answer, "num")
 
 class FUNC_MONO_OP(MONO_OP):
+    """
+    handles user defined functions.
+    """
     def eval1(self, first, *, op):
         e = basic_expressions.Expression()
         symbols = op.symbols.get_copy() # Have to get a new copy for each function execution,
@@ -43,6 +46,16 @@ class FUNC_MONO_OP(MONO_OP):
             print(F"Function F({first})={op.value} returned", result)
         return result
 
+class FUNC_MONO_OP_INT(MONO_OP):
+    """
+    handles user defined functions.
+    """
+    def eval1(self, first, *, op):
+        return int(first)
+
+class HELPER:
+    def __init__(self, x):
+        self.value = x
 
 class BINOP(OP):
     def check_args(self, stack):
@@ -132,8 +145,10 @@ def get_op(token:lexer_token, line):
         "(": Operators.OPEN,
         "∫": Operators.FUNC  # Not found in source code, used as an indicator.
     }
-    if token.type == "function" and token.token.startswith("FN"):
-        return OP_MAP["∫"]
+    if token.type == "function":# and token.token.startswith("FN"):
+        if token.token == "INT":
+            return HELPER(FUNC_MONO_OP_INT()) # Handles the built-in INT function
+        return OP_MAP["∫"] # Handles user defined functions.
     op_char = token.token
     assert_internal(len(op_char) == 1, line, F"Unexpected operator {op_char}")
     assert_syntax(op_char in OP_MAP, line, "Invalid operator {op_char}")
@@ -153,7 +168,7 @@ def get_precedence(token:lexer_token, line):
         "∫": 7, # Has to be lower than "OPEN", so we will eval the arguments, THEN call the func.
     }
 
-    if token.type == "function" and token.token.startswith("FN"):
+    if token.type == "function": # make this for all functions, not: and token.token.startswith("FN"):
         return PREC_MAP["∫"]
     op_char = token.token
     assert_internal(len(op_char) == 1, line, F"Unexpected operator {op_char}")

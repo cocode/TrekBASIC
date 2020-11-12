@@ -233,8 +233,8 @@ class Executor:
         self._symbols = SymbolTable()
         self._run = False
         self._trace = False
+        self._builtin_count = 0
 
-        # executor.put_symbol("INT", "⌊", "function", arg)
     def set_trace(self, value):
         self._trace = value
 
@@ -243,6 +243,9 @@ class Executor:
 
     def run_program(self):
         #program = load_program(program_filename)
+        self.put_symbol("INT", "⌊", "function", arg=lambda x : int(x))
+        self._builtin_count += 1
+
         self._run = True
         while self._run:
             if self._trace:
@@ -267,13 +270,6 @@ class Executor:
         :return:
         """
         return len(self._symbols)
-
-    # def get_active_symbols(self):
-    #     """
-    #     Gets the active symbol table, not a copy. If you want copy, call this, and then call get_copy.
-    #     :return:
-    #     """
-    #     return self._symbols
 
     def put_symbol(self, symbol, value, symbol_type, arg):
         self._symbols.put_symbol(symbol, value, symbol_type, arg)

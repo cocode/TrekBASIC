@@ -50,8 +50,8 @@ class Expression:
                 # Do anything on the stack that has higher precedence.
                 while len(op_stack):
                     top = op_stack[-1]
-                    if top.type == 'function':
-                        print("Found a function")
+                    # if top.type == 'function':
+                    #     print("Found a function")
                     # This makes everything left associative. I think that's ok. Might be wrong for exponentiation
                     if top.token != "(" and get_precedence(top, line) >= get_precedence(current, line): # Check operator precedence
                         self.one_op(op_stack, data_stack, line)
