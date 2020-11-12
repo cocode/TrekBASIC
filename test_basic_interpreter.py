@@ -134,6 +134,31 @@ class Test(TestCase):
         self.assertEqual(1, len(C))
         self.assertEqual(8, len(C[0]))
 
+    def test_expressions(self):
+        listing = [
+            '100 A =2+1',
+            '110 B=4',
+            '120 C = A + B',
+            '130 D$="ABC"',
+            '140 E$=D$+"DEF"',
+        ]
+        program = tokenize(listing)
+        self.assertEqual(len(listing), len(program))
+        executor = Executor(program)
+        executor.run_program()
+        symbols = executor.get_symbols()
+        self.assertEqual(5, len(symbols))
+        A = executor.get_symbol("A")
+        B = executor.get_symbol("B")
+        C = executor.get_symbol("C")
+        D = executor.get_symbol("D$")
+        E = executor.get_symbol("E$")
+        self.assertEqual(A, 3)
+        self.assertEqual(B, 4)
+        self.assertEqual(C, 7)
+        self.assertEqual(D, "ABC")
+        self.assertEqual(E, "ABCDEF")
+
     def test_suite_dim(self):
         """
         Tests with "suite" in the name test for errors.

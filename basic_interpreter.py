@@ -8,6 +8,7 @@ from enum import Enum, auto
 
 from basic_types import statement, statements, lexer_token, BasicSyntaxError, assert_syntax
 from basic_lexer import lexer_token, Lexer, NUMBERS
+from basic_expressions import Expression
 
 
 def smart_split(line:str, enquote:str = '"', dequote:str = '"', split_char:str = ":") -> list[str]:
@@ -62,10 +63,16 @@ def stmt_exp(executor, stmt):
         variable, value = stmt.args.split("=", 1)
     except Exception as e:
         print(e)
-        raise BasicSyntaxError(F"Error detected in line {executor._current}. Probably something not implemented.")
-    if variable.endswith("$"):
-        value = value[1:-1]
-    executor._symbols[variable] = value
+        raise BasicSyntaxError(F"Error detected in line {executor.get_line()}. Probably something not implemented.")
+    variable = variable.strip()
+    lexer = Lexer()
+    tokens = lexer.lex(value)
+    e = Expression()
+    result = e.eval(executor.get_symbols(), tokens, executor.get_line())
+    # if variable.endswith("$"):
+    #     value = value[1:-1]
+
+    executor.put_symbol(variable, result)
 
 
 def stmt_dim(executor, stmt):
@@ -74,15 +81,15 @@ def stmt_dim(executor, stmt):
         s = s.strip()
         # TODO a 'get_identifier' function
         name = s[0]
-        assert_syntax(len(s) > 1, executor._current, "Missing dimensions")
+        assert_syntax(len(s) > 1, executor.get_line(), "Missing dimensions")
         if s[1] in NUMBERS:
             name += s[1]
         if s[len(name)] == "$":
             name += "$"
         dimensions = s[len(name):]
         # TODO This should be part of Executor. Then assert_syntax would know the line number.
-        assert_syntax(dimensions[0] == '(', executor._current, "Missing (")
-        assert_syntax(dimensions[-1] == ')', executor._current, "Missing (")
+        assert_syntax(dimensions[0] == '(', executor.get_line(), "Missing (")
+        assert_syntax(dimensions[-1] == ')', executor.get_line(), "Missing (")
         dimensions = dimensions[1:-1] # Remove parens
         dimensions = dimensions.split(",")
         assert len(dimensions) <= 2 and len(dimensions) > 0
@@ -119,7 +126,7 @@ def stmt_def(executor, stmt):
         print(e)
     variable = variable.strip()
     value = value.strip()
-    executor._symbols[variable] = value
+    executor.put_symbol(variable, value)
 
 
 def stmt_return(executor, stmt):
@@ -243,6 +250,9 @@ class Executor:
 
     def put_symbol(self, symbol, value):
         self._symbols[symbol] = value
+
+    def get_line(self):
+        return self._current
 
     def get_symbol(self, symbol):
         """
