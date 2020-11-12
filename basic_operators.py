@@ -7,7 +7,7 @@ from collections import namedtuple
 import sys
 from enum import Enum, auto
 
-from basic_interpreter import lexer_token, assert_syntax
+from basic_types import lexer_token, assert_syntax
 
 
 class OP:
