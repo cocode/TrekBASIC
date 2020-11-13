@@ -142,10 +142,7 @@ class Test(TestCase):
         self.assertEqual('Fred', executor.get_symbol("Z$"))
 
     def test_dim(self):
-        program = tokenize(['100 DIM A(8), C(1,8)'])
-        self.assertEqual(1, len(program))
-        executor = Executor(program)
-        executor.run_program()
+        executor = self.runit(['100 DIM A(8), C(1,8)'])
         self.assertEqual(2, executor.get_symbol_count()-executor._builtin_count)
         A = executor.get_symbol("A")
         C = executor.get_symbol("C")
@@ -154,10 +151,7 @@ class Test(TestCase):
         self.assertEqual(8, len(C[0]))
 
     def test_def(self):
-        program = tokenize(['100 DEF FNA(X)=X^2+1'])
-        self.assertEqual(1, len(program))
-        executor = Executor(program)
-        executor.run_program()
+        executor = self.runit(['100 DEF FNA(X)=X^2+1'])
         self.assertEqual(1, executor.get_symbol_count()-executor._builtin_count)
         A = executor.get_symbol("FNA")
         AT = executor.get_symbol_type("FNA")
@@ -170,10 +164,7 @@ class Test(TestCase):
             '110 Y=FNA(5)',
             '110 Z=FNA(7*7)',
         ]
-        program = tokenize(listing)
-        self.assertEqual(len(listing), len(program))
-        executor = Executor(program)
-        executor.run_program()
+        executor= self.runit(listing)
         self.assertEqual(3, executor.get_symbol_count()-executor._builtin_count)
         Y = executor.get_symbol("Y")
         self.assertEqual(26, Y)
@@ -187,10 +178,7 @@ class Test(TestCase):
             '110 Y=FNA(5)',
             '110 Z=FNA(A*A)',
         ]
-        program = tokenize(listing)
-        self.assertEqual(len(listing), len(program))
-        executor = Executor(program)
-        executor.run_program()
+        executor= self.runit(listing)
         self.assertEqual(4, executor.get_symbol_count()-executor._builtin_count)
         Y = executor.get_symbol("Y")
         Z = executor.get_symbol("Z")
@@ -204,11 +192,7 @@ class Test(TestCase):
             '110 DEF FNC(X)=FNA(3*X)+FNB(X+1)',
             '110 Z=FNC(3)'
         ]
-        program = tokenize(listing)
-        self.assertEqual(len(listing), len(program))
-        executor = Executor(program)
-        #executor.set_trace(True)
-        executor.run_program()
+        executor= self.runit(listing)
         self.assertEqual(4, executor.get_symbol_count()-executor._builtin_count)
         Z = executor.get_symbol("Z")
         self.assertEqual(92, Z)
@@ -221,11 +205,7 @@ class Test(TestCase):
             '120 Y=FNB(6)', # 110
             '110 Z=X+Y'
         ]
-        program = tokenize(listing)
-        self.assertEqual(len(listing), len(program))
-        executor = Executor(program)
-        #executor.set_trace(True)
-        executor.run_program()
+        executor= self.runit(listing)
         self.assertEqual(5, executor.get_symbol_count()-executor._builtin_count)
         Z = executor.get_symbol("Z")
         self.assertEqual(110, Z)
@@ -237,11 +217,7 @@ class Test(TestCase):
             '110 DEF FNC(X)=FNB(X+1)+FNB(X*2)', # 110
             '110 Z=FNC(3)'
         ]
-        program = tokenize(listing)
-        self.assertEqual(len(listing), len(program))
-        executor = Executor(program)
-        #executor.set_trace(True)
-        executor.run_program()
+        executor= self.runit(listing)
         self.assertEqual(4, executor.get_symbol_count()-executor._builtin_count)
         Z = executor.get_symbol("Z")
         self.assertEqual(110, Z)
@@ -250,10 +226,7 @@ class Test(TestCase):
         listing = [
             '90 A=INT(1.99)',
         ]
-        program = tokenize(listing)
-        self.assertEqual(len(listing), len(program))
-        executor = Executor(program)
-        executor.run_program()
+        executor= self.runit(listing)
         self.assertEqual(1, executor.get_symbol_count()-executor._builtin_count)
         A = executor.get_symbol("A")
         self.assertEqual(1, A)
@@ -262,10 +235,7 @@ class Test(TestCase):
         listing = [
             '90 A=RND(1)',
         ]
-        program = tokenize(listing)
-        self.assertEqual(len(listing), len(program))
-        executor = Executor(program)
-        executor.run_program()
+        executor= self.runit(listing)
         self.assertEqual(1, executor.get_symbol_count()-executor._builtin_count)
         A = executor.get_symbol("A")
         self.assertTrue(A > 0 and A < 1.0)
@@ -279,10 +249,7 @@ class Test(TestCase):
             '130 D$="ABC"',
             '140 E$=D$+"DEF"',
         ]
-        program = tokenize(listing)
-        self.assertEqual(len(listing), len(program))
-        executor = Executor(program)
-        executor.run_program()
+        executor= self.runit(listing)
         self.assertEqual(5, executor.get_symbol_count())
         A = executor.get_symbol("A")
         B = executor.get_symbol("B")
@@ -300,10 +267,7 @@ class Test(TestCase):
             '100 A =2+1',
             '110 B=A/2',
         ]
-        program = tokenize(listing)
-        self.assertEqual(len(listing), len(program))
-        executor = Executor(program)
-        executor.run_program()
+        executor= self.runit(listing)
         self.assertEqual(2, executor.get_symbol_count()-executor._builtin_count)
         A = executor.get_symbol("A")
         B = executor.get_symbol("B")
@@ -318,10 +282,7 @@ class Test(TestCase):
             '130 B  = 2',
             '140 END',
         ]
-        program = tokenize(listing)
-        self.assertEqual(len(listing), len(program))
-        executor = Executor(program)
-        executor.run_program()
+        executor= self.runit(listing)
         self.assertEqual(1, executor.get_symbol_count()-executor._builtin_count)
         B = executor.get_symbol("B")
         self.assertEqual(B, 2)
@@ -333,10 +294,7 @@ class Test(TestCase):
             '110 A$="1"',
             '130 B  = 2',
         ]
-        program = tokenize(listing)
-        self.assertEqual(len(listing), len(program))
-        executor = Executor(program)
-        executor.run_program()
+        executor= self.runit(listing)
         self.assertEqual(0, executor.get_symbol_count()-executor._builtin_count)
 
 
@@ -362,9 +320,10 @@ class Test(TestCase):
         program = tokenize(['100 DIM A(8'])
         self.assertEqual(1, len(program))
         executor = Executor(program)
-        self.assertRaises(BasicSyntaxError, executor.run_program)
+        with self.assertRaises(BasicSyntaxError):
+            executor.run_program()
 
-        # Assert they gave it a dim May not be right, som edialoects of basic assume 10
+        # Assert they gave it a dim May not be right, some dialoects of basic assume 10
         program = tokenize(['100 DIM C'])
         self.assertEqual(1, len(program))
         executor = Executor(program)
