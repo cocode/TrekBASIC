@@ -1,4 +1,7 @@
+from io import StringIO
 from unittest import TestCase
+import sys
+
 from basic_interpreter import tokenize_line, statement, statements, Keywords, smart_split
 from basic_interpreter import load_program, format_program, tokenize, Executor, BasicSyntaxError
 from basic_lexer import Lexer
@@ -6,6 +9,24 @@ from basic_expressions import Expression
 
 
 class Test(TestCase):
+    def runit(self, listing):
+        program = tokenize(listing)
+        self.assertEqual(len(listing), len(program))
+        executor = Executor(program)
+        executor.run_program()
+        return executor
+
+    def runit_capture(self, listing):
+        old = sys.stdout
+        output = StringIO()
+        sys.stdout = output
+        try:
+            executor = self.runit(listing)
+        finally:
+            sys.stdout = old
+        program_output = output.getvalue()
+        return executor, program_output
+
     def test_token_rem(self):
         line = "10 REM SUPER STARTREK - MAY 16,1978 - REQUIRES 24K MEMORY"
         results = tokenize_line(line)
@@ -323,11 +344,20 @@ class Test(TestCase):
         listing = [
             '100 PRINT "SHOULD SEE THIS"'
         ]
+        executor, program_output = self.runit_capture(listing)
+        self.assertEqual('SHOULD SEE THIS\n', program_output)
+
         program = tokenize(listing)
         self.assertEqual(len(listing), len(program))
         executor = Executor(program)
         executor.run_program()
 
+        listing = [
+            '90 K9=12',
+            '100 PRINT"     DESTROY THE";K9;"KLINGON WARSHIPS WHICH HAVE INVADED"'
+        ]
+        executor, program_output = self.runit_capture(listing)
+        # self.assertEqual('     DESTROY THE 12 KLINGON WARSHIPS WHICH HAVE INVADED', program_output)
 
     def test_suite_dim(self):
         """

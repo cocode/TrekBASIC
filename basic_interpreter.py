@@ -55,7 +55,8 @@ def stmt_rem(executor, stmt):
 def stmt_print(executor, stmt):
     arg = stmt.args.strip()
     assert_syntax(arg[0] =='"' and arg[-1] == '"', executor.get_line(), "String not properly quoted for 'PRINT'")
-    print(stmt.args[0:-1])
+    output = arg[1:-1]
+    print(output)
     return None
 
 
