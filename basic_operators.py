@@ -2,8 +2,7 @@
 Implementation for basic operators, such as add, subtract, etc.
 """
 # TODO Unary Minus!
-
-
+from collections import namedtuple
 from enum import Enum
 import random
 
@@ -21,7 +20,7 @@ class MONO_OP:
     def check_args(self, stack):
         assert_syntax(len(stack) >= 1, -1, "Not enough operands for binary operator")
 
-    def eval1(self, first):
+    def eval1(self, first, op):
         return None
 
     def eval(self, stack, *, op):
@@ -29,6 +28,12 @@ class MONO_OP:
         first = stack.pop()
         answer = self.eval1(first.token, op=op)
         return lexer_token(answer, "num")
+
+
+class MINUS_MONO_OP(MONO_OP):
+    def eval1(self, first, op):
+        return -first
+
 
 class FUNC_MONO_OP(MONO_OP):
     """
@@ -46,6 +51,7 @@ class FUNC_MONO_OP(MONO_OP):
         if trace:
             print(F"Function F({first})={op.value} returned", result)
         return result
+
 
 class FUNC_MONO_OP_INT(MONO_OP):
     """
@@ -73,7 +79,7 @@ class FUNC_MONO_OP_RND(MONO_OP):
     def eval1(self, first, *, op):
         return random.random()
 
-class HELPER:
+class HELPER: # Used by buildin functions.
     def __init__(self, x):
         self.value = x
 
@@ -139,6 +145,19 @@ class BINOP_EXP(BINOP_NUM):
     def eval2(self, first, second):
         result = first ** second
         return result
+
+# TODO better data structures for operators.
+alt_op = namedtuple('OperatorAlt','text precedence ltor func')
+class Operators2(Enum):
+    CLOSE = alt_op(")", 8, True, OP())
+    EQUALS = 2
+    MINUS = BINOP_MINUS()
+    PLUS = BINOP_PLUS()
+    DIV = BINOP_DIV()
+    MUL = BINOP_MUL()
+    EXP = BINOP_EXP()
+    OPEN = OP() # NOP
+    FUNC = FUNC_MONO_OP()
 
 
 class Operators(Enum):
