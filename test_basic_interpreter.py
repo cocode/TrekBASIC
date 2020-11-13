@@ -347,17 +347,12 @@ class Test(TestCase):
         executor, program_output = self.runit_capture(listing)
         self.assertEqual('SHOULD SEE THIS\n', program_output)
 
-        program = tokenize(listing)
-        self.assertEqual(len(listing), len(program))
-        executor = Executor(program)
-        executor.run_program()
-
         listing = [
             '90 K9=12',
             '100 PRINT"     DESTROY THE";K9;"KLINGON WARSHIPS WHICH HAVE INVADED"'
         ]
         executor, program_output = self.runit_capture(listing)
-        # self.assertEqual('     DESTROY THE 12 KLINGON WARSHIPS WHICH HAVE INVADED', program_output)
+        self.assertEqual('     DESTROY THE 12 KLINGON WARSHIPS WHICH HAVE INVADED\n', program_output)
 
     def test_suite_dim(self):
         """
