@@ -289,6 +289,45 @@ class Test(TestCase):
         self.assertEqual(A, 3)
         self.assertEqual(B, 1.5)
 
+    def test_goto(self):
+        listing = [
+            '100 GOTO 130',
+            '110 A=1',
+            '120 GOTO 140',
+            '130 B  = 2',
+            '140 END',
+        ]
+        program = tokenize(listing)
+        self.assertEqual(len(listing), len(program))
+        executor = Executor(program)
+        executor.run_program()
+        self.assertEqual(1, executor.get_symbol_count()-executor._builtin_count)
+        B = executor.get_symbol("B")
+        self.assertEqual(B, 2)
+
+
+    def test_end(self):
+        listing = [
+            '100 END',
+            '110 A$="1"',
+            '130 B  = 2',
+        ]
+        program = tokenize(listing)
+        self.assertEqual(len(listing), len(program))
+        executor = Executor(program)
+        executor.run_program()
+        self.assertEqual(0, executor.get_symbol_count()-executor._builtin_count)
+
+
+    def test_print(self):
+        listing = [
+            '100 PRINT "SHOULD SEE THIS"'
+        ]
+        program = tokenize(listing)
+        self.assertEqual(len(listing), len(program))
+        executor = Executor(program)
+        executor.run_program()
+
 
     def test_suite_dim(self):
         """

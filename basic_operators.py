@@ -4,7 +4,7 @@ Implementation for basic operators, such as add, subtract, etc.
 # TODO Unary Minus!
 
 
-from enum import Enum, auto
+from enum import Enum
 import random
 
 from basic_types import lexer_token, assert_syntax, assert_internal

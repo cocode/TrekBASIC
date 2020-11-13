@@ -4,7 +4,7 @@ It's not intended (yet) to run ANY basic program.
 """
 from collections import namedtuple
 import sys
-from enum import Enum, auto
+from enum import Enum
 
 from basic_types import statement, statements, lexer_token, BasicSyntaxError, assert_syntax, ste
 from basic_lexer import lexer_token, Lexer, NUMBERS
@@ -51,9 +51,18 @@ def stmt_rem(executor, stmt):
     """
     return None
 
-
+# TODO can print be more complex? PRINT A$,"ABC",B$. I think it can
 def stmt_print(executor, stmt):
-    print(stmt.args[1:-1])
+    arg = stmt.args.strip()
+    assert_syntax(arg[0] =='"' and arg[-1] == '"', executor.get_line(), "String not properly quoted for 'PRINT'")
+    print(stmt.args[0:-1])
+    return None
+
+
+def stmt_goto(executor, stmt):
+    destination = stmt.args.strip()
+    assert_syntax(str.isdigit(destination), executor.get_line(), F"Goto target is not an int ")
+    executor.goto(int(destination))
     return None
 
 def stmt_for(executor, stmt):
@@ -101,8 +110,6 @@ def stmt_dim(executor, stmt):
             value = [[0] * size_y] * size_x
         executor.put_symbol(name, value, "array", arg=None) # Not right, but for now.
 
-def stmt_goto(executor, stmt):
-    pass
 def stmt_next(executor, stmt):
     pass
 def stmt_if(executor, stmt):
@@ -113,8 +120,10 @@ def stmt_input(executor, stmt):
     pass
 def stmt_on(executor, stmt):
     pass
+
 def stmt_end(executor, stmt):
-    print("Halting")
+    print("Ending program")
+    executor._run = False
     executor.halt()
 
 
@@ -144,22 +153,22 @@ def stmt_def(executor, stmt):
 def stmt_return(executor, stmt):
     pass
 
-
+# TODO maybe include parsing for each type, so we'd have a parse function, and a execute function (stmt_xx)
 class Keywords(Enum):
-    DEF = stmt_def, # User defined functions
-    DIM = stmt_dim,
-    END = stmt_end,
-    EXP = stmt_exp,
-    FOR = stmt_for,
-    GOTO = stmt_goto,
-    GOSUB = stmt_gosub,
-    IF = stmt_if,
-    INPUT = stmt_input,
-    NEXT = stmt_next,
-    ON = stmt_on, # Computed gotos
-    PRINT = stmt_print,
-    REM = stmt_rem,
-    RETURN = stmt_return,
+    DEF = (stmt_def,) # User defined functions
+    DIM = (stmt_dim,)
+    END = (stmt_end,)
+    EXP = (stmt_exp,)
+    FOR = (stmt_for,)
+    GOTO = (stmt_goto,)
+    GOSUB = (stmt_gosub,)
+    IF = (stmt_if,)
+    INPUT = (stmt_input,)
+    NEXT = (stmt_next,)
+    ON = (stmt_on,) # Computed gotos
+    PRINT = (stmt_print,)
+    REM = (stmt_rem,)
+    RETURN = (stmt_return,)
 
 
 def tokenize_line(program_line: object) -> statements:
@@ -178,7 +187,7 @@ def tokenize_line(program_line: object) -> statements:
     number, partial = program_line.split(" ", 1)
     number = int(number)
 
-    # Rem comands don't split on colons, other lines do.
+    # Rem commands don't split on colons, other lines do.
     if partial.startswith(Keywords.REM.name):
         commands_text = [partial]
     else:
@@ -234,6 +243,8 @@ class Executor:
         self._run = False
         self._trace = False
         self._builtin_count = 0
+        self._goto = None
+
 
     def set_trace(self, value):
         self._trace = value
@@ -249,22 +260,32 @@ class Executor:
         self._builtin_count += 1
 
         self._run = True
+        self._count_lines = 0
+        self._count_stmts = 0
         while self._run:
+            self._count_lines += 1
             if self._trace:
                 print(F"{self._current.line}: ")
             # Get the statements on the current line
             stmts = self._current.stmts
             for s in stmts:
+                self._count_stmts += 1
                 if self._trace:
                     print("\t", s.keyword, s.args)
-                execution_function = s.keyword.value
-                # Not sure why execution function is coming back a tuple
-                execution_function[0](self, s)
-                # TODO Handle goto, loops, and other control transfers
-            if self._current.next != -1:
-                self._current = self._program[self._current.next]
+                execution_function = s.keyword.value[0]
+                execution_function(self, s)
+                if not self._run:
+                    break # Don't do the rest of the line
+                if self._goto: # If a goto has happened.
+                    self._current = self._goto
+                    self._goto = None
+                    # Note: Have to check for a goto within a line! 100 print:print:goto 100:print "shouldn't see this"
+                    break # This will skip the "else" which does the normal "step to next line"
             else:
-                self._run = False
+                if self._current.next != -1:
+                    self._current = self._program[self._current.next]
+                else:
+                    self._run = False
 
     def get_symbol_count(self):
         """
@@ -278,6 +299,13 @@ class Executor:
 
     def get_line(self):
         return self._current
+
+    def goto(self, line):
+        for possible in self._program:
+            if possible.line == line:
+                self._goto = possible
+                return
+        raise BasicSyntaxError(F"No line {line} found to GOTO.")
 
     def get_symbol(self, symbol):
         """
