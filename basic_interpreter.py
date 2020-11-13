@@ -6,7 +6,7 @@ from collections import namedtuple
 import sys
 from enum import Enum
 
-from basic_types import statement, statements, lexer_token, BasicSyntaxError, assert_syntax, ste
+from basic_types import statement, statements, lexer_token, BasicSyntaxError, BasicInternalError, assert_syntax, ste
 from basic_lexer import lexer_token, Lexer, NUMBERS
 from basic_expressions import Expression
 from basic_symbols import SymbolTable
@@ -42,7 +42,6 @@ def smart_split(line:str, enquote:str = '"', dequote:str = '"', split_char:str =
         stuff.append(line[start:x+1])
     return stuff
 
-
 # For now, don't tokenize in advance
 def stmt_rem(executor, stmt):
     """
@@ -57,6 +56,8 @@ def stmt_print(executor, stmt):
     args = arg.split(";")
     for i, arg in enumerate(args):
         arg = arg.strip()
+        if len(arg) == 0:
+            continue
         if arg[0] == '"': # quoted string
             assert_syntax(arg[0] =='"' and arg[-1] == '"', executor.get_line(), "String not properly quoted for 'PRINT'")
             output = arg[1:-1]
@@ -247,12 +248,12 @@ def load_program(program_filename):
 
 
 class Executor:
-    def __init__(self, program):
+    def __init__(self, program, trace=False):
         self._program = program
         self._current = program[0]
         self._symbols = SymbolTable()
         self._run = False
-        self._trace = False
+        self._trace = trace
         self._builtin_count = 0
         self._goto = None
 
@@ -284,7 +285,12 @@ class Executor:
                 if self._trace:
                     print("\t", s.keyword, s.args)
                 execution_function = s.keyword.value[0]
-                execution_function(self, s)
+                try:
+                    execution_function(self, s)
+                except BasicSyntaxError as bse:
+                    raise bse
+                except Exception as e:
+                    raise BasicInternalError(F"Internal error in line {self.get_line()}: {e}")
                 if not self._run:
                     break # Don't do the rest of the line
                 if self._goto: # If a goto has happened.
@@ -368,7 +374,7 @@ def print_formatted(program, f = sys.stdout):
 
 if __name__ == "__main__":
     program = load_program("superstartrek.bas")
-    executor = Executor(program)
+    executor = Executor(program, trace=True)
     executor.run_program()
     import pprint
     pprint.pprint(executor.get_symbols())
