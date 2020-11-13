@@ -19,7 +19,7 @@ class Expression:
         if result is not None:
             data_stack.append(result)
 
-    def eval(self, tokens:list[lexer_token], *, symbols=None, line=0):
+    def eval(self, tokens:list[lexer_token], *, symbols=None, line=0) -> lexer_token:
         """
         evalulates an expression, like "2+3*5-A+RND()"
         :param symbols: a COPY!!! of the symbol table from the Executor
