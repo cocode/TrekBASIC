@@ -29,3 +29,5 @@ TODO on interpreter.
 5. Write smaller test programs.
 6. Implement subroutines (GOTO)
 7. Implement FOR loops
+8. Write "renum" utility. Split all multiline statements, and renumber at increments of 10
+   Then reformat the startrek source.
