@@ -66,6 +66,17 @@ class Test(TestCase):
         answer = binop.eval(stack, op=None)
         self.assertEqual(2.4, answer.token)
 
+    def test_exp(self):
+        stack = []
+        tokens = self._lexer.lex('2^3')
+        self.assertEqual(3, len(tokens))
+        stack.append(tokens[0])
+        stack.append(tokens[2])
+        binop = get_op(tokens[1], line=0).value
+        answer = binop.eval(stack, op=None)
+        self.assertEqual(8, answer.token)
+
+
     def test_string_concat(self):
         stack = []
         tokens = self._lexer.lex('"A " + "B"')

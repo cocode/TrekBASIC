@@ -1,7 +1,7 @@
 from unittest import TestCase
 from basic_expressions import Expression
 from basic_lexer import Lexer
-from basic_types import ste
+from basic_types import ste, BasicSyntaxError
 from basic_interpreter import Executor
 from basic_symbols import SymbolTable
 
@@ -104,3 +104,75 @@ class TestExpression(TestCase):
         expression = Expression()
         value = expression.eval(tokens)
         self.assertEqual(4, value)
+
+    def test_eval_unary_minus1(self):
+        tokens = self._lexer.lex("-9")
+        self.assertEqual(2, len(tokens))
+        expression = Expression()
+        value = expression.eval(tokens)
+        self.assertEqual(-9, value)
+
+    def test_eval_unary_minus2(self):
+        tokens = self._lexer.lex("-9*3")
+        self.assertEqual(4, len(tokens))
+        expression = Expression()
+        value = expression.eval(tokens)
+        self.assertEqual(-27, value)
+
+    def test_eval_unary_minus3(self):
+        tokens = self._lexer.lex("10*-8")
+        self.assertEqual(4, len(tokens))
+        expression = Expression()
+        value = expression.eval(tokens)
+        self.assertEqual(-80, value)
+
+    def test_eval_unary_minus4(self):
+        tokens = self._lexer.lex("-(8+3)")
+        self.assertEqual(6, len(tokens))
+        expression = Expression()
+        value = expression.eval(tokens)
+        self.assertEqual(-11, value)
+
+    def test_eval_unary_minus5(self):
+        tokens = self._lexer.lex("-(2+3)*-(4+5)+-1")
+        self.assertEqual(16, len(tokens))
+        expression = Expression()
+        value = expression.eval(tokens)
+        self.assertEqual(44, value)
+
+    def test_eval_unary_minus6(self):
+        tokens = self._lexer.lex("--9")
+        self.assertEqual(3, len(tokens))
+        expression = Expression()
+        with self.assertRaises(BasicSyntaxError):
+            value = expression.eval(tokens)
+
+    def test_eval_unary_minus7(self):
+        tokens = self._lexer.lex("(2+3)-1")
+        self.assertEqual(7, len(tokens))
+        expression = Expression()
+        value = expression.eval(tokens)
+        self.assertEqual(4, value)
+
+    def test_eval_unary_minus8(self):
+        tokens = self._lexer.lex("(7-3)")
+        self.assertEqual(5, len(tokens))
+        expression = Expression()
+        value = expression.eval(tokens)
+        self.assertEqual(4, value)
+
+    def test_eval_unary_minus9(self):
+        tokens = self._lexer.lex("(-7-3)")
+        self.assertEqual(6, len(tokens))
+        expression = Expression()
+        value = expression.eval(tokens)
+        self.assertEqual(-10, value)
+
+    def test_eval_unary_minus9(self):
+        tokens = self._lexer.lex("(-7--3)")
+        self.assertEqual(7, len(tokens))
+        expression = Expression()
+        value = expression.eval(tokens)
+        self.assertEqual(-4, value)
+
+

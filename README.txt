@@ -31,3 +31,6 @@ TODO on interpreter.
 7. Implement FOR loops
 8. Write "renum" utility. Split all multiline statements, and renumber at increments of 10
    Then reformat the startrek source.
+
+   write exponentiation test 2**3**2
+   fix all assertraises to use "with" style

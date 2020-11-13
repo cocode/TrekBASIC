@@ -158,6 +158,7 @@ class Operators2(Enum):
     EXP = BINOP_EXP()
     OPEN = OP() # NOP
     FUNC = FUNC_MONO_OP()
+    UNARY_MINUS = MINUS_MONO_OP()
 
 
 class Operators(Enum):
@@ -170,8 +171,10 @@ class Operators(Enum):
     EXP = BINOP_EXP()
     OPEN = OP() # NOP
     FUNC = FUNC_MONO_OP()
+    UNARY_MINUS = MINUS_MONO_OP()
 
 
+UNARY_MINUS="—"# That's an m-dash.
 def get_op(token:lexer_token, line):
     OP_MAP = {
         ")": Operators.CLOSE,
@@ -182,7 +185,8 @@ def get_op(token:lexer_token, line):
         "*": Operators.MUL,
         "^": Operators.EXP,
         "(": Operators.OPEN,
-        "∫": Operators.FUNC  # Not found in source code, used as an indicator.
+        "∫": Operators.FUNC,  # Not found in source code, used as an indicator.
+        UNARY_MINUS: Operators.UNARY_MINUS,  # That's an m-dash.
     }
     if token.type == "function":# and token.token.startswith("FN"):
         if token.token == "INT":
@@ -198,7 +202,7 @@ def get_op(token:lexer_token, line):
 
 def get_precedence(token:lexer_token, line):
     PREC_MAP = {
-        "(": 8,
+        "(": 9,
         "=": 1,
         "-": 2,
         "+": 3,
@@ -206,7 +210,8 @@ def get_precedence(token:lexer_token, line):
         "*": 5,
         "^": 6,
         ")": 0,
-        "∫": 7, # Has to be lower than "OPEN", so we will eval the arguments, THEN call the func.
+        "∫": 8, # Has to be lower than "OPEN", so we will eval the arguments, THEN call the func.
+        UNARY_MINUS: 7, # Has to be lower than function calls fir "-FNA(X)" to work
     }
 
     if token.type == "function": # make this for all functions, not: and token.token.startswith("FN"):

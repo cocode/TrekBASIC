@@ -4,6 +4,7 @@ Basic support for expressions.
 
 from basic_types import lexer_token, BasicSyntaxError, assert_syntax, OP_TOKEN
 from basic_symbols import SymbolTable
+from basic_operators import UNARY_MINUS
 
 
 class Expression:
@@ -28,11 +29,14 @@ class Expression:
         :return:
         """
         from basic_operators import get_op, get_precedence # Import it in two places, so the IDE knows it's there.
-
+        # "-" is ambigous. It can mean subtraction or unary minus.
+        # if "-" follows a data item, it's subtraction.
+        # if "-" follows an operator, it's unary minus, unless the operator is )
+        # Why ")"? I need to be able to express this better.
+        is_unary_context = True
         assert type(symbols) != dict
-        # Had to iport here, to avoid circular dependencies.
-        if symbols is None:
-            symbols = SymbolTable()
+        if symbols is None: # Happens during testing.
+            symbols = SymbolTable() # TODO Fix this. No "if test" allowed.
 
         if len(tokens) == 0:
             raise BasicSyntaxError(F"No expression.")
@@ -46,13 +50,18 @@ class Expression:
         token_index = 0
         while token_index < len(tokens):
             current = tokens[token_index]
+
             if current.type == "op":
+                if current.token == "-" and is_unary_context:
+                    current = lexer_token(UNARY_MINUS, current.type)
                 # Do anything on the stack that has higher precedence.
                 while len(op_stack):
                     top = op_stack[-1]
-                    # if top.type == 'function':
-                    #     print("Found a function")
                     # This makes everything left associative. I think that's ok. Might be wrong for exponentiation
+                    # This says visual basic was left associative for everything.
+                    # https://docs.microsoft.com/en-us/dotnet/visual-basic/language-reference/operators/operator-precedence
+                    # This shows left associative exponentiation: (they use **, not ^)
+                    # http://www.quitebasic.com/
                     if top.token != "(" and get_precedence(top, line) >= get_precedence(current, line): # Check operator precedence
                         self.one_op(op_stack, data_stack, line)
                     else:
@@ -62,6 +71,10 @@ class Expression:
                 else:
                     assert_syntax(top.token == "(", line, F"Unbalanced parens.")
                     op_stack.pop()
+                if current.token == ")":
+                    is_unary_context = False
+                else:
+                    is_unary_context = True
             else:
                 if current.type == "id":
                     assert_syntax(current.token in symbols.get_symbol_names(), line, F"Undefined variable: '{current.token}'")
@@ -82,6 +95,7 @@ class Expression:
                         raise BasicSyntaxError(F"InternalError: Unknown symbol type: '{symbol_type}")
                 else:
                     data_stack.append(current)
+                is_unary_context = False
             token_index += 1
 
         # Do anything left on the stack
