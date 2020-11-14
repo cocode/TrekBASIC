@@ -9,6 +9,10 @@ from basic_expressions import Expression
 
 
 class Test(TestCase):
+    def assert_value(self, executor, symbol, expected_value):
+        value = executor.get_symbol(symbol)
+        self.assertEqual(expected_value, value)
+
     def runit(self, listing):
         program = tokenize(listing)
         self.assertEqual(len(listing), len(program))
@@ -175,7 +179,7 @@ class Test(TestCase):
         listing = [
             '100 DEF FNA(X)=X^2+1',
             '110 Y=FNA(5)',
-            '110 Z=FNA(7*7)',
+            '120 Z=FNA(7*7)',
         ]
         executor= self.runit(listing)
         self.assertEqual(3, executor.get_symbol_count()-executor._builtin_count)
@@ -189,7 +193,7 @@ class Test(TestCase):
             '90 A=2+1',
             '100 DEF FNA(X)=X^A+1',
             '110 Y=FNA(5)',
-            '110 Z=FNA(A*A)',
+            '120 Z=FNA(A*A)',
         ]
         executor= self.runit(listing)
         self.assertEqual(4, executor.get_symbol_count()-executor._builtin_count)
@@ -202,8 +206,8 @@ class Test(TestCase):
         listing = [
             '100 DEF FNA(X)=X^2',
             '110 DEF FNB(X)=2*X+3',
-            '110 DEF FNC(X)=FNA(3*X)+FNB(X+1)',
-            '110 Z=FNC(3)'
+            '120 DEF FNC(X)=FNA(3*X)+FNB(X+1)',
+            '130 Z=FNC(3)'
         ]
         executor= self.runit(listing)
         self.assertEqual(4, executor.get_symbol_count()-executor._builtin_count)
@@ -214,9 +218,9 @@ class Test(TestCase):
         listing = [
             '100 DEF FNA(X)=X^2', # 16, 36
             '110 DEF FNB(X)=2*FNA(X)+3', # 35, 75
-            '110 X=FNB(4)',
-            '120 Y=FNB(6)', # 110
-            '110 Z=X+Y'
+            '120 X=FNB(4)',
+            '130 Y=FNB(6)', # 110
+            '140 Z=X+Y'
         ]
         executor= self.runit(listing)
         self.assertEqual(5, executor.get_symbol_count()-executor._builtin_count)
@@ -227,8 +231,8 @@ class Test(TestCase):
         listing = [
             '100 DEF FNA(X)=X^2', # 16, 36
             '110 DEF FNB(X)=2*FNA(X)+3', # 35, 75
-            '110 DEF FNC(X)=FNB(X+1)+FNB(X*2)', # 110
-            '110 Z=FNC(3)'
+            '120 DEF FNC(X)=FNB(X+1)+FNB(X*2)', # 110
+            '130 Z=FNC(3)'
         ]
         executor= self.runit(listing)
         self.assertEqual(4, executor.get_symbol_count()-executor._builtin_count)
@@ -299,6 +303,46 @@ class Test(TestCase):
         self.assertEqual(1, executor.get_symbol_count()-executor._builtin_count)
         B = executor.get_symbol("B")
         self.assertEqual(B, 2)
+
+    def test_goto2(self):
+        listing = [
+            '100 A=3:GOTO 120:A=4',
+            '120 B=4000',
+        ]
+        executor= self.runit(listing)
+        self.assertEqual(2, executor.get_symbol_count()-executor._builtin_count)
+        A = executor.get_symbol("A")
+        self.assertEqual(A, 3)
+        B = executor.get_symbol("B")
+        self.assertEqual(B, 4000)
+
+    def test_assignment(self):
+        listing = [
+            '100 A=5:B=6',
+            '110 A= A+A',
+            '120 B= B*A',
+        ]
+        executor= self.runit(listing)
+        self.assertEqual(2, executor.get_symbol_count()-executor._builtin_count)
+        self.assert_value(executor, "A", 10)
+        self.assert_value(executor, "B", 60)
+
+
+    def test_gosub(self):
+        listing = [
+            '100 A=5: GOSUB 1000',
+            '120 B=4000',
+            '130 END',
+            '1000 REM Subroutine',
+            '1010 A= A+A',
+            '1020 RETURN',
+        ]
+        executor= self.runit(listing)
+        self.assertEqual(2, executor.get_symbol_count()-executor._builtin_count)
+        A = executor.get_symbol("A")
+        self.assertEqual(A, 10)
+        B = executor.get_symbol("B")
+        self.assertEqual(B, 4000)
 
 
     def test_end(self):
@@ -454,10 +498,30 @@ class Test(TestCase):
         K3 = executor.get_symbol("K3")
         self.assertEqual(12, K3)
 
-
+    def test_if2(self):
+        # TODO we don't handle nested if thens
+        # ALSO, startrek.bas has ELSE.
+        # 'IFR1>.98THENK3=3:K9=K9+3:GOTO980'
+        # "IFW1>0ANDW1<=8THEN2490"
+        listing = [
+            '100 R1=1.0',
+            '110 K3=-1',
+            '120 IFR1>.98THENK3=12',
+        ]
+        executor= self.runit(listing)
+        print(executor._symbols.dump())
+        K3 = executor.get_symbol("K3")
+        self.assertEqual(12, K3)
 
     def test_if_se(self):
         listing = [
             '100 IF I > 0'
+        ]
+        executor= self.runit_se(listing)
+
+    def test_order_se(self):
+        listing = [
+            '100 REM ',
+            '100 REM'
         ]
         executor= self.runit_se(listing)

@@ -78,6 +78,14 @@ def stmt_goto(executor, stmt):
     executor.goto(int(destination))
     return None
 
+
+def stmt_gosub(executor, stmt):
+    destination = stmt.args.strip()
+    assert_syntax(str.isdigit(destination), F"Gosub target is not an int ")
+    executor.gosub(int(destination))
+    return None
+
+
 def stmt_for(executor, stmt):
     pass
     #raise Exception("Not implmented")
@@ -199,9 +207,6 @@ def stmt_if(executor, stmt):
         executor.goto_next()
 
 
-
-def stmt_gosub(executor, stmt):
-    pass
 def stmt_input(executor, stmt):
     pass
 def stmt_on(executor, stmt):
@@ -239,7 +244,7 @@ def stmt_def(executor, stmt):
     executor.put_symbol(variable, value, "function", arg)
 
 def stmt_return(executor, stmt):
-    pass
+    executor.do_return()
 
 def parse_args(cmd, text):
     """
@@ -304,6 +309,7 @@ def tokenize_statements(commands_text:str):
     list_of_statements = []
     options = [cmd for cmd in Keywords.__members__.values()]
     for command in commands_text:
+        command = command.lstrip()
         for cmd in options:         # Can't just use a dict, because of lines like "100 FORX=1TO10"
             if command.startswith(cmd.name):
                 parser_for_keyword = cmd.value.get_parser()
@@ -319,6 +325,10 @@ def tokenize_statements(commands_text:str):
         # This picks up the clauses after then "THEN" in an "IF ... THEN ..."
         additional_text = parsed_statement.get_additional()
         commands_array = smart_split(additional_text)
+        for i in range(len(commands_array)):
+            # Handle special case of "IF x THEN X=3:100"
+            if commands_array[i].isdigit():
+                commands_array[i] = "GOTO "+commands_array[i]
         additional = tokenize_statements(commands_array)
         list_of_statements.extend(additional)
 
@@ -352,9 +362,13 @@ def tokenize_line(program_line: object) -> statements:
 
 def tokenize(program_lines:list[str]) -> list[statements]:
     tokenized_lines = []
+    last_line = None
     for line in program_lines:
         tokenized_line = tokenize_line(line)
+        if last_line is not None:
+            assert_syntax(tokenized_line.line > last_line, "Line {tokenized_line.line} is <= the preceding line {line}")
         tokenized_lines.append(tokenized_line)
+        last_line = tokenized_line.line
 
     # Set default execution of next line.
     finished_lines = []
@@ -375,6 +389,10 @@ def load_program(program_filename):
     return program
 
 
+# Target of a control transfer
+ControlTransfer = namedtuple("ControlTransfer", "line offset")
+
+
 class Executor:
     def __init__(self, program, trace=False):
         self._program = program
@@ -384,7 +402,12 @@ class Executor:
         self._trace = trace
         self._builtin_count = 0
         self._goto = None
-
+        # _statement_offset is used when we transfer control into the middle of a line
+        # 100 PRINT"BEFORE":GOSUB 110:PRINT"AFTER"
+        # When we RETURN, we should continue with PRINT"AFTER"
+        self._statement_offset = 0
+        self._gosub_stack = []
+        self._stmt_index = 0
 
     def set_trace(self, value):
         self._trace = value
@@ -402,13 +425,15 @@ class Executor:
         self._run = True
         self._count_lines = 0
         self._count_stmts = 0
+        self._statement_offset = 0
         while self._run:
             self._count_lines += 1
             if self._trace:
                 print(F"{self._current.line}: ")
             # Get the statements on the current line
             stmts = self._current.stmts
-            for s in stmts:
+            for self._stmt_index in range(self._statement_offset, len(stmts)):
+                s = stmts[self._stmt_index]
                 self._count_stmts += 1
                 if self._trace:
                     print("\t", s.keyword, s.args)
@@ -426,9 +451,10 @@ class Executor:
                     break # Don't do the rest of the line
                 if self._goto: # If a goto has happened.
                     if self._trace:
-                        print(F"\tGOTO from line {self._current.line} TO {self._goto}.")
+                        print(F"\tGOTO/GOSUB/RETURN from line {self._current.line} TO {self._goto}.")
 
-                    self._current = self._goto
+                    self._current = self._goto.line
+                    self._statement_offset = self._goto.offset
                     self._goto = None
                     # Note: Have to check for a goto within a line! 100 print:print:goto 100:print "shouldn't see this"
                     break # This will skip the "else" which does the normal "step to next line"
@@ -437,6 +463,7 @@ class Executor:
                     self._current = self._program[self._current.next]
                 else:
                     self._run = False
+                self._statement_offset = 0
 
     def get_symbol_count(self):
         """
@@ -455,9 +482,23 @@ class Executor:
     def goto(self, line):
         for possible in self._program:
             if possible.line == line:
-                self._goto = possible
+                self._goto = ControlTransfer(line=possible, offset=0)
                 return
         raise BasicSyntaxError(F"No line {line} found to GOTO.")
+
+    def gosub(self, line):
+        for possible in self._program:
+            if possible.line == line:
+                self._gosub_stack.append((self._current, self._stmt_index+1))
+                self._goto = ControlTransfer(line=possible, offset=0)
+                return
+        raise BasicSyntaxError(F"No line {line} found to GOSUB.")
+
+    def do_return(self):
+        assert_syntax(len(self._gosub_stack), "RETURN without GOSUB")
+        line, offset = self._gosub_stack.pop()
+        self._goto = ControlTransfer(line, offset)
+        return
 
     def goto_next(self, line):
         """

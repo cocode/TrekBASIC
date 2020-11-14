@@ -32,7 +32,8 @@ class TestLexer(TestCase):
         self.assertEqual("str", tokens[2].type)
         self.assertEqual("DEF", tokens[2].token)
 
-        self.assertRaises(BasicSyntaxError, lexer.lex, ['"ABC'])
+        with self.assertRaises(BasicSyntaxError):
+            lexer.lex('"ABC')
 
 
 
