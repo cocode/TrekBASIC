@@ -14,6 +14,9 @@ Two options:
 2 sounds like more fun
 
 TODO on interpreter.
+0. Need tuples for function calls FNA(x,y,z) and array subscripts A(1,2,3)
+    0.0 Note that these subscripts can be expressions.
+    1. Current function and array code only works for single, literal values.
 1. Should probably split symbol table from executor. It would cut circular references. DONE
 2. Expressions will probably be the hardest
     a. Expression evaulation DONE
@@ -34,3 +37,4 @@ TODO on interpreter.
 
    write exponentiation test 2**3**2
    fix all assertraises to use "with" style
+   assert_syntax should not take a line. The line is from the executor, and it will catch and add the line
