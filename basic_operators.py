@@ -6,7 +6,8 @@ from collections import namedtuple
 from enum import Enum
 import random
 
-from basic_types import lexer_token, assert_syntax, assert_internal
+from basic_types import lexer_token, assert_syntax, assert_internal, UNARY_MINUS, ARRAY_ACCESS
+
 import basic_expressions
 from basic_lexer import Lexer
 
@@ -191,8 +192,6 @@ class Operators(Enum):
     ARRAY_ACCESS = ARRAY_ACCESS_MONO_OP()
 
 
-UNARY_MINUS="—"# That's an m-dash.
-ARRAY_ACCESS="@"
 
 def get_op(token:lexer_token):
     OP_MAP = {

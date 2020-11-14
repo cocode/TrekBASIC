@@ -6,7 +6,7 @@ from collections import namedtuple
 import sys
 from enum import Enum
 
-from basic_types import statement, statements, lexer_token, BasicSyntaxError, BasicInternalError, assert_syntax, ste
+from basic_types import statements, lexer_token, BasicSyntaxError, BasicInternalError, assert_syntax, ste, ParsedStatement
 from basic_lexer import lexer_token, Lexer, NUMBERS, LETTERS
 from basic_expressions import Expression
 from basic_symbols import SymbolTable
@@ -180,8 +180,14 @@ def stmt_dim(executor, stmt):
 
 def stmt_next(executor, stmt):
     pass
+
 def stmt_if(executor, stmt):
-    pass
+    then = stmt.args.find("then")
+    assert_syntax(then != -1, "No THEN found for IF")
+    expression = stmt.args[0:then].strip()
+
+
+
 def stmt_gosub(executor, stmt):
     pass
 def stmt_input(executor, stmt):
@@ -220,26 +226,58 @@ def stmt_def(executor, stmt):
     value = value.strip()
     executor.put_symbol(variable, value, "function", arg)
 
-
 def stmt_return(executor, stmt):
     pass
 
-# TODO maybe include parsing for each type, so we'd have a parse function, and a execute function (stmt_xx)
+def parse_args(cmd, text):
+    """
+    Parse the args of a statement that requires no further parsing, like "PRINT"
+    :param text:
+    :return:
+    """
+    return ParsedStatement(cmd, text)
+
+
+class KB:
+    def __init__(self, exec, parse=parse_args):
+        self._parser = parse
+        self._exec = exec
+
+    def get_parser(self):
+        return self._parser
+
+    def get_exec(self):
+        return self._exec
+
+
 class Keywords(Enum):
-    DEF = (stmt_def,) # User defined functions
-    DIM = (stmt_dim,)
-    END = (stmt_end,)
-    EXP = (stmt_exp,)
-    FOR = (stmt_for,)
-    GOTO = (stmt_goto,)
-    GOSUB = (stmt_gosub,)
-    IF = (stmt_if,)
-    INPUT = (stmt_input,)
-    NEXT = (stmt_next,)
-    ON = (stmt_on,) # Computed gotos
-    PRINT = (stmt_print,)
-    REM = (stmt_rem,)
-    RETURN = (stmt_return,)
+    DEF = KB(stmt_def) # User defined functions
+    DIM = KB(stmt_dim)
+    END = KB(stmt_end)
+    FOR = KB(stmt_for)
+    GOTO = KB(stmt_goto)
+    GOSUB = KB(stmt_gosub)
+    IF = KB(stmt_if)
+    INPUT = KB(stmt_input)
+    LET = KB(stmt_exp)
+    NEXT = KB(stmt_next)
+    ON = KB(stmt_on) # Computed gotos
+    PRINT = KB(stmt_print)
+    REM = KB(stmt_rem)
+    RETURN = KB(stmt_return)
+
+
+class ProgramLine:
+    """
+    Represents one line of a program. A line may have multiple statements:
+        100 PRINT X:IF X>3:THEN Y=7: GOTO 100
+    """
+    def __init__(self):
+        self._statments = []
+        self._conditional_statements = []
+
+    def append(self, statement):
+        self._statements.append(statement)
 
 
 def tokenize_line(program_line: object) -> statements:
@@ -263,21 +301,22 @@ def tokenize_line(program_line: object) -> statements:
         commands_text = [partial]
     else:
         commands_text = smart_split(partial)
-    commands = []
-    parsed = []
-    options = [cmd for cmd in Keywords.__members__.values() if cmd.name != "EXP"]
+    list_of_statements = []
+    options = [cmd for cmd in Keywords.__members__.values()]
     for command in commands_text:
-        for cmd in options:
+        for cmd in options:         # Can't just use a dict, because of lines like "100 FORX=1TO10"
             if command.startswith(cmd.name):
-                found = cmd
-                args = command[len(cmd.name):]
+                parser_for_keyword = cmd.value.get_parser()
+                parsed_statement = parser_for_keyword(cmd, command[len(cmd.name):])
                 break
         else:
-            found = Keywords.EXP
-            args = command # No keyword at the front, so include all
-        p = statement(found, args)
-        parsed.append(p)
-    s = statements(number, parsed, -1)
+            # Assignment expression is the default
+            cmd = Keywords.LET
+            parser_for_keyword = cmd.value.get_parser()
+            parsed_statement = parser_for_keyword(cmd, command)
+
+        list_of_statements.append(parsed_statement)
+    s = statements(number, list_of_statements, -1)
     return s
 
 
@@ -343,7 +382,7 @@ class Executor:
                 self._count_stmts += 1
                 if self._trace:
                     print("\t", s.keyword, s.args)
-                execution_function = s.keyword.value[0]
+                execution_function = s.keyword.value.get_exec()
                 try:
                     execution_function(self, s)
                 except BasicSyntaxError as bse:
@@ -413,7 +452,7 @@ def format_line(line):
         if i:
             current += ":"
         stmt = line.stmts[i]
-        if stmt.keyword == Keywords.EXP:
+        if stmt.keyword == Keywords.LET:
             name = ""
         else:
             name = stmt.keyword.name

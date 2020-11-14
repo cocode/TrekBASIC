@@ -2,9 +2,8 @@
 Basic support for expressions.
 """
 
-from basic_types import lexer_token, BasicSyntaxError, assert_syntax, OP_TOKEN
+from basic_types import lexer_token, BasicSyntaxError, assert_syntax, OP_TOKEN, UNARY_MINUS, ARRAY_ACCESS
 from basic_symbols import SymbolTable
-from basic_operators import UNARY_MINUS, ARRAY_ACCESS
 
 
 class Expression:

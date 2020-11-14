@@ -6,8 +6,18 @@ from collections import namedtuple
 import sys
 from enum import Enum, auto
 
+UNARY_MINUS="—"# That's an m-dash.
+ARRAY_ACCESS="@"
+
 lexer_token = namedtuple("Token", "token type")
-statement = namedtuple("Subs", "keyword args")
+#statement = namedtuple("Subs", "keyword args")
+class ParsedStatement:
+    """
+    Base class for a statement that has been processed.
+    """
+    def __init__(self, keyword, args):
+        self.keyword = keyword
+        self.args = args
 # Statements has a line number, and a list of statement.
 statements = namedtuple("Statement", "line stmts next")
 # Symbol table entry

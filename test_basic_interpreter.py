@@ -2,7 +2,7 @@ from io import StringIO
 from unittest import TestCase
 import sys
 
-from basic_interpreter import tokenize_line, statement, statements, Keywords, smart_split
+from basic_interpreter import tokenize_line, statements, Keywords, smart_split
 from basic_interpreter import load_program, format_program, tokenize, Executor, BasicSyntaxError, is_valid_identifier
 from basic_lexer import Lexer
 from basic_expressions import Expression
@@ -26,6 +26,15 @@ class Test(TestCase):
             sys.stdout = old
         program_output = output.getvalue()
         return executor, program_output
+
+    def runit_se(self, listing):
+        """
+        Run, and verify that the program raises a BasicSyntaxError
+        :param listing:
+        :return:
+        """
+        with self.assertRaises(BasicSyntaxError):
+            executor = self.runit(listing)
 
     def test_token_rem(self):
         line = "10 REM SUPER STARTREK - MAY 16,1978 - REQUIRES 24K MEMORY"
@@ -56,7 +65,7 @@ class Test(TestCase):
         expect = multi_exp.split(":")
         self.assertEqual(6, len(expect))
         for i in range(len(expect)):
-            self.assertEqual(Keywords.EXP, results.stmts[i].keyword)
+            self.assertEqual(Keywords.LET, results.stmts[i].keyword)
             self.assertEqual(expect[i], results.stmts[i].args)
 
     def test_multiple(self):
@@ -100,11 +109,11 @@ class Test(TestCase):
         self.assertEqual('I=1TO9', result.args)
 
         result = results.stmts[1]
-        self.assertEqual(Keywords.EXP, result.keyword)
+        self.assertEqual(Keywords.LET, result.keyword)
         self.assertEqual('C(I,1)=0', result.args)
 
         result = results.stmts[2]
-        self.assertEqual(Keywords.EXP, result.keyword)
+        self.assertEqual(Keywords.LET, result.keyword)
         self.assertEqual('C(I,2)=0', result.args)
 
         result = results.stmts[3]
@@ -431,3 +440,19 @@ class Test(TestCase):
             executor= is_valid_identifier("1A")
         with self.assertRaises(BasicSyntaxError):
             executor= is_valid_identifier("1$$")
+
+    # def test_if(self):
+    #     'IFR1>.98THENK3=3:K9=K9+3:GOTO980'
+    #
+    #     "IFW1>0ANDW1<=8THEN2490"
+    #     listing = [
+    #         '100 R1=1.0'
+    #         '110 K3=-1'
+    #         '120 IFR1>.98THENK3=12'
+    #     ]
+
+    def test_if_se(self):
+        listing = [
+            '100 IF I > 0'
+        ]
+        executor= self.runit_se(listing)
