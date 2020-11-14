@@ -36,5 +36,6 @@ TODO on interpreter.
    Then reformat the startrek source.
 
    write exponentiation test 2**3**2
-   fix all assertraises to use "with" style
-   assert_syntax should not take a line. The line is from the executor, and it will catch and add the line
+   I THINK DONE fix all assertraises to use "with" style
+   DONE  assert_syntax should not take a line. The line is from the executor, and it will catch and add the line
+   Should we precompute expressions to ASTs on load?
