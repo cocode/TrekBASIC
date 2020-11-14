@@ -18,9 +18,12 @@ class Lexer:
         pass
 
     def lex(self, text):
+        tokens = [token for token in self.lex2(text)]
+        return tokens
+
+    def lex2(self, text):
         state = None
         token = ""
-        tokens = []
         back = None
         index = 0
 
@@ -41,14 +44,14 @@ class Lexer:
                     token = ""
                     while (c := cur()) is not None and (c in LETTERS or c in NUMBERS or c == '$'):
                         token += consume()
-                    tokens.append(lexer_token(token, "id"))
+                    yield lexer_token(token, "id")
                 elif c in OPERATORS:
-                    tokens.append(lexer_token(consume(), "op"))
+                    yield lexer_token(consume(), "op")
                 elif c in NUMBERS or c == '.':
                     token = ""
                     while (c := cur()) is not None and (c in NUMBERS or c == '.'):
                         token += consume()
-                    tokens.append(lexer_token(float(token), "num"))
+                    yield lexer_token(float(token), "num")
                 elif c == '"':
                     consume()
                     token = ""
@@ -57,10 +60,10 @@ class Lexer:
                     if cur() != '"':
                         raise BasicSyntaxError(F"No closing quote char.")
                     consume()
-                    tokens.append(lexer_token(token, "str"))
+                    yield lexer_token(token, "str")
                 elif c == ' ' or c == '\t':
                     consume() # Ignore non quoted whitespace.
                 else:
                     raise BasicSyntaxError(F"Unexpected char '{c}'")
 
-        return tokens
+        return
