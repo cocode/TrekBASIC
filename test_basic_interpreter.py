@@ -4,14 +4,24 @@ import sys
 
 from basic_interpreter import tokenize_line, statements, Keywords, smart_split
 from basic_interpreter import load_program, format_program, tokenize, Executor, BasicSyntaxError, is_valid_identifier
-from basic_lexer import Lexer
-from basic_expressions import Expression
 
 
 class Test(TestCase):
     def assert_value(self, executor, symbol, expected_value):
         value = executor.get_symbol(symbol)
         self.assertEqual(expected_value, value)
+
+    def assert_values(self, executor, expected_values):
+        """
+        Verifies the symbol table contains the values passed in.
+        Does NOT check for extra values.
+        :param executor:
+        :param expected_values:
+        :return: None. Raises an exception, if needed.
+        """
+        for item in expected_values.items():
+            self.assert_value(executor, item[0], item[1])
+
 
     def runit(self, listing):
         program = tokenize(listing)
@@ -339,10 +349,8 @@ class Test(TestCase):
         ]
         executor= self.runit(listing)
         self.assertEqual(2, executor.get_symbol_count()-executor._builtin_count)
-        A = executor.get_symbol("A")
-        self.assertEqual(A, 10)
-        B = executor.get_symbol("B")
-        self.assertEqual(B, 4000)
+        self.assert_value(executor, "A", 10)
+        self.assert_value(executor, "B", 4000)
 
 
     def test_end(self):
@@ -495,8 +503,7 @@ class Test(TestCase):
         ]
         executor= self.runit(listing)
         print(executor._symbols.dump())
-        K3 = executor.get_symbol("K3")
-        self.assertEqual(12, K3)
+        self.assert_value(executor,"K3", 12)
 
     def test_if2(self):
         # TODO we don't handle nested if thens
@@ -510,8 +517,8 @@ class Test(TestCase):
         ]
         executor= self.runit(listing)
         print(executor._symbols.dump())
-        K3 = executor.get_symbol("K3")
-        self.assertEqual(12, K3)
+        self.assert_value(executor,"K3", 12)
+
 
     def test_if_not(self):
         # Test if condition is false in IF THEN
@@ -530,9 +537,7 @@ class Test(TestCase):
             '130 IFA>.98THENB=12:IF B<1THENF=5555'
         ]
         executor= self.runit(listing)
-        self.assert_value(executor, "B", 12)
-        self.assert_value(executor, "E", 17)
-        self.assert_value(executor, "F", -1)
+        self.assert_values(executor, {"B":12, "E":17, "F":-1})
 
     def test_if_se(self):
         listing = [
