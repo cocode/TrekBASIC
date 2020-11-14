@@ -18,8 +18,9 @@ ste = namedtuple("Symbol", "value type arg")
 
 
 class BasicSyntaxError(Exception):
-    def __init__(self, message,):
+    def __init__(self, message):
         super(BasicSyntaxError, self).__init__(message)
+        self.message = message
 
 
 class BasicInternalError(Exception):

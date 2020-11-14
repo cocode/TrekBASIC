@@ -7,7 +7,7 @@ import sys
 from enum import Enum
 
 from basic_types import statement, statements, lexer_token, BasicSyntaxError, BasicInternalError, assert_syntax, ste
-from basic_lexer import lexer_token, Lexer, NUMBERS
+from basic_lexer import lexer_token, Lexer, NUMBERS, LETTERS
 from basic_expressions import Expression
 from basic_symbols import SymbolTable
 
@@ -81,18 +81,74 @@ def stmt_for(executor, stmt):
     pass
     #raise Exception("Not implmented")
 
+
+def is_valid_identifier(variable:str):
+    """
+    Checks if the identifier is a valid variable name to assign to.
+    Assumes that spaces have already been removed.
+    Does not recognize internal functions, or user defined functions.
+    :param variable: The variable name to check.
+    :return: None. Raises an exception if the name is not valid.
+    """
+    assert_syntax(len(variable) >= 1, 0, F"Zero length variable name.")
+    assert_syntax(len(variable) <= 3, 0, F"Variable {variable} too long.")
+    assert_syntax(variable[0] in LETTERS, 0, F"Variable {variable} must start with a letters.")
+    if len(variable) == 1:
+        return
+    if len(variable) == 2 and variable[1] == '$':
+        return
+    assert_syntax(variable[1] in NUMBERS, 0, "Second char of {variable} must be a number or $.")
+    if len(variable) == 2:
+        return
+    assert_syntax(variable[2] == '$', 0, F"Invalid variable name {variable}")
+
+
+def assign_variable(executor, variable, value):
+    """
+    Variable assignment can include assigning array elements.
+    :param variable:
+    :param value:
+    :return:
+    """
+    variable = variable.replace(" ", "")
+    # Need to handle array element assignment.
+    i = variable.find("(")
+    if i != -1:
+        # Array reference
+        j = variable.find(")", i+1)
+        if j == -1:
+            raise BasicSyntaxError(F"Missing ) in in array assignment to {variable}")
+        if i+1 == j:
+            raise BasicSyntaxError(F"Missing array subscript in assignment to {variable}")
+
+        subscripts = variable[i+1:j].split(",")
+        # TODO subscripts can be expressions!
+        if len(subscripts) > 2:
+            raise BasicSyntaxError('Three+ dimensional arrays are not supported')
+        variable = variable[:i]
+        is_valid_identifier(variable)
+        target = executor.get_symbol(variable) # Array must exist. get_symbol will raise if is does not.
+        subscript0 = int(subscripts[0])
+        if len(subscripts) == 1:
+            target[subscript0] = value
+        else:
+            subscript1 = int(subscripts[1])
+            target[subscript0][subscript1] = value
+    else:
+        is_valid_identifier(variable)
+        executor.put_symbol(variable, value, symbol_type="variable", arg=None)
+
 def stmt_exp(executor, stmt):
     try:
         variable, value = stmt.args.split("=", 1)
     except Exception as e:
-        print(e)
-        raise BasicSyntaxError(F"Error detected in line {executor.get_line()}. Probably something not implemented.")
+        raise BasicSyntaxError(F"Error in expression. No '='.")
     variable = variable.strip()
     lexer = Lexer()
     tokens = lexer.lex(value)
     e = Expression()
     result = e.eval(tokens, symbols=executor._symbols.get_copy())
-    executor.put_symbol(variable, result, symbol_type="variable", arg=None)
+    assign_variable(executor, variable, result)
 
 
 def stmt_dim(executor, stmt):
@@ -288,6 +344,9 @@ class Executor:
                 try:
                     execution_function(self, s)
                 except BasicSyntaxError as bse:
+                    # TODO: This needs a bit more thought. The tests are checking for exceptions,
+                    # TODO and don't need the print statement. The user just needs the message printed.
+                    print(F"Syntax Error in line {self.get_line().line}: {bse.message}")
                     raise bse
                 except Exception as e:
                     raise BasicInternalError(F"Internal error in line {self.get_line()}: {e}")
@@ -312,6 +371,7 @@ class Executor:
         return len(self._symbols)
 
     def put_symbol(self, symbol, value, symbol_type, arg):
+        # TODO Maybe check is_valid_variable here? Have to allow user defined functions, and built-ins, though.
         self._symbols.put_symbol(symbol, value, symbol_type, arg)
 
     def get_line(self):

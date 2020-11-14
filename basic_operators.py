@@ -35,6 +35,7 @@ class MINUS_MONO_OP(MONO_OP):
         return -first
 
 
+# TODO Basic allows for multiple arguments to a user defined function.
 class FUNC_MONO_OP(MONO_OP):
     """
     handles user defined functions.
@@ -51,6 +52,21 @@ class FUNC_MONO_OP(MONO_OP):
         if trace:
             print(F"Function F({first})={op.value} returned", result)
         return result
+
+
+# TODO Basic allows for multiple arguments to array subscripts
+class ARRAY_ACCESS_MONO_OP(MONO_OP):
+    """
+    handles user defined functions.
+    """
+    def eval1(self, first, *, op):
+        array_name = op.arg
+        variable = op.symbols.get_symbol(array_name)
+        variable_type = op.symbols.get_symbol_type(array_name)
+        assert_syntax(variable_type == "array", 0, "Array access to non-array variable '{variable}'")
+        assert_syntax(int(first) == first, 0, "Non-integral array subscript {first}'")
+        return variable[int(first)] # TODO This will only work for one dimensional arrays, that don't have expressions as subscripts.
+
 
 
 class FUNC_MONO_OP_INT(MONO_OP):
@@ -172,9 +188,12 @@ class Operators(Enum):
     OPEN = OP() # NOP
     FUNC = FUNC_MONO_OP()
     UNARY_MINUS = MINUS_MONO_OP()
+    ARRAY_ACCESS = ARRAY_ACCESS_MONO_OP()
 
 
 UNARY_MINUS="—"# That's an m-dash.
+ARRAY_ACCESS="@"
+
 def get_op(token:lexer_token, line):
     OP_MAP = {
         ")": Operators.CLOSE,
@@ -187,6 +206,7 @@ def get_op(token:lexer_token, line):
         "(": Operators.OPEN,
         "∫": Operators.FUNC,  # Not found in source code, used as an indicator.
         UNARY_MINUS: Operators.UNARY_MINUS,  # That's an m-dash.
+        ARRAY_ACCESS: Operators.ARRAY_ACCESS,
     }
     if token.type == "function":# and token.token.startswith("FN"):
         if token.token == "INT":
@@ -211,13 +231,14 @@ def get_precedence(token:lexer_token, line):
         "^": 6,
         ")": 0,
         "∫": 8, # Has to be lower than "OPEN", so we will eval the arguments, THEN call the func.
-        UNARY_MINUS: 7, # Has to be lower than function calls fir "-FNA(X)" to work
+        UNARY_MINUS: 7, # Has to be lower than function calls (CLOSE) for "-FNA(X)" to work, and lower than array access
+        ARRAY_ACCESS: 8,
     }
 
     if token.type == "function": # make this for all functions, not: and token.token.startswith("FN"):
         return PREC_MAP["∫"]
     op_char = token.token
     assert_internal(len(op_char) == 1, line, F"Unexpected operator {op_char}")
-    assert_syntax(op_char in PREC_MAP, line, "Invalid operator {op_char}")
+    assert_syntax(op_char in PREC_MAP, line, F"Invalid operator {op_char}")
     return PREC_MAP[op_char]
 

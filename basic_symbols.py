@@ -1,8 +1,9 @@
 """
 This handles the symbol table for the executor
 """
+import pprint
 
-from basic_types import ste
+from basic_types import ste, assert_syntax
 
 
 class SymbolTable:
@@ -39,6 +40,7 @@ class SymbolTable:
         :param symbol:
         :return:
         """
+        assert_syntax(symbol in self._symbols, 0, F"Variable {symbol} does not exist.")
         return self._symbols[symbol].value
 
     def get_symbol_type(self, symbol:str):
@@ -54,3 +56,6 @@ class SymbolTable:
         :return:
         """
         return self._symbols[symbol].arg
+
+    def dump(self):
+        pprint.pprint(self._symbols)

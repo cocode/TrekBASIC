@@ -4,7 +4,7 @@ Basic support for expressions.
 
 from basic_types import lexer_token, BasicSyntaxError, assert_syntax, OP_TOKEN
 from basic_symbols import SymbolTable
-from basic_operators import UNARY_MINUS
+from basic_operators import UNARY_MINUS, ARRAY_ACCESS
 
 
 class Expression:
@@ -89,10 +89,12 @@ class Expression:
                         # Handle function as operators. Lower priority than "(", but higher than everything else.
                         # So don't append this to the data stack, append it to the op stack as a function.
                         arg = symbols.get_symbol_arg(current.token)
-                        fn_exp = Expression()
                         op_stack.append(OP_TOKEN(current.token, "function", arg, symbol_value, symbols=symbols))
                     else:
-                        raise BasicSyntaxError(F"InternalError: Unknown symbol type: '{symbol_type}")
+                        # Handle function as operators. Lower priority than "(", but higher than everything else.
+                        # So don't append this to the data stack, append it to the op stack as a function.
+                        arg = current.token
+                        op_stack.append(OP_TOKEN(ARRAY_ACCESS, "array_access", arg, None, symbols=symbols))
                 else:
                     data_stack.append(current)
                 is_unary_context = False

@@ -3,7 +3,7 @@ from unittest import TestCase
 import sys
 
 from basic_interpreter import tokenize_line, statement, statements, Keywords, smart_split
-from basic_interpreter import load_program, format_program, tokenize, Executor, BasicSyntaxError
+from basic_interpreter import load_program, format_program, tokenize, Executor, BasicSyntaxError, is_valid_identifier
 from basic_lexer import Lexer
 from basic_expressions import Expression
 
@@ -134,12 +134,16 @@ class Test(TestCase):
             # TODO Compare output to source
 
     def test_assignment(self):
-        program = tokenize(['100 Z$="Fred"'])
-        self.assertEqual(1, len(program))
-        executor = Executor(program)
-        executor.run_program()
+        executor = self.runit(['100 Z$="Fred"'])
         self.assertEqual(1, executor.get_symbol_count()-executor._builtin_count)
         self.assertEqual('Fred', executor.get_symbol("Z$"))
+
+    def test_assignment2(self):
+        program = tokenize(['100 TOOLONGVARNAME="Fred"'])
+        self.assertEqual(1, len(program))
+        executor = Executor(program)
+        with self.assertRaises(BasicSyntaxError):
+            executor.run_program()
 
     def test_dim(self):
         executor = self.runit(['100 DIM A(8), C(1,8)'])
@@ -297,7 +301,6 @@ class Test(TestCase):
         executor= self.runit(listing)
         self.assertEqual(0, executor.get_symbol_count()-executor._builtin_count)
 
-
     def test_print(self):
         listing = [
             '100 PRINT "SHOULD SEE THIS"'
@@ -327,5 +330,104 @@ class Test(TestCase):
         program = tokenize(['100 DIM C'])
         self.assertEqual(1, len(program))
         executor = Executor(program)
-        self.assertRaises(BasicSyntaxError, executor.run_program)
+        with self.assertRaises(BasicSyntaxError):
+            executor.run_program()
 
+    def test_array_assignment_error(self):
+        listing = [
+            '110 A(3,2=1',
+        ]
+        with self.assertRaises(BasicSyntaxError):
+            executor= self.runit(listing)
+
+    def test_array_assignment_error2(self):
+        listing = [
+            '110 A()=1',
+        ]
+        with self.assertRaises(BasicSyntaxError):
+            executor= self.runit(listing)
+
+    def test_array_assignment_error3(self):
+        listing = [
+            '110 A(1,2,3)=1',
+        ]
+        with self.assertRaises(BasicSyntaxError):
+            executor= self.runit(listing)
+
+    def test_array_assignment_error4(self):
+        # Array not initialized. Some basics allow this. For now, we don't
+        listing = [
+            '110 A(1)=1',
+        ]
+        with self.assertRaises(BasicSyntaxError):
+            executor= self.runit(listing)
+
+    def test_array_assignment1(self):
+        listing = [
+            '100 DIMA(10)',
+            '110 A(3)=17',
+        ]
+        executor= self.runit(listing)
+        print(executor._symbols.dump())
+        A = executor.get_symbol("A")
+        # TODO Figure out if the language expects zero-based arrays, or one based.
+        # It looks like "startrek.bas" expects zero based, and superstartrek.bas expects 1
+        # TODO Add an option. Add a getter to Executor, so the test can be independent.
+        # TODO Need to handle array access in expressions. Including D$(1,2)
+        self.assertEqual(0, A[0], 0) # Check for initialization
+        self.assertEqual(17, A[3])   # Verify assignment
+
+    # TODO Need multi-dimensional array support in expression evaluation
+    # def test_array_assignment2(self):
+    #     listing = [
+    #         '100 DIMA(10)',
+    #         '110 A(3)=27',
+    #         '120 Y=A(3)',
+    #         '200 DIM B( 10, 5)',
+    #         '110 B(1, 4)=17',
+    #         '120 Z=B(1,5)'
+    #     ]
+    #     executor= self.runit(listing)
+    #     print(executor._symbols.dump())
+    #     A = executor.get_symbol("A")
+    #     B = executor.get_symbol("B")
+    #     Y = executor.get_symbol("Y")
+    #     Z = executor.get_symbol("Z")
+    #     # TODO Figure out if the language expects zero-based arrays, or one based.
+    #     # It looks like "startrek.bas" expects zero based, and superstartrek.bas expects 1
+    #     # TODO Add an option. Add a getter to Executor, so the test can be independent.
+    #     # TODO Need to handle array access in expressions. Including D$(1,2)
+    #     self.assertEqual(A[0], 0) # Check for initialization
+    #     self.assertEqual(A[3], 27) # Verify assignment
+    #     self.assertEqual(Z, 3) # Verify element access
+    #     # TODO two dimensional arrays.
+
+    def test_array_assignment3(self):
+        listing = [
+            '100 DIMA(10)',
+            '110 A(3)=27',
+            '120 Y=A(3)',
+        ]
+        executor= self.runit(listing)
+        print(executor._symbols.dump())
+        A = executor.get_symbol("A")
+        Y = executor.get_symbol("Y")
+        # TODO Figure out if the language expects zero-based arrays, or one based.
+        # It looks like "startrek.bas" expects zero based, and superstartrek.bas expects 1
+        # TODO Add an option. Add a getter to Executor, so the test can be independent.
+        # TODO Need to handle array access in expressions. Including D$(1,2)
+        self.assertEqual(A[0], 0) # Check for initialization
+        self.assertEqual(A[3], 27) # Verify assignment
+        self.assertEqual(27, Y) # Verify element access
+        # TODO two dimensional arrays.
+
+    def test_is_valid_variable(self):
+        is_valid_identifier("A")
+        is_valid_identifier("B1")
+        is_valid_identifier("B1$")
+        with self.assertRaises(BasicSyntaxError):
+            executor= is_valid_identifier("LONG")
+        with self.assertRaises(BasicSyntaxError):
+            executor= is_valid_identifier("1A")
+        with self.assertRaises(BasicSyntaxError):
+            executor= is_valid_identifier("1$$")
