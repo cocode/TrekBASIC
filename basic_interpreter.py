@@ -59,7 +59,7 @@ def stmt_print(executor, stmt):
         if len(arg) == 0:
             continue
         if arg[0] == '"': # quoted string
-            assert_syntax(arg[0] =='"' and arg[-1] == '"', executor.get_line(), "String not properly quoted for 'PRINT'")
+            assert_syntax(arg[0] =='"' and arg[-1] == '"', "String not properly quoted for 'PRINT'")
             output = arg[1:-1]
             print(output, end='')
         else: # Variable
@@ -73,7 +73,7 @@ def stmt_print(executor, stmt):
 
 def stmt_goto(executor, stmt):
     destination = stmt.args.strip()
-    assert_syntax(str.isdigit(destination), executor.get_line(), F"Goto target is not an int ")
+    assert_syntax(str.isdigit(destination), F"Goto target is not an int ")
     executor.goto(int(destination))
     return None
 
@@ -90,17 +90,17 @@ def is_valid_identifier(variable:str):
     :param variable: The variable name to check.
     :return: None. Raises an exception if the name is not valid.
     """
-    assert_syntax(len(variable) >= 1, 0, F"Zero length variable name.")
-    assert_syntax(len(variable) <= 3, 0, F"Variable {variable} too long.")
-    assert_syntax(variable[0] in LETTERS, 0, F"Variable {variable} must start with a letters.")
+    assert_syntax(len(variable) >= 1, F"Zero length variable name.")
+    assert_syntax(len(variable) <= 3, F"Variable {variable} too long.")
+    assert_syntax(variable[0] in LETTERS, F"Variable {variable} must start with a letters.")
     if len(variable) == 1:
         return
     if len(variable) == 2 and variable[1] == '$':
         return
-    assert_syntax(variable[1] in NUMBERS, 0, "Second char of {variable} must be a number or $.")
+    assert_syntax(variable[1] in NUMBERS, "Second char of {variable} must be a number or $.")
     if len(variable) == 2:
         return
-    assert_syntax(variable[2] == '$', 0, F"Invalid variable name {variable}")
+    assert_syntax(variable[2] == '$', F"Invalid variable name {variable}")
 
 
 def assign_variable(executor, variable, value):
@@ -157,15 +157,15 @@ def stmt_dim(executor, stmt):
         s = s.strip()
         # TODO a 'get_identifier' function
         name = s[0]
-        assert_syntax(len(s) > 1, executor.get_line(), "Missing dimensions")
+        assert_syntax(len(s) > 1, "Missing dimensions")
         if s[1] in NUMBERS:
             name += s[1]
         if s[len(name)] == "$":
             name += "$"
         dimensions = s[len(name):]
         # TODO This should be part of Executor. Then assert_syntax would know the line number.
-        assert_syntax(dimensions[0] == '(', executor.get_line(), "Missing (")
-        assert_syntax(dimensions[-1] == ')', executor.get_line(), "Missing (")
+        assert_syntax(dimensions[0] == '(',  "Missing (")
+        assert_syntax(dimensions[-1] == ')', "Missing (")
         dimensions = dimensions[1:-1] # Remove parens
         dimensions = dimensions.split(",")
         assert len(dimensions) <= 2 and len(dimensions) > 0
@@ -210,8 +210,11 @@ def stmt_def(executor, stmt):
     except Exception as e:
         print(e)
     variable = variable.strip()
-    assert_syntax(len(variable) == 6 and variable.startswith("FN") and variable[3]=='(' and variable[5]==')',
-                  executor.get_line(), "Function definition error")
+    assert_syntax(len(variable) == 6 and
+                  variable.startswith("FN") and
+                  variable[3]=='(' and
+                  variable[5]==')',
+                  "Function definition error")
     arg = variable[4]
     variable = variable[:3]
     value = value.strip()

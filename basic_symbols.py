@@ -40,7 +40,7 @@ class SymbolTable:
         :param symbol:
         :return:
         """
-        assert_syntax(symbol in self._symbols, 0, F"Variable {symbol} does not exist.")
+        assert_syntax(symbol in self._symbols, F"Variable {symbol} does not exist.")
         return self._symbols[symbol].value
 
     def get_symbol_type(self, symbol:str):

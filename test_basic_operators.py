@@ -44,7 +44,7 @@ class Test(TestCase):
         self.assertEqual(3, len(tokens))
         stack.append(tokens[0])
         stack.append(tokens[2])
-        binop = get_op(tokens[1], line=0).value
+        binop = get_op(tokens[1]).value
         answer = binop.eval(stack, op=None)
         self.assertEqual(70, answer.token)
 
@@ -54,7 +54,7 @@ class Test(TestCase):
         self.assertEqual(3, len(tokens))
         stack.append(tokens[0])
         stack.append(tokens[2])
-        binop = get_op(tokens[1], line=0).value
+        binop = get_op(tokens[1]).value
         answer = binop.eval(stack, op=None)
         self.assertEqual(2, answer.token)
 
@@ -62,7 +62,7 @@ class Test(TestCase):
         self.assertEqual(3, len(tokens))
         stack.append(tokens[0])
         stack.append(tokens[2])
-        binop = get_op(tokens[1], line=0).value
+        binop = get_op(tokens[1]).value
         answer = binop.eval(stack, op=None)
         self.assertEqual(2.4, answer.token)
 
@@ -72,7 +72,7 @@ class Test(TestCase):
         self.assertEqual(3, len(tokens))
         stack.append(tokens[0])
         stack.append(tokens[2])
-        binop = get_op(tokens[1], line=0).value
+        binop = get_op(tokens[1]).value
         answer = binop.eval(stack, op=None)
         self.assertEqual(8, answer.token)
 
@@ -83,7 +83,7 @@ class Test(TestCase):
         self.assertEqual(3, len(tokens))
         stack.append(tokens[0])
         stack.append(tokens[2])
-        binop = get_op(tokens[1], line=0).value
+        binop = get_op(tokens[1]).value
         answer = binop.eval(stack, op=None)
         self.assertEqual("A B", answer.token)
 

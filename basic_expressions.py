@@ -8,11 +8,11 @@ from basic_operators import UNARY_MINUS, ARRAY_ACCESS
 
 
 class Expression:
-    def one_op(self, op_stack, data_stack, line):
+    def one_op(self, op_stack, data_stack):
         from basic_operators import get_op, get_precedence
 
         top = op_stack.pop()
-        m = get_op(top, line)  # An instance of OP
+        m = get_op(top)
         value = m.value
         top_op_function = value
         result = top_op_function.eval(data_stack, op=top)
@@ -20,12 +20,11 @@ class Expression:
         if result is not None:
             data_stack.append(result)
 
-    def eval(self, tokens:list[lexer_token], *, symbols=None, line=0) -> lexer_token:
+    def eval(self, tokens:list[lexer_token], *, symbols=None) -> lexer_token:
         """
         evalulates an expression, like "2+3*5-A+RND()"
         :param symbols: a COPY!!! of the symbol table from the Executor
         :param tokens: the incoming list[lexer_token]
-        :params line: The line number, for error messages only.
         :return:
         """
         from basic_operators import get_op, get_precedence # Import it in two places, so the IDE knows it's there.
@@ -42,7 +41,7 @@ class Expression:
             raise BasicSyntaxError(F"No expression.")
 
         if len(tokens) == 1:
-            assert_syntax(tokens[0].type != 'op', line, F"Invalid expression.")
+            assert_syntax(tokens[0].type != 'op', F"Invalid expression.")
             return tokens[0].token
 
         data_stack = []
@@ -62,14 +61,14 @@ class Expression:
                     # https://docs.microsoft.com/en-us/dotnet/visual-basic/language-reference/operators/operator-precedence
                     # This shows left associative exponentiation: (they use **, not ^)
                     # http://www.quitebasic.com/
-                    if top.token != "(" and get_precedence(top, line) >= get_precedence(current, line): # Check operator precedence
-                        self.one_op(op_stack, data_stack, line)
+                    if top.token != "(" and get_precedence(top) >= get_precedence(current): # Check operator precedence
+                        self.one_op(op_stack, data_stack)
                     else:
                         break
                 if current.token != ")":
                     op_stack.append(OP_TOKEN(current.token, current.type, None, None, symbols=None))
                 else:
-                    assert_syntax(top.token == "(", line, F"Unbalanced parens.")
+                    assert_syntax(top.token == "(", F"Unbalanced parens.")
                     op_stack.pop()
                 if current.token == ")":
                     is_unary_context = False
@@ -77,7 +76,7 @@ class Expression:
                     is_unary_context = True
             else:
                 if current.type == "id":
-                    assert_syntax(current.token in symbols.get_symbol_names(), line, F"Undefined variable: '{current.token}'")
+                    assert_syntax(current.token in symbols.get_symbol_names(), F"Undefined variable: '{current.token}'")
                     symbol_value = symbols.get_symbol(current.token)
                     symbol_type = symbols.get_symbol_type(current.token)
                     if symbol_type == "variable":
@@ -102,10 +101,10 @@ class Expression:
 
         # Do anything left on the stack
         while len(op_stack):
-            self.one_op(op_stack, data_stack, line)
+            self.one_op(op_stack, data_stack)
 
-        assert_syntax(len(op_stack) == 0, line, F"Expression not completed.")
-        assert_syntax(len(data_stack) == 1, line, F"Data not consumed.")
+        assert_syntax(len(op_stack) == 0, F"Expression not completed.")
+        assert_syntax(len(data_stack) == 1, F"Data not consumed.")
 
         return data_stack[0].token
 

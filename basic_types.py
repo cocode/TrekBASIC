@@ -28,14 +28,14 @@ class BasicInternalError(Exception):
         super(BasicInternalError, self).__init__(message)
 
 
-def assert_syntax(value, line, message):
+def assert_syntax(value, message):
     if not value:
-        raise BasicSyntaxError(F"SyntaxError in line {line}: {message}")
+        raise BasicSyntaxError(F"SyntaxError: {message}")
 
 
-def assert_internal(value, line, message):
+def assert_internal(value, message):
     if not value:
-        raise BasicInternalError(F"InternalError in line {line}: {message}")
+        raise BasicInternalError(F"InternalError: {message}")
 
 
 # We had been using a lexical token for the operators, but function calls need more data.

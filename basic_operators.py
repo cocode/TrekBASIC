@@ -18,7 +18,7 @@ class OP:
 
 class MONO_OP:
     def check_args(self, stack):
-        assert_syntax(len(stack) >= 1, -1, "Not enough operands for binary operator")
+        assert_syntax(len(stack) >= 1, "Not enough operands for binary operator")
 
     def eval1(self, first, op):
         return None
@@ -63,8 +63,8 @@ class ARRAY_ACCESS_MONO_OP(MONO_OP):
         array_name = op.arg
         variable = op.symbols.get_symbol(array_name)
         variable_type = op.symbols.get_symbol_type(array_name)
-        assert_syntax(variable_type == "array", 0, "Array access to non-array variable '{variable}'")
-        assert_syntax(int(first) == first, 0, "Non-integral array subscript {first}'")
+        assert_syntax(variable_type == "array", "Array access to non-array variable '{variable}'")
+        assert_syntax(int(first) == first, "Non-integral array subscript {first}'")
         return variable[int(first)] # TODO This will only work for one dimensional arrays, that don't have expressions as subscripts.
 
 
@@ -101,7 +101,7 @@ class HELPER: # Used by buildin functions.
 
 class BINOP(OP):
     def check_args(self, stack):
-        assert_syntax(len(stack) >= 2, -1, "Not enough operands for binary operator")
+        assert_syntax(len(stack) >= 2, "Not enough operands for binary operator")
 
     def eval2(self, first, second):
         pass
@@ -117,8 +117,8 @@ class BINOP(OP):
 class BINOP_NUM(BINOP):
     def check_args(self, stack):
         super().check_args(stack)
-        assert_syntax(stack[-1].type == "num", -1, "Operand not numeric for binary op")
-        assert_syntax(stack[-2].type == "num", -1, "Operand not numeric for binary op")
+        assert_syntax(stack[-1].type == "num", "Operand not numeric for binary op")
+        assert_syntax(stack[-2].type == "num", "Operand not numeric for binary op")
 
     def eval2(self, first:float, second:float):
         pass
@@ -130,8 +130,8 @@ class BINOP_STR_NUM(BINOP):
     """
     def check_args(self, stack):
         super().check_args(stack)
-        assert_syntax(stack[-1].type == "num" or stack[-1].type == "str", -1, "Operand not string or number for '+'")
-        assert_syntax(stack[-2].type == "num" or stack[-2].type == "str", -1, "Operand not string or number for '+'")
+        assert_syntax(stack[-1].type == "num" or stack[-1].type == "str", "Operand not string or number for '+'")
+        assert_syntax(stack[-2].type == "num" or stack[-2].type == "str", "Operand not string or number for '+'")
 
 
 
@@ -194,7 +194,7 @@ class Operators(Enum):
 UNARY_MINUS="—"# That's an m-dash.
 ARRAY_ACCESS="@"
 
-def get_op(token:lexer_token, line):
+def get_op(token:lexer_token):
     OP_MAP = {
         ")": Operators.CLOSE,
         "=": Operators.EQUALS,
@@ -215,12 +215,12 @@ def get_op(token:lexer_token, line):
             return HELPER(FUNC_MONO_OP_RND()) # Handles the built-in RND function
         return OP_MAP["∫"] # Handles user defined functions.
     op_char = token.token
-    assert_internal(len(op_char) == 1, line, F"Unexpected operator {op_char}")
-    assert_syntax(op_char in OP_MAP, line, "Invalid operator {op_char}")
+    assert_internal(len(op_char) == 1, F"Unexpected operator {op_char}")
+    assert_syntax(op_char in OP_MAP, "Invalid operator {op_char}")
     return OP_MAP[op_char]
 
 
-def get_precedence(token:lexer_token, line):
+def get_precedence(token:lexer_token):
     PREC_MAP = {
         "(": 9,
         "=": 1,
@@ -238,7 +238,7 @@ def get_precedence(token:lexer_token, line):
     if token.type == "function": # make this for all functions, not: and token.token.startswith("FN"):
         return PREC_MAP["∫"]
     op_char = token.token
-    assert_internal(len(op_char) == 1, line, F"Unexpected operator {op_char}")
-    assert_syntax(op_char in PREC_MAP, line, F"Invalid operator {op_char}")
+    assert_internal(len(op_char) == 1, F"Unexpected operator {op_char}")
+    assert_syntax(op_char in PREC_MAP, F"Invalid operator {op_char}")
     return PREC_MAP[op_char]
 
