@@ -192,6 +192,7 @@ class Operators(Enum):
     DIV = BINOP_DIV()
     GT = BINOP(lambda x,y: x > y)
     LT = BINOP(lambda x,y: x < y)
+    NE = BINOP(lambda x,y: x != y)
     MUL = BINOP_MUL()
     EXP = BINOP_EXP()
     OPEN = OP() # NOP
@@ -207,6 +208,7 @@ def get_op(token:lexer_token):
         "=": Operators.EQUALS,
         ">": Operators.GT,
         "<": Operators.LT,
+        "<>": Operators.NE,
         "-": Operators.MINUS,
         "+": Operators.PLUS,
         "/": Operators.DIV,
@@ -223,16 +225,18 @@ def get_op(token:lexer_token):
         if token.token == "RND":
             return HELPER(FUNC_MONO_OP_RND()) # Handles the built-in RND function
         return OP_MAP["∫"] # Handles user defined functions.
-    op_char = token.token
-    assert_internal(len(op_char) == 1, F"Unexpected operator {op_char}")
-    assert_syntax(op_char in OP_MAP, "Invalid operator {op_char}")
-    return OP_MAP[op_char]
+    operator = token.token
+    assert_syntax(operator in OP_MAP, "Invalid operator {operator}")
+    return OP_MAP[operator]
 
 
 def get_precedence(token:lexer_token):
     PREC_MAP = {
         "(": 9,
         "=": 1,
+        ">": 1,
+        "<": 1,
+        "<>": 1,
         "-": 2,
         "+": 3,
         "/": 4,
@@ -246,8 +250,7 @@ def get_precedence(token:lexer_token):
 
     if token.type == "function": # make this for all functions, not: and token.token.startswith("FN"):
         return PREC_MAP["∫"]
-    op_char = token.token
-    assert_internal(len(op_char) == 1, F"Unexpected operator {op_char}")
-    assert_syntax(op_char in PREC_MAP, F"Invalid operator {op_char}")
-    return PREC_MAP[op_char]
+    operator = token.token
+    assert_syntax(operator in PREC_MAP, F"Invalid operator {operator}")
+    return PREC_MAP[operator]
 

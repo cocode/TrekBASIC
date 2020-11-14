@@ -46,7 +46,12 @@ class Lexer:
                         token += consume()
                     yield lexer_token(token, "id")
                 elif c in OPERATORS:
-                    yield lexer_token(consume(), "op")
+                    first = consume()
+                    if cur() == ">":
+                        consume()
+                        yield lexer_token("<>", "op")
+                    else:
+                        yield lexer_token(first, "op")
                 elif c in NUMBERS or c == '.':
                     token = ""
                     while (c := cur()) is not None and (c in NUMBERS or c == '.'):

@@ -551,3 +551,11 @@ class Test(TestCase):
             '100 REM'
         ]
         executor= self.runit_se(listing)
+    def test_not_equals(self):
+        listing = [
+            '100 X=1',
+            '110 IF3<>2THENX=3',
+            '120 IF3<>3THENX=5'
+        ]
+        executor = self.runit(listing)
+        self.assert_value(executor, "X", 3)

@@ -35,5 +35,15 @@ class TestLexer(TestCase):
         with self.assertRaises(BasicSyntaxError):
             lexer.lex('"ABC')
 
+    def test_lex_ne(self):
+        lexer = Lexer()
+        tokens = lexer.lex("X<>3")
+        self.assertEqual(3, len(tokens))
+        self.assertEqual("id", tokens[0].type)
+        self.assertEqual("X", tokens[0].token)
+        self.assertEqual("op", tokens[1].type)
+        self.assertEqual("<>", tokens[1].token)
+        self.assertEqual("num", tokens[2].type)
+        self.assertEqual(3, tokens[2].token)
 
 
