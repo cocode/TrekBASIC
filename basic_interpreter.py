@@ -202,7 +202,6 @@ def stmt_if(executor, stmt):
     tokens = lexer.lex(stmt.args)
     e = Expression()
     result = e.eval(tokens, symbols=executor._symbols.get_copy())
-    print("IF REsults", result)
     if not result:
         executor.goto_next()
 
@@ -377,7 +376,9 @@ def tokenize(program_lines:list[str]) -> list[statements]:
             finished_lines.append(statements(tokenized_lines[i].line,
                                              tokenized_lines[i].stmts,
                                              i+1))
-        finished_lines.append(tokenized_lines[-1])
+        finished_lines.append(statements(tokenized_lines[-1].line,
+                                         tokenized_lines[-1].stmts,
+                                         None))
     return finished_lines
 
 
@@ -459,7 +460,7 @@ class Executor:
                     # Note: Have to check for a goto within a line! 100 print:print:goto 100:print "shouldn't see this"
                     break # This will skip the "else" which does the normal "step to next line"
             else:
-                if self._current.next != -1:
+                if self._current.next != None:
                     self._current = self._program[self._current.next]
                 else:
                     self._run = False
@@ -500,7 +501,7 @@ class Executor:
         self._goto = ControlTransfer(line, offset)
         return
 
-    def goto_next(self, line):
+    def goto_next(self):
         """
         This is used by "IF ... THEN...", if the condition is false. It moves us to the next line, instead
         of continuing with the THEN clause.
@@ -510,7 +511,8 @@ class Executor:
         next = self._current.next
         if next is None:
             self._run = False
-        self.goto(next)
+        else:
+            self.goto(next)
 
     def get_symbol(self, symbol):
         """

@@ -55,4 +55,4 @@ on program load time. Is this a problem? I'll have to change a few tests, if I d
    Should have a function for doing a goto. It's only one line now:
     self._goto = ControlTransfer(line, offset)
     but it should only be in one place.
-    Implement >= and <= and !=? How does basic do !=
+    Implement >= and <= and !=? How does basic do != ? Maybe <>

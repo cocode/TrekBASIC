@@ -191,7 +191,7 @@ class Operators(Enum):
     PLUS = BINOP_PLUS()
     DIV = BINOP_DIV()
     GT = BINOP(lambda x,y: x > y)
-    LT = BINOP(lambda x,y: x > y)
+    LT = BINOP(lambda x,y: x < y)
     MUL = BINOP_MUL()
     EXP = BINOP_EXP()
     OPEN = OP() # NOP

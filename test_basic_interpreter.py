@@ -513,6 +513,27 @@ class Test(TestCase):
         K3 = executor.get_symbol("K3")
         self.assertEqual(12, K3)
 
+    def test_if_not(self):
+        # Test if condition is false in IF THEN
+        listing = [
+            '100 A=1.0:B=2:C=3:D=4',
+            '120 IFA<.98THENB=12'
+        ]
+        executor= self.runit(listing)
+        self.assert_value(executor, "B", 2)
+
+    def test_if_nested(self):
+        # Test if condition is false in IF THEN
+        listing = [
+            '100 A=1.0:B=2:C=3:D=4:F=-1',
+            '120 IFA>.98THENB=12:IF B>1THENE=17',
+            '130 IFA>.98THENB=12:IF B<1THENF=5555'
+        ]
+        executor= self.runit(listing)
+        self.assert_value(executor, "B", 12)
+        self.assert_value(executor, "E", 17)
+        self.assert_value(executor, "F", -1)
+
     def test_if_se(self):
         listing = [
             '100 IF I > 0'
