@@ -48,3 +48,6 @@ on program load time. Is this a problem? I'll have to change a few tests, if I d
    I THINK DONE fix all assertraises to use "with" style
    DONE  assert_syntax should not take a line. The line is from the executor, and it will catch and add the line
    Should we precompute expressions to ASTs on load?
+
+   It would be nice to have a BASIC command line environment.
+    LOAD, RUN, BREAKPOINT
