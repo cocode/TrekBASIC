@@ -6,7 +6,8 @@ from collections import namedtuple
 import sys
 from enum import Enum
 
-from basic_types import statements, lexer_token, BasicSyntaxError, BasicInternalError, assert_syntax, ste, ParsedStatement
+from basic_types import statements, lexer_token, BasicSyntaxError, BasicInternalError, assert_syntax, ste
+from parsed_statements import ParsedStatement, ParsedStatementIf
 from basic_lexer import lexer_token, Lexer, NUMBERS, LETTERS
 from basic_expressions import Expression
 from basic_symbols import SymbolTable
@@ -182,9 +183,20 @@ def stmt_next(executor, stmt):
     pass
 
 def stmt_if(executor, stmt):
-    then = stmt.args.find("then")
-    assert_syntax(then != -1, "No THEN found for IF")
-    expression = stmt.args[0:then].strip()
+    """
+    An if statement works by skipping to the next line, if the THEN clause is false, otherwise
+    it continues to execute the clauses after the THEN.
+    :param executor:
+    :param stmt:
+    :return:
+    """
+    lexer = Lexer()
+    tokens = lexer.lex(stmt.args)
+    e = Expression()
+    result = e.eval(tokens, symbols=executor._symbols.get_copy())
+    print("IF REsults", result)
+    if not result:
+        executor.goto_next()
 
 
 
@@ -237,6 +249,14 @@ def parse_args(cmd, text):
     """
     return ParsedStatement(cmd, text)
 
+def parse_args_if(cmd, text):
+    """
+    Parse the args of an if statement
+    :param text:
+    :return:
+    """
+    p = ParsedStatementIf(cmd, text)
+    return p
 
 class KB:
     def __init__(self, exec, parse=parse_args):
@@ -257,7 +277,7 @@ class Keywords(Enum):
     FOR = KB(stmt_for)
     GOTO = KB(stmt_goto)
     GOSUB = KB(stmt_gosub)
-    IF = KB(stmt_if)
+    IF = KB(stmt_if, parse_args_if)
     INPUT = KB(stmt_input)
     LET = KB(stmt_exp)
     NEXT = KB(stmt_next)
@@ -280,6 +300,30 @@ class ProgramLine:
         self._statements.append(statement)
 
 
+def tokenize_statements(commands_text:str):
+    list_of_statements = []
+    options = [cmd for cmd in Keywords.__members__.values()]
+    for command in commands_text:
+        for cmd in options:         # Can't just use a dict, because of lines like "100 FORX=1TO10"
+            if command.startswith(cmd.name):
+                parser_for_keyword = cmd.value.get_parser()
+                parsed_statement = parser_for_keyword(cmd, command[len(cmd.name):])
+                break
+        else:
+            # Assignment expression is the default
+            cmd = Keywords.LET
+            parser_for_keyword = cmd.value.get_parser()
+            parsed_statement = parser_for_keyword(cmd, command)
+
+        list_of_statements.append(parsed_statement)
+        # This picks up the clauses after then "THEN" in an "IF ... THEN ..."
+        additional_text = parsed_statement.get_additional()
+        commands_array = smart_split(additional_text)
+        additional = tokenize_statements(commands_array)
+        list_of_statements.extend(additional)
+
+    return list_of_statements
+
 def tokenize_line(program_line: object) -> statements:
     """
     Converts the line into a partially digested form. tokenizing basic is mildly annoying,
@@ -301,21 +345,7 @@ def tokenize_line(program_line: object) -> statements:
         commands_text = [partial]
     else:
         commands_text = smart_split(partial)
-    list_of_statements = []
-    options = [cmd for cmd in Keywords.__members__.values()]
-    for command in commands_text:
-        for cmd in options:         # Can't just use a dict, because of lines like "100 FORX=1TO10"
-            if command.startswith(cmd.name):
-                parser_for_keyword = cmd.value.get_parser()
-                parsed_statement = parser_for_keyword(cmd, command[len(cmd.name):])
-                break
-        else:
-            # Assignment expression is the default
-            cmd = Keywords.LET
-            parser_for_keyword = cmd.value.get_parser()
-            parsed_statement = parser_for_keyword(cmd, command)
-
-        list_of_statements.append(parsed_statement)
+    list_of_statements = tokenize_statements(commands_text)
     s = statements(number, list_of_statements, -1)
     return s
 
@@ -395,6 +425,9 @@ class Executor:
                 if not self._run:
                     break # Don't do the rest of the line
                 if self._goto: # If a goto has happened.
+                    if self._trace:
+                        print(F"\tGOTO from line {self._current.line} TO {self._goto}.")
+
                     self._current = self._goto
                     self._goto = None
                     # Note: Have to check for a goto within a line! 100 print:print:goto 100:print "shouldn't see this"
@@ -425,6 +458,18 @@ class Executor:
                 self._goto = possible
                 return
         raise BasicSyntaxError(F"No line {line} found to GOTO.")
+
+    def goto_next(self, line):
+        """
+        This is used by "IF ... THEN...", if the condition is false. It moves us to the next line, instead
+        of continuing with the THEN clause.
+        :param line:
+        :return:
+        """
+        next = self._current.next
+        if next is None:
+            self._run = False
+        self.goto(next)
 
     def get_symbol(self, symbol):
         """

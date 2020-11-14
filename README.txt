@@ -13,7 +13,16 @@ Two options:
 
 2 sounds like more fun
 
+Definitions:
+A LINE is made up of multiple STATEMENTS, each one beginning with a KEYWORD.
+LINE: 100 PRINT X:GOTO 100
+STATEMENTS: "PRINT X" and "GOTO 100"
+KEYWORDS "PRINT", and "GOTO"
+
 TODO on interpreter.
+Use lambda with BINOP to cut the number of OP classes 90%
+Is it ok to do some processing at load time? If I do, then some errors may raise their exception
+on program load time. Is this a problem? I'll have to change a few tests, if I do, like "if with no then"
 0. Need tuples for function calls FNA(x,y,z) and array subscripts A(1,2,3)
     0.0 Note that these subscripts can be expressions.
     1. Current function and array code only works for single, literal values.

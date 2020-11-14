@@ -101,11 +101,15 @@ class HELPER: # Used by buildin functions.
         self.value = x
 
 class BINOP(OP):
+    def __init__(self, lam=None):
+        self._lambda = lam
+
     def check_args(self, stack):
         assert_syntax(len(stack) >= 2, "Not enough operands for binary operator")
 
     def eval2(self, first, second):
-        pass
+        if self._lambda:
+            return self._lambda(first, second)
 
     def eval(self, stack, *, op):
         self.check_args(stack)
@@ -178,12 +182,16 @@ class Operators2(Enum):
     UNARY_MINUS = MINUS_MONO_OP()
 
 
+# TODO: Need to rewrite lexer to handle multi-character tokens for >=, <=
+# ALSO MUST UPDATE basic_lexer.py:OPERATORS
 class Operators(Enum):
     CLOSE = OP() # NOP
     EQUALS = 2
     MINUS = BINOP_MINUS()
     PLUS = BINOP_PLUS()
     DIV = BINOP_DIV()
+    GT = BINOP(lambda x,y: x > y)
+    LT = BINOP(lambda x,y: x > y)
     MUL = BINOP_MUL()
     EXP = BINOP_EXP()
     OPEN = OP() # NOP
@@ -197,6 +205,8 @@ def get_op(token:lexer_token):
     OP_MAP = {
         ")": Operators.CLOSE,
         "=": Operators.EQUALS,
+        ">": Operators.GT,
+        "<": Operators.LT,
         "-": Operators.MINUS,
         "+": Operators.PLUS,
         "/": Operators.DIV,

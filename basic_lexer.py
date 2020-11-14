@@ -10,7 +10,7 @@ from basic_types import lexer_token, BasicSyntaxError, assert_syntax
 
 NUMBERS = "0123456789]"
 LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-OPERATORS = "()^*/+-="
+OPERATORS = "()^*/+-=><"
 
 
 class Lexer:

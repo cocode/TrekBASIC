@@ -135,8 +135,8 @@ class Test(TestCase):
         self.assertEqual('C(9,2)', results[1])
 
     def test_load_program(self):
-        program = load_program("superstartrek.bas")
-        self.assertEqual(425, len(program))
+        program = load_program("simple_test.bas")
+        self.assertEqual(2, len(program))
         with open("sample_output.txt", 'w') as f:
             for line in format_program(program):
                 print(line, file=f)
@@ -441,15 +441,20 @@ class Test(TestCase):
         with self.assertRaises(BasicSyntaxError):
             executor= is_valid_identifier("1$$")
 
-    # def test_if(self):
-    #     'IFR1>.98THENK3=3:K9=K9+3:GOTO980'
-    #
-    #     "IFW1>0ANDW1<=8THEN2490"
-    #     listing = [
-    #         '100 R1=1.0'
-    #         '110 K3=-1'
-    #         '120 IFR1>.98THENK3=12'
-    #     ]
+    def test_if(self):
+        # 'IFR1>.98THENK3=3:K9=K9+3:GOTO980'
+        # "IFW1>0ANDW1<=8THEN2490"
+        listing = [
+            '100 R1=1.0',
+            '110 K3=-1',
+            '120 IFR1>.98THENK3=12',
+        ]
+        executor= self.runit(listing)
+        print(executor._symbols.dump())
+        K3 = executor.get_symbol("K3")
+        self.assertEqual(12, K3)
+
+
 
     def test_if_se(self):
         listing = [
