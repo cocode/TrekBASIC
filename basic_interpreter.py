@@ -120,7 +120,7 @@ def assign_variable(executor, variable, value):
     :return:
     """
     variable = variable.replace(" ", "")
-    # Need to handle array element assignment.
+    # Need to handle two dimensional array element assignment.
     i = variable.find("(")
     if i != -1:
         # Array reference
@@ -147,17 +147,22 @@ def assign_variable(executor, variable, value):
         is_valid_identifier(variable)
         executor.put_symbol(variable, value, symbol_type=SymbolType.VARIABLE, arg=None)
 
+
+def eval_expression(symbols, value):
+    lexer = Lexer()
+    tokens = lexer.lex(value)
+    e = Expression()
+    result = e.eval(tokens, symbols=symbols)
+    return result
+
 def stmt_exp(executor, stmt):
     try:
         variable, value = stmt.args.split("=", 1)
     except Exception as e:
         raise BasicSyntaxError(F"Error in expression. No '='.")
-    variable = variable.strip()
-    lexer = Lexer()
-    tokens = lexer.lex(value)
-    e = Expression()
 
-    result = e.eval(tokens, symbols=executor._symbols)
+    variable = variable.strip()
+    result = eval_expression(executor._symbols, value)
     assign_variable(executor, variable, result)
 
 
