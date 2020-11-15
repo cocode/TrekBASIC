@@ -17,10 +17,10 @@ class TestExpression(TestCase):
         self.assertEqual(1, value)
 
     def test_eval2(self):
-        tokens = self._lexer.lex("ABC")
+        tokens = self._lexer.lex('"ABC"')
         self.assertEqual(1, len(tokens))
         expression = Expression()
-        value = expression.eval(tokens,)
+        value = expression.eval(tokens)
         self.assertEqual("ABC", value)
 
     def test_eval3(self):

@@ -190,9 +190,11 @@ class Operators(Enum):
     MINUS = BINOP_MINUS()
     PLUS = BINOP_PLUS()
     DIV = BINOP_DIV()
-    GT = BINOP(lambda x,y: x > y)
-    LT = BINOP(lambda x,y: x < y)
-    NE = BINOP(lambda x,y: x != y)
+    GT = BINOP(lambda x, y: x > y)
+    LT = BINOP(lambda x, y: x < y)
+    NE = BINOP(lambda x, y: x != y)
+    AND = BINOP(lambda x, y: x and y) # May be semantic differences between python "and" and basic "AND".
+    OR = BINOP(lambda x, y: x or y)   # Basic only allows "AND" of booleans, I believe.
     MUL = BINOP_MUL()
     EXP = BINOP_EXP()
     OPEN = OP() # NOP
@@ -209,6 +211,8 @@ def get_op(token:lexer_token):
         ">": Operators.GT,
         "<": Operators.LT,
         "<>": Operators.NE,
+        "AND": Operators.AND,
+        "OR": Operators.OR,
         "-": Operators.MINUS,
         "+": Operators.PLUS,
         "/": Operators.DIV,
@@ -232,20 +236,23 @@ def get_op(token:lexer_token):
 
 def get_precedence(token:lexer_token):
     PREC_MAP = {
-        "(": 9,
+        ")": 0,
         "=": 1,
-        ">": 1,
-        "<": 1,
-        "<>": 1,
-        "-": 2,
-        "+": 3,
-        "/": 4,
+        "AND": 2,
+        "OR": 2,
+        ">": 3,
+        "<": 3,
+        "<>": 3,
+        "-": 4,
+        "+": 4,
+        "/": 5,
         "*": 5,
         "^": 6,
-        ")": 0,
-        "∫": 8, # Has to be lower than "OPEN", so we will eval the arguments, THEN call the func.
         UNARY_MINUS: 7, # Has to be lower than function calls (CLOSE) for "-FNA(X)" to work, and lower than array access
+        "∫": 8, # Has to be lower than "OPEN", so we will eval the arguments, THEN call the func.
         ARRAY_ACCESS: 8,
+        "(": 9,
+
     }
 
     if token.type == "function": # make this for all functions, not: and token.token.startswith("FN"):

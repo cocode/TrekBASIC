@@ -23,10 +23,10 @@ class Test(TestCase):
             self.assert_value(executor, item[0], item[1])
 
 
-    def runit(self, listing):
+    def runit(self, listing, trace=False):
         program = tokenize(listing)
         self.assertEqual(len(listing), len(program))
-        executor = Executor(program)
+        executor = Executor(program, trace=trace)
         executor.run_program()
         return executor
 
@@ -81,6 +81,28 @@ class Test(TestCase):
         for i in range(len(expect)):
             self.assertEqual(Keywords.LET, results.stmts[i].keyword)
             self.assertEqual(expect[i], results.stmts[i].args)
+
+    def test_token_exp(self):
+        multi_exp = "T=INT(RND(1)*20+20)*100:T0=T:T9=25+INT(RND(1)*10):D0=0:E=3000:E0=E"
+        line = f"370 {multi_exp}"
+        results = tokenize_line(line)
+        self.assertTrue(isinstance(results, statements))
+        self.assertEqual(370, results.line)
+        self.assertEqual(6, len(results.stmts))
+        expect = multi_exp.split(":")
+        self.assertEqual(6, len(expect))
+        for i in range(len(expect)):
+            self.assertEqual(Keywords.LET, results.stmts[i].keyword)
+            self.assertEqual(expect[i], results.stmts[i].args)
+
+    def test_tokenize_if(self):
+        clause = "IF3<>2THENX=3"
+        line = f"370 {clause}"
+        results = tokenize_line(line)
+        self.assertTrue(isinstance(results, statements))
+        self.assertEqual(370, results.line)
+        self.assertEqual(2, len(results.stmts))
+
 
     def test_multiple(self):
         """
@@ -429,7 +451,6 @@ class Test(TestCase):
             '110 A(3)=17',
         ]
         executor= self.runit(listing)
-        print(executor._symbols.dump())
         A = executor.get_symbol("A")
         # TODO Figure out if the language expects zero-based arrays, or one based.
         # It looks like "startrek.bas" expects zero based, and superstartrek.bas expects 1
@@ -449,7 +470,6 @@ class Test(TestCase):
     #         '120 Z=B(1,5)'
     #     ]
     #     executor= self.runit(listing)
-    #     print(executor._symbols.dump())
     #     A = executor.get_symbol("A")
     #     B = executor.get_symbol("B")
     #     Y = executor.get_symbol("Y")
@@ -470,7 +490,6 @@ class Test(TestCase):
             '120 Y=A(3)',
         ]
         executor= self.runit(listing)
-        print(executor._symbols.dump())
         A = executor.get_symbol("A")
         Y = executor.get_symbol("Y")
         # TODO Figure out if the language expects zero-based arrays, or one based.
@@ -502,7 +521,6 @@ class Test(TestCase):
             '120 IFR1>.98THENK3=12',
         ]
         executor= self.runit(listing)
-        print(executor._symbols.dump())
         self.assert_value(executor,"K3", 12)
 
     def test_if2(self):
@@ -516,7 +534,6 @@ class Test(TestCase):
             '120 IFR1>.98THENK3=12',
         ]
         executor= self.runit(listing)
-        print(executor._symbols.dump())
         self.assert_value(executor,"K3", 12)
 
 
@@ -551,6 +568,7 @@ class Test(TestCase):
             '100 REM'
         ]
         executor= self.runit_se(listing)
+
     def test_not_equals(self):
         listing = [
             '100 X=1',
@@ -559,3 +577,36 @@ class Test(TestCase):
         ]
         executor = self.runit(listing)
         self.assert_value(executor, "X", 3)
+
+    def test_and(self):
+        listing = [
+            '100 X=10:Y=3',
+            '110 IFX>YANDY>0THENA=9', # True, True => True
+            '120 IFX>YANDY<0THENB=10', # True, False => False
+            '130 IFX<YANDY>0THENC=11', # False, True => False
+            '140 IFX<YANDY<0THEND=12', # False, False => False
+        ]
+        executor = self.runit(listing)
+        self.assert_value(executor, "X", 10)
+        self.assert_value(executor, "Y", 3)
+        self.assert_value(executor, "A", 9)
+        self.assertFalse(executor.is_symbol_defined("B"))
+        self.assertFalse(executor.is_symbol_defined("C"))
+        self.assertFalse(executor.is_symbol_defined("D"))
+
+    def test_or(self):
+        listing = [
+            '100 X=10:Y=3',
+            '110 IFX>YORY>0THENA=9', # True, True => True
+            '120 IFX>YORY<0THENB=10', # True, False => True
+            '130 IFX<YORY>0THENC=11', # False, True => True
+            '140 IFX<YORY<0THEND=12', # False, False => False
+        ]
+        executor = self.runit(listing)
+        self.assert_value(executor, "X", 10)
+        self.assert_value(executor, "Y", 3)
+        self.assert_value(executor, "A", 9)
+        self.assert_value(executor, "B", 10)
+        self.assert_value(executor, "C", 11)
+        self.assertFalse(executor.is_symbol_defined("D"))
+

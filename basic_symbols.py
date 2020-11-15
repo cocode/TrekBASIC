@@ -15,6 +15,7 @@ class SymbolTable:
 
     def get_copy(self):
         """
+        TODO Get rid of this, and use nested scopes
         This must return a copy, not the original, as callers DO make changes for DEF FN
         :return: A new SymbolTable
         """
@@ -34,6 +35,13 @@ class SymbolTable:
 
     def put_symbol(self, symbol:str, value, symbol_type:str, arg:str):
         self._symbols[symbol] = ste(value, symbol_type, arg)
+
+    def is_symbol_defined(self, symbol:str):
+        """
+        :param symbol:
+        :return:
+        """
+        return symbol in self._symbols
 
     def get_symbol(self, symbol:str):
         """

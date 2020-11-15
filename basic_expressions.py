@@ -39,9 +39,9 @@ class Expression:
         if len(tokens) == 0:
             raise BasicSyntaxError(F"No expression.")
 
-        if len(tokens) == 1:
-            assert_syntax(tokens[0].type != 'op', F"Invalid expression.")
-            return tokens[0].token
+        # if len(tokens) == 1:
+        #     assert_syntax(tokens[0].type != 'op', F"Invalid expression.")
+        #     return tokens[0].token
 
         data_stack = []
         op_stack:OP_TOKEN = []

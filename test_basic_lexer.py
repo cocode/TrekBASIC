@@ -7,22 +7,33 @@ class TestLexer(TestCase):
     def test_lex(self):
         lexer = Lexer()
 
-        tokens = lexer.lex("X")
+        tokens = lexer.lex("X1")
         self.assertEqual(1, len(tokens))
         self.assertEqual("id", tokens[0].type)
-        self.assertEqual("X", tokens[0].token)
+        self.assertEqual("X1", tokens[0].token)
+
+    def test_lex_builtin(self):
+        lexer = Lexer()
+
+        tokens = lexer.lex("RND")
+        self.assertEqual(1, len(tokens))
+        self.assertEqual("id", tokens[0].type)
+        self.assertEqual("RND", tokens[0].token)
 
         tokens = lexer.lex("D(R1)=D(R1)-H/S-.5*RND(1)")
-        self.assertEqual(20, len(tokens))
-        self.assertEqual("id", tokens[0].type)
-        self.assertEqual("D", tokens[0].token)
-        self.assertEqual("op", tokens[9].type)
-        self.assertEqual("-", tokens[9].token)
-        self.assertEqual("num", tokens[14].type)
-        self.assertEqual(.5, tokens[14].token)
-        self.assertEqual("id", tokens[16].type)
-        self.assertEqual("RND", tokens[16].token)
+        expected = [("D", 'id'), ("(", 'op'), ("R1", 'id'), (")", 'op'), ("=", 'op'),
+                    ("D", 'id'), ("(", 'op'), ("R1", 'id'), (")", 'op'), ("-", 'op'),
+                    ("H", 'id'), ("/", 'op'), ("S", 'id'), ("-", 'op'),
+                    (.5, 'num'), ("*", 'op'), ("RND", 'id'), ("(", 'op'), (1, 'num'), (")", 'op')]
+        for index, expect in enumerate(expected):
+            # print(index, expect)
+            self.assertEqual(expect[0], tokens[index].token)
+            self.assertEqual(expect[1], tokens[index].type)
 
+        self.assertEqual(len(expected), len(tokens))
+
+    def test_lex_literals(self):
+        lexer = Lexer()
         tokens = lexer.lex('"ABC"+"DEF"')
         self.assertEqual(3, len(tokens))
         self.assertEqual("str", tokens[0].type)

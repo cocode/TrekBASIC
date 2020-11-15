@@ -365,7 +365,7 @@ def tokenize(program_lines:list[str]) -> list[statements]:
     for line in program_lines:
         tokenized_line = tokenize_line(line)
         if last_line is not None:
-            assert_syntax(tokenized_line.line > last_line, "Line {tokenized_line.line} is <= the preceding line {line}")
+            assert_syntax(tokenized_line.line > last_line, F"Line {tokenized_line.line} is <= the preceding line {line}")
         tokenized_lines.append(tokenized_line)
         last_line = tokenized_line.line
 
@@ -460,10 +460,10 @@ class Executor:
                     # Note: Have to check for a goto within a line! 100 print:print:goto 100:print "shouldn't see this"
                     break # This will skip the "else" which does the normal "step to next line"
             else:
-                if self._current.next != None:
-                    self._current = self._program[self._current.next]
-                else:
+                if self._current.next is None:
                     self._run = False
+                else:
+                    self._current = self._program[self._current.next]
                 self._statement_offset = 0
 
     def get_symbol_count(self):
@@ -512,7 +512,15 @@ class Executor:
         if next is None:
             self._run = False
         else:
-            self.goto(next)
+            line = self._program[next].line
+            self.goto(line)
+
+    def is_symbol_defined(self, symbol):
+        """
+        :param symbol:
+        :return: True if defined, else False
+        """
+        return self._symbols.is_symbol_defined(symbol)
 
     def get_symbol(self, symbol):
         """

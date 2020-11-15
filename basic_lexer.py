@@ -1,5 +1,12 @@
 """
-Lexical analysis for the basic intrepreter.
+Lexical analysis for the basic intepreter. Lexer is ONLY used for expressions.
+
+My current thought is that you can't write a context-independent lexer for basic.
+
+IF X>YANDX<ZTHEN100
+
+I think you have to know that Y is a variable, and can't be longer than one letter, you can't
+just grab sequences of letters.
 """
 
 from collections import namedtuple
@@ -11,11 +18,37 @@ from basic_types import lexer_token, BasicSyntaxError, assert_syntax
 NUMBERS = "0123456789]"
 LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 OPERATORS = "()^*/+-=><"
+BOOLEAN_OPERATORS=["AND", "OR"]
+BUILT_IN_FUNCTIONS=["INT", "RND"]
+#KEYWORDS=["DEF", "DIM", "END", "FOR", "GOTO", "GOSUB", "IF", "INPUT", "LET", "NEXT", "ON", "PRINT", "REM", "RETURN"]
+FN_OPERATORS=["FN"+chr(c) for c in range(ord("A"), ord("Z"))]
+TEXT_OPERATORS=BOOLEAN_OPERATORS + BUILT_IN_FUNCTIONS + FN_OPERATORS
 
 
 class Lexer:
     def __init__(self):
         pass
+
+    def scan_for_keyword(self, array, text):
+        """
+        find any strings matching an element of array in text.
+        :param array:
+        :param text:
+        :return:
+        """
+        match = ""
+        for i, c in enumerate(text):
+            match += c
+            potentials = [op for op in array if i < len(op) and op[i] == match[i]]
+            #print(c, potentials)
+
+            if not potentials:
+                return None
+            for p in potentials:
+                if i + 1 == len(p):
+                    return p
+            array = potentials
+        return None
 
     def lex(self, text):
         tokens = [token for token in self.lex2(text)]
@@ -32,6 +65,11 @@ class Lexer:
                 return None
             return text[index]
 
+        def peek():
+            if index +1 ==  len(text):
+                return None
+            return text[index+1]
+
         def consume():
             nonlocal index
             current = text[index]
@@ -42,9 +80,33 @@ class Lexer:
             if state is None:
                 if c in LETTERS:
                     token = ""
-                    while (c := cur()) is not None and (c in LETTERS or c in NUMBERS or c == '$'):
+                    if peek() is not None and peek() in NUMBERS or peek() == '$':
+                        # Only consume if on identifier path.
                         token += consume()
-                    yield lexer_token(token, "id")
+                        if cur() in NUMBERS:
+                            token += consume()
+                        if cur() == '$':
+                            token += consume()
+                        yield lexer_token(token, "id")
+                        continue
+
+                    if peek() is None or peek() not in LETTERS:
+                        yield lexer_token(consume(), "id")
+                        continue
+
+                    # At this point, we know it's not a variable.
+                    found = self.scan_for_keyword(TEXT_OPERATORS, text[index:])
+                    if not found:
+                        # Can't make an operator from it, so much be an ID.
+                        yield lexer_token(consume(), "id")
+                        continue
+
+                    for _ in found:
+                        consume()
+                    if found in BOOLEAN_OPERATORS:
+                        yield lexer_token(found, "op")
+                    else:
+                        yield lexer_token(found, "id")
                 elif c in OPERATORS:
                     first = consume()
                     if cur() == ">":
@@ -72,3 +134,11 @@ class Lexer:
                     raise BasicSyntaxError(F"Unexpected char '{c}'")
 
         return
+
+if __name__ == '__main__':
+    p = Lexer()
+    tokens = p.lex("RND")
+    # tokens = p.lex("IFX>YANDQ1<7")
+    for t in tokens:
+        print("Token: ", t)
+    #print(p.consume_from(TEXT_OPERATORS, "AND ABC"))
