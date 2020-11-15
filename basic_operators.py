@@ -26,11 +26,15 @@ class OP:
 
 
 class MONO_OP:
+    def __init__(self, lam=None):
+        self._lambda = lam
+
     def check_args(self, stack):
         assert_syntax(len(stack) >= 1, "Not enough operands for binary operator")
 
     def eval1(self, first, op):
-        return None
+        if self._lambda:
+            return self._lambda(first)
 
     def eval(self, stack, *, op):
         self.check_args(stack)
@@ -76,25 +80,6 @@ class ARRAY_ACCESS_MONO_OP(MONO_OP):
         assert_syntax(int(first) == first, "Non-integral array subscript {first}'")
         return variable[int(first)] # TODO This will only work for one dimensional arrays, that don't have expressions as subscripts.
 
-
-
-class FUNC_MONO_OP_INT(MONO_OP):
-    """
-    Handles the built-in INT function
-    """
-    def eval1(self, first, *, op):
-        return int(first)
-
-
-class FUNC_MONO_OP_RND(MONO_OP):
-    """
-    Handles the built-in RND function. I'm not certain what the behavior should be,
-    I think he's always passing RND(1), and gets a number between 0 and 1.0. On some
-    versions of BASIC RND(10) still generates from 0 to 1.0, on others in generate 0 to 10.0
-    I'll assume always 1.0 for now.
-    """
-    def eval1(self, first, *, op):
-        return random.random()
 
 # class HELPER: # Used by built-in functions.
 #     def __init__(self, x):
@@ -232,9 +217,9 @@ def get_op(token):
     """
     if token.type == "function":# and token.token.startswith("FN"):
         if token.token == "INT":
-            return FUNC_MONO_OP_INT() # Handles the built-in INT function
+            return MONO_OP(lambda x: int(x)) # Handles the built-in INT function
         if token.token == "RND":
-            return FUNC_MONO_OP_RND() # Handles the built-in RND function
+            return MONO_OP(lambda x: random.random()) # Handles the built-in RND function
         op_def = get_op_def("∫") # Handles user defined functions.
         return op_def.cls
 
