@@ -61,3 +61,5 @@ on program load time. Is this a problem? I'll have to change a few tests, if I d
     TODO Fix the lexer to allow all two character operators, and to require no changes if more are added.
     TODO Replace namedtuple for ste with dataclass (maybe)
     TODO Use enum for symbol types ("str" and whatever)
+    TODO need to make sure we suport get_symbol_count() for nested scopes. But see next item, so maybe not
+    TODO Should use nested scopes for internal functions. They should be in an inner scope.
