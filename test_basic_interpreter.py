@@ -180,7 +180,7 @@ class Test(TestCase):
 
     def test_assignment(self):
         executor = self.runit(['100 Z$="Fred"'])
-        self.assertEqual(1, executor.get_symbol_count()-executor._builtin_count)
+        self.assertEqual(1, executor.get_symbol_count())
         self.assertEqual('Fred', executor.get_symbol("Z$"))
 
     def test_assignment2(self):
@@ -192,7 +192,7 @@ class Test(TestCase):
 
     def test_dim(self):
         executor = self.runit(['100 DIM A(8), C(1,8)'])
-        self.assertEqual(2, executor.get_symbol_count()-executor._builtin_count)
+        self.assertEqual(2, executor.get_symbol_count())
         A = executor.get_symbol("A")
         C = executor.get_symbol("C")
         self.assertEqual(8, len(A))
@@ -201,7 +201,7 @@ class Test(TestCase):
 
     def test_def(self):
         executor = self.runit(['100 DEF FNA(X)=X^2+1'])
-        self.assertEqual(1, executor.get_symbol_count()-executor._builtin_count)
+        self.assertEqual(1, executor.get_symbol_count())
         A = executor.get_symbol("FNA")
         AT = executor.get_symbol_type("FNA")
         self.assertEqual("X^2+1", A)
@@ -214,7 +214,7 @@ class Test(TestCase):
             '120 Z=FNA(7*7)',
         ]
         executor= self.runit(listing)
-        self.assertEqual(3, executor.get_symbol_count()-executor._builtin_count)
+        self.assertEqual(3, executor.get_symbol_count())
         Y = executor.get_symbol("Y")
         self.assertEqual(26, Y)
         Z = executor.get_symbol("Z")
@@ -228,7 +228,7 @@ class Test(TestCase):
             '120 Z=FNA(A*A)',
         ]
         executor= self.runit(listing)
-        self.assertEqual(4, executor.get_symbol_count()-executor._builtin_count)
+        self.assertEqual(4, executor.get_symbol_count())
         Y = executor.get_symbol("Y")
         Z = executor.get_symbol("Z")
         self.assertEqual(126, Y)
@@ -242,7 +242,7 @@ class Test(TestCase):
             '130 Z=FNC(3)'
         ]
         executor= self.runit(listing)
-        self.assertEqual(4, executor.get_symbol_count()-executor._builtin_count)
+        self.assertEqual(4, executor.get_symbol_count())
         Z = executor.get_symbol("Z")
         self.assertEqual(92, Z)
 
@@ -255,7 +255,7 @@ class Test(TestCase):
             '140 Z=X+Y'
         ]
         executor= self.runit(listing)
-        self.assertEqual(5, executor.get_symbol_count()-executor._builtin_count)
+        self.assertEqual(5, executor.get_symbol_count())
         Z = executor.get_symbol("Z")
         self.assertEqual(110, Z)
 
@@ -267,7 +267,7 @@ class Test(TestCase):
             '130 Z=FNC(3)'
         ]
         executor= self.runit(listing)
-        self.assertEqual(4, executor.get_symbol_count()-executor._builtin_count)
+        self.assertEqual(4, executor.get_symbol_count())
         Z = executor.get_symbol("Z")
         self.assertEqual(110, Z)
 
@@ -276,7 +276,7 @@ class Test(TestCase):
             '90 A=INT(1.99)',
         ]
         executor= self.runit(listing)
-        self.assertEqual(1, executor.get_symbol_count()-executor._builtin_count)
+        self.assertEqual(1, executor.get_symbol_count())
         A = executor.get_symbol("A")
         self.assertEqual(1, A)
 
@@ -285,7 +285,7 @@ class Test(TestCase):
             '90 A=RND(1)',
         ]
         executor= self.runit(listing)
-        self.assertEqual(1, executor.get_symbol_count()-executor._builtin_count)
+        self.assertEqual(1, executor.get_symbol_count())
         A = executor.get_symbol("A")
         self.assertTrue(A > 0 and A < 1.0)
 
@@ -299,7 +299,7 @@ class Test(TestCase):
             '140 E$=D$+"DEF"',
         ]
         executor= self.runit(listing)
-        self.assertEqual(5, executor.get_symbol_count()-executor._builtin_count)
+        self.assertEqual(5, executor.get_symbol_count())
         A = executor.get_symbol("A")
         B = executor.get_symbol("B")
         C = executor.get_symbol("C")
@@ -317,7 +317,7 @@ class Test(TestCase):
             '110 B=A/2',
         ]
         executor= self.runit(listing)
-        self.assertEqual(2, executor.get_symbol_count()-executor._builtin_count)
+        self.assertEqual(2, executor.get_symbol_count())
         A = executor.get_symbol("A")
         B = executor.get_symbol("B")
         self.assertEqual(A, 3)
@@ -338,7 +338,7 @@ class Test(TestCase):
             '140 END',
         ]
         executor= self.runit(listing)
-        self.assertEqual(1, executor.get_symbol_count()-executor._builtin_count)
+        self.assertEqual(1, executor.get_symbol_count())
         B = executor.get_symbol("B")
         self.assertEqual(B, 2)
 
@@ -348,7 +348,7 @@ class Test(TestCase):
             '120 B=4000',
         ]
         executor= self.runit(listing)
-        self.assertEqual(2, executor.get_symbol_count()-executor._builtin_count)
+        self.assertEqual(2, executor.get_symbol_count())
         A = executor.get_symbol("A")
         self.assertEqual(A, 3)
         B = executor.get_symbol("B")
@@ -361,7 +361,7 @@ class Test(TestCase):
             '120 B= B*A',
         ]
         executor= self.runit(listing)
-        self.assertEqual(2, executor.get_symbol_count()-executor._builtin_count)
+        self.assertEqual(2, executor.get_symbol_count())
         self.assert_value(executor, "A", 10)
         self.assert_value(executor, "B", 60)
 
@@ -376,7 +376,7 @@ class Test(TestCase):
             '1020 RETURN',
         ]
         executor= self.runit(listing)
-        self.assertEqual(2, executor.get_symbol_count()-executor._builtin_count)
+        self.assertEqual(2, executor.get_symbol_count())
         self.assert_value(executor, "A", 10)
         self.assert_value(executor, "B", 4000)
 
@@ -388,7 +388,7 @@ class Test(TestCase):
             '130 B  = 2',
         ]
         executor= self.runit(listing)
-        self.assertEqual(0, executor.get_symbol_count()-executor._builtin_count)
+        self.assertEqual(0, executor.get_symbol_count())
 
     def test_print(self):
         listing = [

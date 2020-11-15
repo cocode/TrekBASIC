@@ -202,7 +202,7 @@ def stmt_if(executor, stmt):
     lexer = Lexer()
     tokens = lexer.lex(stmt.args)
     e = Expression()
-    result = e.eval(tokens, symbols=executor._symbols.get_copy())
+    result = e.eval(tokens, symbols=executor._symbols)
     if not result:
         executor.goto_next()
 
@@ -399,10 +399,10 @@ class Executor:
     def __init__(self, program, trace=False):
         self._program = program
         self._current = program[0]
-        self._symbols = SymbolTable()
+        self._internal_symbols = SymbolTable()
+        self._symbols = self._internal_symbols.get_nested_scope()
         self._run = False
         self._trace = trace
-        self._builtin_count = 0
         self._goto = None
         # _statement_offset is used when we transfer control into the middle of a line
         # 100 PRINT"BEFORE":GOSUB 110:PRINT"AFTER"
@@ -418,11 +418,8 @@ class Executor:
         self._run = False
 
     def run_program(self):
-        #program = load_program(program_filename)
-        self.put_symbol("INT", "⌊", "function", arg=lambda x : int(x))
-        self._builtin_count += 1
-        self.put_symbol("RND", "⌊", "function", arg=lambda x : int(x))
-        self._builtin_count += 1
+        self._internal_symbols.put_symbol("INT", "⌊", "function", arg=lambda x : int(x))
+        self._internal_symbols.put_symbol("RND", "⌊", "function", arg=lambda x : int(x))
 
         self._run = True
         self._count_lines = 0
@@ -469,7 +466,7 @@ class Executor:
 
     def get_symbol_count(self):
         """
-        Get number of defined symbols. Used for testing.
+        Get number of defined symbols. Used for testing. This deliberately does not count nested scopes.
         :return:
         """
         return len(self._symbols)

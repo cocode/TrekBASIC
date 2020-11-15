@@ -14,16 +14,6 @@ class SymbolTable:
     def __len__(self):
         return len(self._symbols)
 
-    def get_copy(self):
-        """
-        TODO Get rid of this, and use nested scopes
-        This must return a copy, not the original, as callers DO make changes for DEF FN
-        :return: A new SymbolTable
-        """
-        new_table = SymbolTable()
-        new_table._symbols = self._symbols.copy()
-        return new_table
-
     def get_nested_scope(self):
         """
         Gets a new scope for a user defined function.
@@ -32,13 +22,6 @@ class SymbolTable:
         :return: A new symbol table, that points to the current symbols table as an enclosing scope.
         """
         return SymbolTable(self)
-
-    def get_active_symbols(self):
-        """
-        This returns the original, and changing it will affect program execution
-        :return:
-        """
-        return self._symbols
 
     def put_symbol(self, symbol:str, value, symbol_type:str, arg:str):
         self._symbols[symbol] = ste(value, symbol_type, arg)
