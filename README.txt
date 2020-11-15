@@ -59,3 +59,5 @@ on program load time. Is this a problem? I'll have to change a few tests, if I d
 
     TODO Fix functions to store there extra into in the symbol table, not in the "op" parameter.
     TODO Fix the lexer to allow all two character operators, and to require no changes if more are added.
+    TODO Replace namedtuple for ste with dataclass (maybe)
+    TODO Use enum for symbol types ("str" and whatever)
