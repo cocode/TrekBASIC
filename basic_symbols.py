@@ -31,9 +31,6 @@ class SymbolTable:
         """
         return self._symbols
 
-    def get_symbol_names(self):
-        return self._symbols.keys()
-
     def put_symbol(self, symbol:str, value, symbol_type:str, arg:str):
         self._symbols[symbol] = ste(value, symbol_type, arg)
 
