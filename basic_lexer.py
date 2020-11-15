@@ -137,7 +137,7 @@ class Lexer:
 
 if __name__ == '__main__':
     p = Lexer()
-    tokens = p.lex("RND")
+    tokens = p.lex("XRND")
     # tokens = p.lex("IFX>YANDQ1<7")
     for t in tokens:
         print("Token: ", t)

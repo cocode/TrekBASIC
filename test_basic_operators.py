@@ -1,6 +1,7 @@
 from unittest import TestCase
 from basic_lexer import Lexer
-from basic_operators import get_op, BINOP_MINUS, BINOP_PLUS, MINUS_MONO_OP
+from basic_operators import get_op, BINOP_MINUS, MINUS_MONO_OP
+from basic_types import lexer_token
 
 
 class Test(TestCase):
@@ -14,7 +15,7 @@ class Test(TestCase):
         self.assertEqual(3, len(tokens))
         stack.append(tokens[0])
         stack.append(tokens[2])
-        binop = BINOP_MINUS()
+        binop = get_op(lexer_token("-", "op")).value
         answer = binop.eval(stack, op=None) # Op is not needed for this test. Only used for DEF FNx
         self.assertEqual(3, answer.token)
 
@@ -24,7 +25,7 @@ class Test(TestCase):
         self.assertEqual(3, len(tokens))
         stack.append(tokens[0])
         stack.append(tokens[2])
-        binop = BINOP_PLUS()
+        binop = get_op(lexer_token("+", "op")).value
         answer = binop.eval(stack, op=None)
         self.assertEqual(17, answer.token)
 
@@ -34,7 +35,7 @@ class Test(TestCase):
         self.assertEqual(3, len(tokens))
         stack.append(tokens[0])
         stack.append(tokens[2])
-        binop = BINOP_PLUS()
+        binop = get_op(lexer_token("+", "op")).value
         answer = binop.eval(stack, op=None)
         self.assertEqual(17, answer.token)
 

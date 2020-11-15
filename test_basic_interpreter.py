@@ -299,7 +299,7 @@ class Test(TestCase):
             '140 E$=D$+"DEF"',
         ]
         executor= self.runit(listing)
-        self.assertEqual(5, executor.get_symbol_count())
+        self.assertEqual(5, executor.get_symbol_count()-executor._builtin_count)
         A = executor.get_symbol("A")
         B = executor.get_symbol("B")
         C = executor.get_symbol("C")
@@ -311,7 +311,7 @@ class Test(TestCase):
         self.assertEqual(D, "ABC")
         self.assertEqual(E, "ABCDEF")
 
-    def test_expressions(self):
+    def test_expressions2(self):
         listing = [
             '100 A =2+1',
             '110 B=A/2',
@@ -322,6 +322,12 @@ class Test(TestCase):
         B = executor.get_symbol("B")
         self.assertEqual(A, 3)
         self.assertEqual(B, 1.5)
+
+    def test_expressions3(self):
+        listing = [
+            '100 A=2+"1"',
+        ]
+        executor= self.runit_se(listing)
 
     def test_goto(self):
         listing = [

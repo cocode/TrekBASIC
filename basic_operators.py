@@ -1,11 +1,12 @@
 """
 Implementation for basic operators, such as add, subtract, etc.
 """
-# TODO Unary Minus!
 from collections import namedtuple
 from enum import Enum
 import random
 
+# Operators have
+# String, Precedence, Associativity (may be all LEFT for basic), function,
 from basic_types import lexer_token, assert_syntax, assert_internal, UNARY_MINUS, ARRAY_ACCESS
 
 import basic_expressions
@@ -77,14 +78,6 @@ class FUNC_MONO_OP_INT(MONO_OP):
     def eval1(self, first, *, op):
         return int(first)
 
-class ZERO_OP:
-    def eval0(self):
-        return None
-
-    def eval(self, stack, *, op):
-        answer = self.eval0()
-        return lexer_token(answer, "num")
-
 
 class FUNC_MONO_OP_RND(MONO_OP):
     """
@@ -125,9 +118,6 @@ class BINOP_NUM(BINOP):
         assert_syntax(stack[-1].type == "num", "Operand not numeric for binary op")
         assert_syntax(stack[-2].type == "num", "Operand not numeric for binary op")
 
-    def eval2(self, first:float, second:float):
-        pass
-
 
 class BINOP_STR_NUM(BINOP):
     """
@@ -137,49 +127,28 @@ class BINOP_STR_NUM(BINOP):
         super().check_args(stack)
         assert_syntax(stack[-1].type == "num" or stack[-1].type == "str", "Operand not string or number for '+'")
         assert_syntax(stack[-2].type == "num" or stack[-2].type == "str", "Operand not string or number for '+'")
-
+        assert_syntax(stack[-1].type == stack[-2].type, "Operands don't match (string vs number) for '+'")
 
 
 class BINOP_MINUS(BINOP_NUM):
     def eval2(self, first, second):
-        result = first- second
+        result = first - second
         return result
 
-
-class BINOP_PLUS(BINOP_STR_NUM):
-    def eval2(self, first, second):
-        result = first + second
-        return result
-
-class BINOP_MUL(BINOP_NUM):
-    def eval2(self, first, second):
-        result = first * second
-        return result
-
-class BINOP_DIV(BINOP_NUM):
-    def eval2(self, first, second):
-        result = first / second
-        return result
-
-
-class BINOP_EXP(BINOP_NUM):
-    def eval2(self, first, second):
-        result = first ** second
-        return result
 
 # TODO better data structures for operators.
-alt_op = namedtuple('OperatorAlt','text precedence ltor func')
-class Operators2(Enum):
-    CLOSE = alt_op(")", 8, True, OP())
-    EQUALS = 2
-    MINUS = BINOP_MINUS()
-    PLUS = BINOP_PLUS()
-    DIV = BINOP_DIV()
-    MUL = BINOP_MUL()
-    EXP = BINOP_EXP()
-    OPEN = OP() # NOP
-    FUNC = FUNC_MONO_OP()
-    UNARY_MINUS = MINUS_MONO_OP()
+alt_op = namedtuple('OperatorAlt','text prec func ltor', defaults=[True])
+# class Operators2(Enum):
+#     CLOSE = alt_op(")", 8, True, OP())
+#     EQUALS = 2
+#     MINUS = BINOP_MINUS()
+#     PLUS = BINOP_PLUS()
+#     DIV = BINOP_DIV()
+#     MUL = BINOP_MUL()
+#     EXP = BINOP_EXP()
+#     OPEN = OP() # NOP
+#     FUNC = FUNC_MONO_OP()
+#     UNARY_MINUS = MINUS_MONO_OP()
 
 
 # TODO: Need to rewrite lexer to handle multi-character tokens for >=, <=
@@ -187,16 +156,17 @@ class Operators2(Enum):
 class Operators(Enum):
     CLOSE = OP() # NOP
     EQUALS = 2
-    MINUS = BINOP_MINUS()
-    PLUS = BINOP_PLUS()
-    DIV = BINOP_DIV()
-    GT = BINOP(lambda x, y: x > y)
-    LT = BINOP(lambda x, y: x < y)
-    NE = BINOP(lambda x, y: x != y)
+    MINUS = BINOP_NUM(lambda x, y: x - y)
+    PLUS = BINOP_STR_NUM(lambda x, y: x + y)
+    DIV = BINOP_NUM(lambda x, y: x / y)
+    GT = BINOP_STR_NUM(lambda x, y: x > y) # does basic compare strings? It must!
+    LT = BINOP_STR_NUM(lambda x, y: x < y)
+    NE = BINOP_STR_NUM(lambda x, y: x != y)
     AND = BINOP(lambda x, y: x and y) # May be semantic differences between python "and" and basic "AND".
+                                      # Python lets you AND to ints, basic does not. BINOP_BOOL maybe?
     OR = BINOP(lambda x, y: x or y)   # Basic only allows "AND" of booleans, I believe.
-    MUL = BINOP_MUL()
-    EXP = BINOP_EXP()
+    MUL = BINOP_NUM(lambda x, y: x * y)
+    EXP = BINOP_NUM(lambda x, y: x ** y)
     OPEN = OP() # NOP
     FUNC = FUNC_MONO_OP()
     UNARY_MINUS = MINUS_MONO_OP()
