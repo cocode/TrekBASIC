@@ -137,11 +137,11 @@ def assign_variable(executor, variable, value):
         variable = variable[:i]
         is_valid_identifier(variable)
         target = executor.get_symbol(variable) # Array must exist. get_symbol will raise if is does not.
-        subscript0 = int(subscripts[0])
+        subscript0 = int(eval_expression(executor._symbols, subscripts[0]))
         if len(subscripts) == 1:
             target[subscript0] = value
         else:
-            subscript1 = int(subscripts[1])
+            subscript1 = int(eval_expression(executor._symbols, subscripts[1]))
             target[subscript0][subscript1] = value
     else:
         is_valid_identifier(variable)
@@ -167,6 +167,7 @@ def stmt_exp(executor, stmt):
 
 
 def stmt_dim(executor, stmt):
+    # TODO Handle variables in array dimensions?
     stmts = smart_split(stmt.args.strip(), "(", ")", ",")
     for s in stmts:
         s = s.strip()

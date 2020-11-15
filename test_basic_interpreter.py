@@ -465,8 +465,19 @@ class Test(TestCase):
         self.assertEqual(0, A[0], 0) # Check for initialization
         self.assertEqual(17, A[3])   # Verify assignment
 
+    def test_array_assignment2(self):
+        listing = [
+            '100 DIMA(10)',
+            '105 I5=2*3',
+            '110 A(I5)=I5+1',
+        ]
+        executor= self.runit(listing)
+        A = executor.get_symbol("A")
+        self.assertEqual(0, A[0], 0) # Check for initialization
+        self.assertEqual(7, A[6])   # Verify assignment
+
     # TODO Need multi-dimensional array support in expression evaluation
-    # def test_array_assignment2(self):
+    # def test_array_assignment3(self):
     #     listing = [
     #         '100 DIMA(10)',
     #         '110 A(3)=27',
@@ -489,7 +500,7 @@ class Test(TestCase):
     #     self.assertEqual(Z, 3) # Verify element access
     #     # TODO two dimensional arrays.
 
-    def test_array_assignment3(self):
+    def test_array_assignment4(self):
         listing = [
             '100 DIMA(10)',
             '110 A(3)=27',
