@@ -2,7 +2,7 @@
 Basic support for expressions.
 """
 
-from basic_types import lexer_token, BasicSyntaxError, assert_syntax, OP_TOKEN, UNARY_MINUS, ARRAY_ACCESS
+from basic_types import lexer_token, BasicSyntaxError, assert_syntax, OP_TOKEN, UNARY_MINUS, ARRAY_ACCESS, SymbolType
 from basic_symbols import SymbolTable
 
 
@@ -76,16 +76,16 @@ class Expression:
                     assert_syntax(symbols.is_symbol_defined(current.token), F"Undefined variable: '{current.token}'")
                     symbol_value = symbols.get_symbol(current.token)
                     symbol_type = symbols.get_symbol_type(current.token)
-                    if symbol_type == "variable":
+                    if symbol_type == SymbolType.VARIABLE:
                         if current.token.endswith("$"):
                             data_stack.append(lexer_token(symbol_value, "str"))
                         else:
                             data_stack.append(lexer_token(symbol_value, "num"))
-                    elif symbol_type == "function":
+                    elif symbol_type == SymbolType.FUNCTION:
                         # Handle function as operators. Lower priority than "(", but higher than everything else.
                         # So don't append this to the data stack, append it to the op stack as a function.
                         arg = symbols.get_symbol_arg(current.token)
-                        op_stack.append(OP_TOKEN(current.token, "function", arg, symbol_value, symbols=symbols))
+                        op_stack.append(OP_TOKEN(current.token, SymbolType.FUNCTION, arg, symbol_value, symbols=symbols))
                     else:
                         # Handle function as operators. Lower priority than "(", but higher than everything else.
                         # So don't append this to the data stack, append it to the op stack as a function.

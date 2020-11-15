@@ -57,9 +57,13 @@ on program load time. Is this a problem? I'll have to change a few tests, if I d
     but it should only be in one place.
     Implement >= and <= and !=? How does basic do != ? Maybe <>
 
-    TODO Fix functions to store there extra into in the symbol table, not in the "op" parameter.
+    TODO Fix functions to store their extra into in the symbol table, not in the "op" parameter.
+        1. store data in symbol table
+        2. Use it
+        3. remove old versions.
+        4. Hmm. Looks like the issues is not the symbol table, its that the expression evaluator doesn't
+        pass that information into FUNC_MONO_OP
     TODO Fix the lexer to allow all two character operators, and to require no changes if more are added.
     TODO Replace namedtuple for ste with dataclass (maybe)
-    TODO Use enum for symbol types ("str" and whatever)
     TODO need to make sure we suport get_symbol_count() for nested scopes. But see next item, so maybe not
-    TODO Should use nested scopes for internal functions. They should be in an inner scope.
+    TODO Search and destroy for literal strings used for what should be enums.

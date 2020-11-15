@@ -3,7 +3,7 @@ This handles the symbol table for the executor
 """
 import pprint
 
-from basic_types import ste, assert_syntax
+from basic_types import ste, assert_syntax, SymbolType
 
 
 class SymbolTable:
@@ -23,7 +23,8 @@ class SymbolTable:
         """
         return SymbolTable(self)
 
-    def put_symbol(self, symbol:str, value, symbol_type:str, arg:str):
+    def put_symbol(self, symbol:str, value, symbol_type:SymbolType, arg:str):
+        assert SymbolType == type(symbol_type)
         self._symbols[symbol] = ste(value, symbol_type, arg)
 
     def _is_local(self, symbol):

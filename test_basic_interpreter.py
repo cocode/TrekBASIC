@@ -4,7 +4,7 @@ import sys
 
 from basic_interpreter import tokenize_line, statements, Keywords, smart_split
 from basic_interpreter import load_program, format_program, tokenize, Executor, BasicSyntaxError, is_valid_identifier
-
+from basic_types import SymbolType
 
 class Test(TestCase):
     def assert_value(self, executor, symbol, expected_value):
@@ -205,7 +205,7 @@ class Test(TestCase):
         A = executor.get_symbol("FNA")
         AT = executor.get_symbol_type("FNA")
         self.assertEqual("X^2+1", A)
-        self.assertEqual("function", AT)
+        self.assertEqual(SymbolType.FUNCTION, AT)
 
     def test_def2(self):
         listing = [

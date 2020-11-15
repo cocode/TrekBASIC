@@ -10,7 +10,7 @@ from collections import namedtuple
 from enum import Enum
 import random
 
-from basic_types import lexer_token, assert_syntax, assert_internal, UNARY_MINUS, ARRAY_ACCESS
+from basic_types import lexer_token, assert_syntax, assert_internal, UNARY_MINUS, ARRAY_ACCESS, SymbolType
 
 import basic_expressions
 from basic_lexer import Lexer
@@ -59,7 +59,7 @@ class FUNC_MONO_OP(MONO_OP):
     def eval1(self, first, *, op):
         e = basic_expressions.Expression()
         symbols = op.symbols.get_nested_scope()
-        symbols.put_symbol(op.arg, first, "variable", arg=None)
+        symbols.put_symbol(op.arg, first, SymbolType.VARIABLE, arg=None)
         lexer = Lexer()
         tokens = lexer.lex(op.value)
         result = e.eval(tokens, symbols=symbols)
@@ -78,7 +78,7 @@ class ARRAY_ACCESS_MONO_OP(MONO_OP):
         array_name = op.arg
         variable = op.symbols.get_symbol(array_name)
         variable_type = op.symbols.get_symbol_type(array_name)
-        assert_syntax(variable_type == "array", "Array access to non-array variable '{variable}'")
+        assert_syntax(variable_type == SymbolType.ARRAY, "Array access to non-array variable '{variable}'")
         assert_syntax(int(first) == first, "Non-integral array subscript {first}'")
         return variable[int(first)] # TODO This will only work for one dimensional arrays, that don't have expressions as subscripts.
 
@@ -172,7 +172,7 @@ def get_op(token):
     :param token: May be an OP_TOKEN, or a lexer_token # TODO Should subclass, maybe.
     :return: An instance of a class that handles that operation.
     """
-    if token.type == "function":# and token.token.startswith("FN"):
+    if token.type == SymbolType.FUNCTION:# and token.token.startswith("FN"):
         if token.token == "INT":
             return MONO_OP(lambda x: int(x)) # Handles the built-in INT function
         if token.token == "RND":
@@ -186,7 +186,7 @@ def get_op(token):
 
 
 def get_precedence(token:lexer_token):
-    if token.type == "function": # make this for all functions, not: and token.token.startswith("FN"):
+    if token.type == SymbolType.FUNCTION: # make this for all functions, not: and token.token.startswith("FN"):
         return Operators.FUNC.value.prec # PREC_MAP["∫"]
     op_def = get_op_def(token.token)
     return op_def.prec

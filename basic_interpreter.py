@@ -6,7 +6,7 @@ from collections import namedtuple
 import sys
 from enum import Enum
 
-from basic_types import statements, lexer_token, BasicSyntaxError, BasicInternalError, assert_syntax, ste
+from basic_types import statements, lexer_token, BasicSyntaxError, BasicInternalError, assert_syntax, ste, SymbolType
 from parsed_statements import ParsedStatement, ParsedStatementIf
 from basic_lexer import lexer_token, Lexer, NUMBERS, LETTERS
 from basic_expressions import Expression
@@ -145,7 +145,7 @@ def assign_variable(executor, variable, value):
             target[subscript0][subscript1] = value
     else:
         is_valid_identifier(variable)
-        executor.put_symbol(variable, value, symbol_type="variable", arg=None)
+        executor.put_symbol(variable, value, symbol_type=SymbolType.VARIABLE, arg=None)
 
 def stmt_exp(executor, stmt):
     try:
@@ -186,7 +186,7 @@ def stmt_dim(executor, stmt):
             size_x = int(dimensions[0].replace("(",''))
             size_y = int(dimensions[1].replace(")",''))
             value = [[0] * size_y] * size_x
-        executor.put_symbol(name, value, "array", arg=None) # Not right, but for now.
+        executor.put_symbol(name, value, SymbolType.ARRAY, arg=None) # Not right, but for now.
 
 def stmt_next(executor, stmt):
     pass
@@ -241,7 +241,7 @@ def stmt_def(executor, stmt):
     arg = variable[4]
     variable = variable[:3]
     value = value.strip()
-    executor.put_symbol(variable, value, "function", arg)
+    executor.put_symbol(variable, value, SymbolType.FUNCTION, arg)
 
 def stmt_return(executor, stmt):
     executor.do_return()
@@ -418,8 +418,8 @@ class Executor:
         self._run = False
 
     def run_program(self):
-        self._internal_symbols.put_symbol("INT", "⌊", "function", arg=lambda x : int(x))
-        self._internal_symbols.put_symbol("RND", "⌊", "function", arg=lambda x : int(x))
+        self._internal_symbols.put_symbol("INT", "⌊", SymbolType.FUNCTION, arg=lambda x : int(x))
+        self._internal_symbols.put_symbol("RND", "⌊", SymbolType.FUNCTION, arg=lambda x : int(x))
 
         self._run = True
         self._count_lines = 0

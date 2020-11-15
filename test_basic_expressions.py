@@ -1,8 +1,7 @@
 from unittest import TestCase
 from basic_expressions import Expression
 from basic_lexer import Lexer
-from basic_types import ste, BasicSyntaxError
-from basic_interpreter import Executor
+from basic_types import ste, BasicSyntaxError, SymbolType
 from basic_symbols import SymbolTable
 
 class TestExpression(TestCase):
@@ -55,9 +54,8 @@ class TestExpression(TestCase):
         tokens = self._lexer.lex(" 1 + A")
         self.assertEqual(3, len(tokens))
         expression = Expression()
-#        entry = ste(22, "variable", None)
         symbol_table = SymbolTable()
-        symbol_table.put_symbol("A", 22, "variable", arg=None)
+        symbol_table.put_symbol("A", 22, SymbolType.VARIABLE, arg=None)
         value = expression.eval(tokens, symbols=symbol_table)
         self.assertEqual(23, value)
 
@@ -66,7 +64,7 @@ class TestExpression(TestCase):
         self.assertEqual(3, len(tokens))
         expression = Expression()
         symbol_table = SymbolTable()
-        symbol_table.put_symbol("A$", "C", "variable", arg=None)
+        symbol_table.put_symbol("A$", "C", SymbolType.VARIABLE, arg=None)
         value = expression.eval(tokens, symbols=symbol_table)
         self.assertEqual('ABC', value)
 
