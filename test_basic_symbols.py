@@ -26,7 +26,7 @@ class TestSymbolTable(TestCase):
 
     def test_scope(self):
         outer = SymbolTable()
-        inner = outer.get_new_scope()
+        inner = outer.get_nested_scope()
         outer.put_symbol("A", 3, "variable", arg=None)
         outer.put_symbol("B", 27, "variable", arg=None)
 

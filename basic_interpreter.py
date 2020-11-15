@@ -156,7 +156,8 @@ def stmt_exp(executor, stmt):
     lexer = Lexer()
     tokens = lexer.lex(value)
     e = Expression()
-    result = e.eval(tokens, symbols=executor._symbols.get_copy())
+
+    result = e.eval(tokens, symbols=executor._symbols)
     assign_variable(executor, variable, result)
 
 

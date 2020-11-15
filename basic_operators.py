@@ -58,8 +58,7 @@ class FUNC_MONO_OP(MONO_OP):
     """
     def eval1(self, first, *, op):
         e = basic_expressions.Expression()
-        symbols = op.symbols.get_copy() # Have to get a new copy for each function execution,
-                                        # More than one may use the same variable. x = fna(x)+fnb(x)
+        symbols = op.symbols.get_nested_scope()
         symbols.put_symbol(op.arg, first, "variable", arg=None)
         lexer = Lexer()
         tokens = lexer.lex(op.value)

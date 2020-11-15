@@ -24,7 +24,7 @@ class SymbolTable:
         new_table._symbols = self._symbols.copy()
         return new_table
 
-    def get_new_scope(self):
+    def get_nested_scope(self):
         """
         Gets a new scope for a user defined function.
         This current SymbolTable (self) will be the outer scope for the new function.
