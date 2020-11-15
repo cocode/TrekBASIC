@@ -15,6 +15,13 @@ from basic_lexer import Lexer
 
 class OP:
     def eval(self, stack, *, op):
+        """
+        Called to evaluate an operation in an expression.
+
+        :param stack: The data stack, containing operand for the operation
+        :param op: This is only used to provide context for user defined functions. TOOD: This should go into the symbol table
+        :return:
+        """
         return None
 
 
@@ -89,10 +96,10 @@ class FUNC_MONO_OP_RND(MONO_OP):
     def eval1(self, first, *, op):
         return random.random()
 
-class HELPER: # Used by buildin functions.
-    def __init__(self, x):
-        self.value = x
-
+# class HELPER: # Used by built-in functions.
+#     def __init__(self, x):
+#         self.value = x
+#
 class BINOP(OP):
     def __init__(self, lam=None):
         self._lambda = lam
@@ -137,97 +144,122 @@ class BINOP_MINUS(BINOP_NUM):
 
 
 # TODO better data structures for operators.
-alt_op = namedtuple('OperatorAlt','text prec func ltor', defaults=[True])
+OpDef = namedtuple('OpDef','text prec cls')
+
+
+class Operators(Enum):
+    CLOSE=         OpDef(')',    0,  OP() )
+    EQUALS=        OpDef('=',    1,  OP() )
+    GT=            OpDef('>',    3,  BINOP_STR_NUM(lambda x, y: x > y))
+    LT=            OpDef('<',    3,  BINOP_STR_NUM(lambda x, y: x < y))
+    NE=            OpDef('<>',   3,  BINOP_STR_NUM(lambda x, y: x != y))
+    # May be semantic differences between python "and" and basic "AND".
+    # Python lets you AND to ints, basic does not. BINOP_BOOL maybe?
+    # Basic only allows "AND" of booleans, I believe. TODO We should set the type
+    # Of the output of a BOOLEAN and, and check that an IF only uses a BOOLEAN
+    AND=           OpDef('AND',  2,  BINOP(lambda x, y: x and y) )
+    OR=            OpDef('OR',   2,  BINOP(lambda x, y: x or y))
+    MINUS=         OpDef('-',    4,  BINOP_NUM(lambda x, y: x - y))
+    PLUS=          OpDef('+',    4,  BINOP_STR_NUM(lambda x, y: x + y))
+    DIV=           OpDef('/',    5,  BINOP_NUM(lambda x, y: x / y))
+    MUL=           OpDef('*',    5,  BINOP_NUM(lambda x, y: x * y))
+    EXP=           OpDef('^',    6,  BINOP_NUM(lambda x, y: x ** y))
+    OPEN=          OpDef('(',    9,  OP())
+    FUNC=          OpDef('∫',    8,  FUNC_MONO_OP())
+    UNARY_MINUS=   OpDef('—',    7,  MINUS_MONO_OP()) # M-dash
+    ARRAY_ACCESS=  OpDef('@',    8,  ARRAY_ACCESS_MONO_OP())
+
+
+OP_MAP={k.value.text:k for k in Operators}
+OPERATORS = [k for k in OP_MAP]
+# Internal operations.
+OPERATORS.remove(Operators.ARRAY_ACCESS.value.text)
+OPERATORS.remove(Operators.FUNC.value.text)
+
+# # TODO: Need to rewrite lexer to handle multi-character tokens for >=, <=
+# # ALSO MUST UPDATE basic_lexer.py:OPERATORS
 # class Operators2(Enum):
-#     CLOSE = alt_op(")", 8, True, OP())
+#     # In precedence order, for my sanity.
+#     CLOSE = OP() # NOP
 #     EQUALS = 2
-#     MINUS = BINOP_MINUS()
-#     PLUS = BINOP_PLUS()
-#     DIV = BINOP_DIV()
-#     MUL = BINOP_MUL()
-#     EXP = BINOP_EXP()
+#     MINUS = BINOP_NUM(lambda x, y: x - y)
+#     PLUS = BINOP_STR_NUM(lambda x, y: x + y)
+#     DIV = BINOP_NUM(lambda x, y: x / y)
+#     GT = BINOP_STR_NUM(lambda x, y: x > y) # does basic compare strings? It must!
+#     LT = BINOP_STR_NUM(lambda x, y: x < y)
+#     NE = BINOP_STR_NUM(lambda x, y: x != y)
+#     AND = BINOP(lambda x, y: x and y) # May be semantic differences between python "and" and basic "AND".
+#                                       # Python lets you AND to ints, basic does not. BINOP_BOOL maybe?
+#     OR = BINOP(lambda x, y: x or y)   # Basic only allows "AND" of booleans, I believe.
+#     MUL = BINOP_NUM(lambda x, y: x * y)
+#     EXP = BINOP_NUM(lambda x, y: x ** y)
 #     OPEN = OP() # NOP
 #     FUNC = FUNC_MONO_OP()
 #     UNARY_MINUS = MINUS_MONO_OP()
+#     ARRAY_ACCESS = ARRAY_ACCESS_MONO_OP()
 
 
-# TODO: Need to rewrite lexer to handle multi-character tokens for >=, <=
-# ALSO MUST UPDATE basic_lexer.py:OPERATORS
-class Operators(Enum):
-    CLOSE = OP() # NOP
-    EQUALS = 2
-    MINUS = BINOP_NUM(lambda x, y: x - y)
-    PLUS = BINOP_STR_NUM(lambda x, y: x + y)
-    DIV = BINOP_NUM(lambda x, y: x / y)
-    GT = BINOP_STR_NUM(lambda x, y: x > y) # does basic compare strings? It must!
-    LT = BINOP_STR_NUM(lambda x, y: x < y)
-    NE = BINOP_STR_NUM(lambda x, y: x != y)
-    AND = BINOP(lambda x, y: x and y) # May be semantic differences between python "and" and basic "AND".
-                                      # Python lets you AND to ints, basic does not. BINOP_BOOL maybe?
-    OR = BINOP(lambda x, y: x or y)   # Basic only allows "AND" of booleans, I believe.
-    MUL = BINOP_NUM(lambda x, y: x * y)
-    EXP = BINOP_NUM(lambda x, y: x ** y)
-    OPEN = OP() # NOP
-    FUNC = FUNC_MONO_OP()
-    UNARY_MINUS = MINUS_MONO_OP()
-    ARRAY_ACCESS = ARRAY_ACCESS_MONO_OP()
+# OP_MAP = {
+#     ")": Operators.CLOSE,
+#     "=": Operators.EQUALS,
+#     ">": Operators.GT,
+#     "<": Operators.LT,
+#     "<>": Operators.NE,
+#     "AND": Operators.AND,
+#     "OR": Operators.OR,
+#     "-": Operators.MINUS,
+#     "+": Operators.PLUS,
+#     "/": Operators.DIV,
+#     "*": Operators.MUL,
+#     "^": Operators.EXP,
+#     "(": Operators.OPEN,
+#     "∫": Operators.FUNC,  # Not found in source code, used as an indicator.
+#     UNARY_MINUS: Operators.UNARY_MINUS,  # That's an m-dash.
+#     ARRAY_ACCESS: Operators.ARRAY_ACCESS,
+# }
+
+def get_op_def(operator:str):
+    assert_syntax(operator in OP_MAP, F"Invalid operator {operator}")
+    return OP_MAP[operator].value
 
 
+def get_op(token):
+    """
+    This gets the class that handles the operation. # TODO should change to "get_op_class"
 
-def get_op(token:lexer_token):
-    OP_MAP = {
-        ")": Operators.CLOSE,
-        "=": Operators.EQUALS,
-        ">": Operators.GT,
-        "<": Operators.LT,
-        "<>": Operators.NE,
-        "AND": Operators.AND,
-        "OR": Operators.OR,
-        "-": Operators.MINUS,
-        "+": Operators.PLUS,
-        "/": Operators.DIV,
-        "*": Operators.MUL,
-        "^": Operators.EXP,
-        "(": Operators.OPEN,
-        "∫": Operators.FUNC,  # Not found in source code, used as an indicator.
-        UNARY_MINUS: Operators.UNARY_MINUS,  # That's an m-dash.
-        ARRAY_ACCESS: Operators.ARRAY_ACCESS,
-    }
+    :param token: May be an OP_TOKEN, or a lexer_token # TODO Should subclass, maybe.
+    :return: An instance of a class that handles that operation.
+    """
     if token.type == "function":# and token.token.startswith("FN"):
         if token.token == "INT":
-            return HELPER(FUNC_MONO_OP_INT()) # Handles the built-in INT function
+            return FUNC_MONO_OP_INT() # Handles the built-in INT function
         if token.token == "RND":
-            return HELPER(FUNC_MONO_OP_RND()) # Handles the built-in RND function
-        return OP_MAP["∫"] # Handles user defined functions.
-    operator = token.token
-    assert_syntax(operator in OP_MAP, "Invalid operator {operator}")
-    return OP_MAP[operator]
+            return FUNC_MONO_OP_RND() # Handles the built-in RND function
+        op_def = get_op_def("∫") # Handles user defined functions.
+        return op_def.cls
 
+    operator = token.token
+    op_def = get_op_def(operator)
+    # assert_syntax(operator in OP_MAP, F"Invalid operator {operator}")
+    # return OP_MAP[operator].value.cls
+    return op_def.cls
+
+
+# assert len(PREC_MAP) == len(OP_MAP)
+# assert len(PREC_MAP) == len(Operators.__members__)
+#
+# for op in OP_MAP:
+#     f = str(OP_MAP[op].name)+"="
+#     g = F"'{op}',"
+#     h = F"{PREC_MAP[op]},"
+#     print(F"\t{f:14} ({g:7} {h:3} BINOP('aa') )")
 
 def get_precedence(token:lexer_token):
-    PREC_MAP = {
-        ")": 0,
-        "=": 1,
-        "AND": 2,
-        "OR": 2,
-        ">": 3,
-        "<": 3,
-        "<>": 3,
-        "-": 4,
-        "+": 4,
-        "/": 5,
-        "*": 5,
-        "^": 6,
-        UNARY_MINUS: 7, # Has to be lower than function calls (CLOSE) for "-FNA(X)" to work, and lower than array access
-        "∫": 8, # Has to be lower than "OPEN", so we will eval the arguments, THEN call the func.
-        ARRAY_ACCESS: 8,
-        "(": 9,
-
-    }
-
     if token.type == "function": # make this for all functions, not: and token.token.startswith("FN"):
-        return PREC_MAP["∫"]
-    operator = token.token
-    assert_syntax(operator in PREC_MAP, F"Invalid operator {operator}")
-    return PREC_MAP[operator]
+        return Operators.FUNC.value.prec # PREC_MAP["∫"]
+    op_def = get_op_def(token.token)
+    return op_def.prec
+    # operator = token.token
+    # assert_syntax(operator in PREC_MAP, F"Invalid operator {operator}")
+    # return PREC_MAP[operator]
 

@@ -10,11 +10,9 @@ class Expression:
     def one_op(self, op_stack, data_stack):
         from basic_operators import get_op, get_precedence
 
-        top = op_stack.pop()
-        m = get_op(top)
-        value = m.value
-        top_op_function = value
-        result = top_op_function.eval(data_stack, op=top)
+        current_op = op_stack.pop()
+        eval_class = get_op(current_op)
+        result = eval_class.eval(data_stack, op=current_op)
         # Some operators, like parens, don't return a result
         if result is not None:
             data_stack.append(result)
