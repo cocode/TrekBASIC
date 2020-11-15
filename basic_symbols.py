@@ -39,10 +39,15 @@ class SymbolTable:
         :param symbol:
         :return:
         """
-        return symbol in self._symbols
+        defined = symbol in self._symbols
+        if defined:
+            return True
+        if self._enclosing_scope:
+            return self._enclosing_scope.is_symbol_defined(symbol)
 
     def get_symbol(self, symbol:str):
         """
+        Gets the symbols VALUE. TODO: Rename to get_symbol_value
         :param symbol:
         :return:
         """
