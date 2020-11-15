@@ -73,7 +73,7 @@ class Expression:
                     is_unary_context = True
             else:
                 if current.type == "id":
-                    assert_syntax(current.token in symbols.get_symbol_names(), F"Undefined variable: '{current.token}'")
+                    assert_syntax(symbols.is_symbol_defined(current.token), F"Undefined variable: '{current.token}'")
                     symbol_value = symbols.get_symbol(current.token)
                     symbol_type = symbols.get_symbol_type(current.token)
                     if symbol_type == "variable":

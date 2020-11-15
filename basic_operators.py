@@ -1,12 +1,15 @@
 """
 Implementation for basic operators, such as add, subtract, etc.
 """
+
+# TODO: Need to rewrite lexer to handle multi-character tokens for >=, <=
+
+
+
 from collections import namedtuple
 from enum import Enum
 import random
 
-# Operators have
-# String, Precedence, Associativity (may be all LEFT for basic), function,
 from basic_types import lexer_token, assert_syntax, assert_internal, UNARY_MINUS, ARRAY_ACCESS
 
 import basic_expressions
@@ -81,10 +84,6 @@ class ARRAY_ACCESS_MONO_OP(MONO_OP):
         return variable[int(first)] # TODO This will only work for one dimensional arrays, that don't have expressions as subscripts.
 
 
-# class HELPER: # Used by built-in functions.
-#     def __init__(self, x):
-#         self.value = x
-#
 class BINOP(OP):
     def __init__(self, lam=None):
         self._lambda = lam
@@ -128,10 +127,9 @@ class BINOP_MINUS(BINOP_NUM):
         return result
 
 
-# TODO better data structures for operators.
-OpDef = namedtuple('OpDef','text prec cls')
+OpDef = namedtuple('OpDef','text prec cls') # Later, might want to add associativity (L TO R or R TO L)
 
-
+# If any additions, ALSO MUST UPDATE basic_lexer.py:OPERATORS. TODO Fix this.
 class Operators(Enum):
     CLOSE=         OpDef(')',    0,  OP() )
     EQUALS=        OpDef('=',    1,  OP() )
@@ -156,52 +154,12 @@ class Operators(Enum):
 
 
 OP_MAP={k.value.text:k for k in Operators}
-OPERATORS = [k for k in OP_MAP]
+OPERATORS = [k for k in OP_MAP] # TODO This is supposed to replace lexer.OPERATORS, but it's not done yet.
+
 # Internal operations.
 OPERATORS.remove(Operators.ARRAY_ACCESS.value.text)
 OPERATORS.remove(Operators.FUNC.value.text)
 
-# # TODO: Need to rewrite lexer to handle multi-character tokens for >=, <=
-# # ALSO MUST UPDATE basic_lexer.py:OPERATORS
-# class Operators2(Enum):
-#     # In precedence order, for my sanity.
-#     CLOSE = OP() # NOP
-#     EQUALS = 2
-#     MINUS = BINOP_NUM(lambda x, y: x - y)
-#     PLUS = BINOP_STR_NUM(lambda x, y: x + y)
-#     DIV = BINOP_NUM(lambda x, y: x / y)
-#     GT = BINOP_STR_NUM(lambda x, y: x > y) # does basic compare strings? It must!
-#     LT = BINOP_STR_NUM(lambda x, y: x < y)
-#     NE = BINOP_STR_NUM(lambda x, y: x != y)
-#     AND = BINOP(lambda x, y: x and y) # May be semantic differences between python "and" and basic "AND".
-#                                       # Python lets you AND to ints, basic does not. BINOP_BOOL maybe?
-#     OR = BINOP(lambda x, y: x or y)   # Basic only allows "AND" of booleans, I believe.
-#     MUL = BINOP_NUM(lambda x, y: x * y)
-#     EXP = BINOP_NUM(lambda x, y: x ** y)
-#     OPEN = OP() # NOP
-#     FUNC = FUNC_MONO_OP()
-#     UNARY_MINUS = MINUS_MONO_OP()
-#     ARRAY_ACCESS = ARRAY_ACCESS_MONO_OP()
-
-
-# OP_MAP = {
-#     ")": Operators.CLOSE,
-#     "=": Operators.EQUALS,
-#     ">": Operators.GT,
-#     "<": Operators.LT,
-#     "<>": Operators.NE,
-#     "AND": Operators.AND,
-#     "OR": Operators.OR,
-#     "-": Operators.MINUS,
-#     "+": Operators.PLUS,
-#     "/": Operators.DIV,
-#     "*": Operators.MUL,
-#     "^": Operators.EXP,
-#     "(": Operators.OPEN,
-#     "∫": Operators.FUNC,  # Not found in source code, used as an indicator.
-#     UNARY_MINUS: Operators.UNARY_MINUS,  # That's an m-dash.
-#     ARRAY_ACCESS: Operators.ARRAY_ACCESS,
-# }
 
 def get_op_def(operator:str):
     assert_syntax(operator in OP_MAP, F"Invalid operator {operator}")
@@ -225,26 +183,12 @@ def get_op(token):
 
     operator = token.token
     op_def = get_op_def(operator)
-    # assert_syntax(operator in OP_MAP, F"Invalid operator {operator}")
-    # return OP_MAP[operator].value.cls
     return op_def.cls
 
-
-# assert len(PREC_MAP) == len(OP_MAP)
-# assert len(PREC_MAP) == len(Operators.__members__)
-#
-# for op in OP_MAP:
-#     f = str(OP_MAP[op].name)+"="
-#     g = F"'{op}',"
-#     h = F"{PREC_MAP[op]},"
-#     print(F"\t{f:14} ({g:7} {h:3} BINOP('aa') )")
 
 def get_precedence(token:lexer_token):
     if token.type == "function": # make this for all functions, not: and token.token.startswith("FN"):
         return Operators.FUNC.value.prec # PREC_MAP["∫"]
     op_def = get_op_def(token.token)
     return op_def.prec
-    # operator = token.token
-    # assert_syntax(operator in PREC_MAP, F"Invalid operator {operator}")
-    # return PREC_MAP[operator]
 

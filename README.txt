@@ -56,3 +56,6 @@ on program load time. Is this a problem? I'll have to change a few tests, if I d
     self._goto = ControlTransfer(line, offset)
     but it should only be in one place.
     Implement >= and <= and !=? How does basic do != ? Maybe <>
+
+    TODO Fix functions to store there extra into in the symbol table, not in the "op" parameter.
+    TODO Fix the lexer to allow all two character operators, and to require no changes if more are added.

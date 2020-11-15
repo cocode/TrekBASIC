@@ -7,8 +7,9 @@ from basic_types import ste, assert_syntax
 
 
 class SymbolTable:
-    def __init__(self):
+    def __init__(self, scope = None):
         self._symbols = {}
+        self._enclosing_scope = scope
 
     def __len__(self):
         return len(self._symbols)
