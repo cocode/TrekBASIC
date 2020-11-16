@@ -169,6 +169,10 @@ def stmt_let(executor, stmt):
     assign_variable(executor, variable, result)
 
 
+def stmt_clear(executor, stmt):
+    # Clear statement removes all variables.
+    executor.init_symbols()
+
 def stmt_dim(executor, stmt):
     # TODO Handle variables in array dimensions?
     stmts = smart_split(stmt.args.strip(), "(", ")", ",")
@@ -290,6 +294,7 @@ class KB:
 
 
 class Keywords(Enum):
+    CLEAR = KB(stmt_clear)
     DEF = KB(stmt_def) # User defined functions
     DIM = KB(stmt_dim)
     END = KB(stmt_end)
@@ -348,6 +353,8 @@ def tokenize_line(program_line: object) -> ProgramLine:
     :param program_line:
     :return:
     """
+    if len(program_line) == 0:
+        return None
     number, partial = program_line.split(" ", 1)
     assert_syntax(str.isdigit(number), F"Line number is not in correct format: {number}")
     number = int(number)
@@ -371,6 +378,8 @@ def tokenize(program_lines:list[str]) -> list[ProgramLine]:
     last_line = None
     for line in program_lines:
         tokenized_line = tokenize_line(line)
+        if tokenized_line is None:
+            continue    # Ignore blank lines.
         if last_line is not None:
             assert_syntax(tokenized_line.line > last_line, F"Line {tokenized_line.line} is <= the preceding line {line}")
         tokenized_lines.append(tokenized_line)
@@ -412,8 +421,6 @@ class Executor:
     def __init__(self, program, trace=False):
         self._program = program
         self._index = 0
-        self._internal_symbols = SymbolTable()
-        self._symbols = self._internal_symbols.get_nested_scope()
         self._run = False
         self._trace = trace
         self._goto = None
@@ -424,6 +431,15 @@ class Executor:
         self._gosub_stack = []
         self._stmt_index = 0
         self._for_stack = []
+        # PyCharm complains if these are defined anywhere outside of __init__
+        self._internal_symbols = None
+        self._symbols = None
+        self.init_symbols()
+
+    def init_symbols(self):
+        self._internal_symbols = SymbolTable()
+        self._symbols = self._internal_symbols.get_nested_scope()
+
 
     def set_trace(self, value):
         self._trace = value
@@ -622,10 +638,13 @@ class Executor:
 
 
 if __name__ == "__main__":
+    # Makes it to 1320 of superstartrek, and line 20 of startrek.bas
     program = load_program("superstartrek.bas")
+    program = load_program("startrek.bas")
+    program = load_program("simple_test.bas")
     executor = Executor(program, trace=False)
     executor.run_program()
     import pprint
-    pprint.pprint(executor.get_symbols())
+    pprint.pprint(executor._symbols.dump())
 
 

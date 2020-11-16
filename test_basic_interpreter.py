@@ -753,3 +753,12 @@ class Test(TestCase):
             '''PRINT "THIS WON'T WORK"'''
         ]
         self.runit_se(listing)
+
+    def test_clear(self):
+        listing = [
+            '1000 A=3',
+            '1010 CLEAR 1000',
+        ]
+        executor= self.runit(listing)
+        self.assertEqual(0, executor.get_symbol_count())
+        self.assertFalse(executor.is_symbol_defined("A"))
