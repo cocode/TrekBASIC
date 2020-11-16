@@ -819,3 +819,17 @@ class Test(TestCase):
         ]
         executor = self.runit(listing)
         self.assert_value(executor, "Z$", "ABC")
+
+    def test_right(self):
+        listing = [
+            '1540 Z$=RIGHT$("ABCDEFGHI", 3)',
+        ]
+        executor = self.runit(listing)
+        self.assert_value(executor, "Z$", "GHI")
+
+    def test_mid(self):
+        listing = [
+            '1540 Z$=MID$("ABCDEFGHI", 4, 3)',
+        ]
+        executor = self.runit(listing)
+        self.assert_value(executor, "Z$", "DEF")

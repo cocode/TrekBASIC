@@ -466,6 +466,8 @@ class Executor:
         self._internal_symbols.put_symbol("RND", "⌊", SymbolType.FUNCTION, arg=None)
         self._internal_symbols.put_symbol("SGN", "⌊", SymbolType.FUNCTION, arg=None)
         self._internal_symbols.put_symbol("LEFT$", "⌊", SymbolType.FUNCTION, arg=None)
+        self._internal_symbols.put_symbol("RIGHT$", "⌊", SymbolType.FUNCTION, arg=None)
+        self._internal_symbols.put_symbol("MID$", "⌊", SymbolType.FUNCTION, arg=None)
 
         self._run = True
         self._count_lines = 0

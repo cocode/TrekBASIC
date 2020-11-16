@@ -207,7 +207,11 @@ def get_op(token):
         if token.token == "RND":
             return MONO_OP(lambda x: random.random()) # Handles the built-in RND function
         if token.token == "LEFT$":
-            return MONO_OP(lambda x: x[0][:int(x[1])]) # Handles the built-in LEFT$ function
+            return MONO_OP(lambda x: x[0][:int(x[1])])
+        if token.token == "RIGHT$":
+            return MONO_OP(lambda x: x[0][-int(x[1]):])
+        if token.token == "MID$":
+            return MONO_OP(lambda x: x[0][int(x[1])-1:int(x[1])-1+int(x[2])])
         if token.token == "SGN":
             return MONO_OP(lambda x: (x > 0) - (x < 0)) # Handles the built-in SGN function
         op_def = get_op_def("∫") # Handles user defined functions.

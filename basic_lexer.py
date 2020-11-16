@@ -15,7 +15,7 @@ NUMBERS = "0123456789]"
 LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 OPERATORS = "()^*/+-=><,"
 BOOLEAN_OPERATORS=["AND", "OR"]
-BUILT_IN_FUNCTIONS=["INT", "RND", "SGN", "LEFT$"] # TODO get this from the function definitons
+BUILT_IN_FUNCTIONS=["INT", "RND", "SGN", "LEFT$", "RIGHT$", "MID$"] # TODO get this from the function definitons
 #KEYWORDS=["DEF", "DIM", "END", "FOR", "GOTO", "GOSUB", "IF", "INPUT", "LET", "NEXT", "ON", "PRINT", "REM", "RETURN"]
 FN_OPERATORS=["FN"+chr(c) for c in range(ord("A"), ord("Z"))]
 # Operators made from letters, not symbols.
