@@ -176,7 +176,7 @@ class TestExpression(TestCase):
         value = expression.eval(tokens)
         self.assertEqual(-10, value)
 
-    def test_eval_unary_minus9(self):
+    def test_eval_unary_minus10(self):
         tokens = self._lexer.lex("(-7--3)")
         self.assertEqual(7, len(tokens))
         expression = Expression()
