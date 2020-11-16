@@ -88,7 +88,7 @@ class Test(TestCase):
             self.assertEqual(Keywords.LET, results.stmts[i].keyword)
             self.assertEqual(expect[i], results.stmts[i].args)
 
-    def test_token_exp(self):
+    def test_token_exp2(self):
         multi_exp = "T=INT(RND(1)*20+20)*100:T0=T:T9=25+INT(RND(1)*10):D0=0:E=3000:E0=E"
         line = f"370 {multi_exp}"
         results = tokenize_line(line)
@@ -184,6 +184,17 @@ class Test(TestCase):
         executor = self.runit(['100 Z$="Fred"'])
         self.assertEqual(1, executor.get_symbol_count())
         self.assertEqual('Fred', executor.get_symbol("Z$"))
+
+    def test_assignment_1(self):
+        listing = [
+            '100 A=5:B=6',
+            '110 A= A+A',
+            '120 B= B*A',
+        ]
+        executor= self.runit(listing)
+        self.assertEqual(2, executor.get_symbol_count())
+        self.assert_value(executor, "A", 10)
+        self.assert_value(executor, "B", 60)
 
     def test_assignment2(self):
         program = ['100 TOOLONGVARNAME="Fred"']
@@ -364,17 +375,6 @@ class Test(TestCase):
         self.assertEqual(A, 3)
         B = executor.get_symbol("B")
         self.assertEqual(B, 4000)
-
-    def test_assignment(self):
-        listing = [
-            '100 A=5:B=6',
-            '110 A= A+A',
-            '120 B= B*A',
-        ]
-        executor= self.runit(listing)
-        self.assertEqual(2, executor.get_symbol_count())
-        self.assert_value(executor, "A", 10)
-        self.assert_value(executor, "B", 60)
 
 
     def test_gosub(self):
