@@ -710,19 +710,35 @@ class Test(TestCase):
         self.assert_value(executor, "K", 300)
         self.assert_value(executor, "Q", 77)
 
-    # Commenting out for now, as it blocks the tests. I need to get redirection done.
-    # def test_input_1(self):
-    #     listing = [
-    #         '100 INPUT"ENTER YOUR NAME:";A1$',
-    #     ]
-    #     executor, output = self.runit_capture(listing)
-    #     self.assertEqual("ENTER YOUR NAME:", output)
-    #     self.assertEqual('TOM', executor.get_symbol_value("A1$"))
-    #
-    # def test_input_2(self):
-    #     listing = [
-    #         '110 INPUT"ENTER YOUR AGE:";A'
-    #     ]
-    #     executor, output = self.runit_capture(listing)
-    #     self.assertEqual("ENTER YOUR AGE:", output)
-    #     self.assertEqual(3, executor.get_symbol_value("A"))
+    # Disabling for now, as it blocks the tests. I need to get redirection done.
+    if False:
+        def test_input_1(self):
+            listing = [
+                '100 INPUT"ENTER YOUR NAME:";A1$',
+            ]
+            executor, output = self.runit_capture(listing)
+            self.assertEqual("ENTER YOUR NAME:", output)
+            self.assertEqual('TOM', executor.get_symbol_value("A1$"))
+
+        def test_input_2(self):
+            listing = [
+                '110 INPUT"ENTER YOUR AGE:";A'
+            ]
+            executor, output = self.runit_capture(listing)
+            self.assertEqual("ENTER YOUR AGE:", output)
+            self.assertEqual(3, executor.get_symbol_value("A"))
+
+        def test_input_3(self):
+            # You have to type in the answer!!
+            listing = [
+                '110 INPUTW1'
+            ]
+            executor = self.runit(listing)
+            self.assertEqual(91, executor.get_symbol_value("W1"))
+
+    def test_line_numbers(self):
+        # You have to type in the answer!!
+        listing = [
+            '''PRINT "THIS WON'T WORK"'''
+        ]
+        self.runit_se(listing)

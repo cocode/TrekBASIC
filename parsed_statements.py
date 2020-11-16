@@ -60,8 +60,10 @@ class ParsedStatementInput(ParsedStatement):
     def __init__(self, keyword, args):
         super().__init__(keyword, "")
         delim = args.find(";")
-        assert_syntax(delim != -1, "No ; found for INPUT statement")
-        self._prompt = args[:delim].strip()
+        if delim == -1:
+            self._prompt = ""
+        else:
+            self._prompt = args[:delim].strip()
         self._input_var = args[delim+1:].strip()
 
 

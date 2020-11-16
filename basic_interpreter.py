@@ -219,7 +219,8 @@ def stmt_input(executor, stmt):
     is_valid_identifier(var)
     prompt = stmt._prompt
     # Not sure if this can be an expression. None are used in my examples, but why not?
-    prompt = eval_expression(executor._symbols, prompt)
+    if prompt:
+        prompt = eval_expression(executor._symbols, prompt)
     print(prompt, end='')
     result = input()
     if not is_string_variable(var):
@@ -348,6 +349,7 @@ def tokenize_line(program_line: object) -> ProgramLine:
     :return:
     """
     number, partial = program_line.split(" ", 1)
+    assert_syntax(str.isdigit(number), F"Line number is not in correct format: {number}")
     number = int(number)
 
     # Rem commands don't split on colons, other lines do.
@@ -355,7 +357,11 @@ def tokenize_line(program_line: object) -> ProgramLine:
         commands_text = [partial]
     else:
         commands_text = smart_split(partial)
-    list_of_statements = tokenize_statements(commands_text)
+    try:
+        list_of_statements = tokenize_statements(commands_text)
+    except BasicSyntaxError as bse:
+        print(F"Syntax Error in line {number}: {bse.message}")
+        raise bse
     s = ProgramLine(number, list_of_statements, -1)
     return s
 
