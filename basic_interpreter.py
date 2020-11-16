@@ -418,11 +418,18 @@ ControlLocation = namedtuple("ControlLocation", "index offset")
 ForRecord = namedtuple("ForRecord", "var stop step stmt")
 
 class Executor:
-    def __init__(self, program, trace=False):
+    def __init__(self, program:list[ProgramLine], trace=False, stack_trace=False):
+        """
+
+        :param program:
+        :param trace: Print basic line numbers during execution
+        :param stack_trace: Rethrow BasicSyntaxErrors, so we get a stack trace.
+        """
         self._program = program
         self._index = 0
         self._run = False
         self._trace = trace
+        self._stack_trace = stack_trace
         self._goto = None
         # _statement_offset is used when we transfer control into the middle of a line
         # 100 PRINT"BEFORE":GOSUB 110:PRINT"AFTER"
@@ -480,7 +487,8 @@ class Executor:
                     # TODO: This needs a bit more thought. The tests are checking for exceptions,
                     # TODO and don't need the print statement. The user just needs the message printed.
                     print(F"Syntax Error in line {current.line}: {bse.message}")
-                    raise bse
+                    if self._stack_trace:
+                        raise bse
                 except Exception as e:
                     traceback.print_exc()
                     raise BasicInternalError(F"Internal error in line {current.line}: {e}")
