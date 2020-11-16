@@ -68,6 +68,3 @@ on program load time. Is this a problem? I'll have to change a few tests, if I d
     TODO need to make sure we suport get_symbol_count() for nested scopes. But see next item, so maybe not
     TODO Search and destroy for literal strings used for what should be enums.
     TODO what does get_additional do?
-    TODO I need new names! We use 'line' both for the 100 "100 PRINT X", and for the index into the
-         array of lines. (and we use offset for the index into the list of stmts on a line, so we
-         can't use that. Maybe line_number, index_number and offset?

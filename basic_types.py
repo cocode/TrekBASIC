@@ -17,7 +17,7 @@ lexer_token = namedtuple("Token", "token type")
 # next: This is an int that DOES NOT represent the line, it represents an index into the list of lines, or -1
 #       for the last line.
 # TODO Rename to 'ProgramLine'
-statements = namedtuple("Statement", "line stmts next") # TODO Change "next" to "next_offset" for clarity.
+ProgramLine = namedtuple("ProgramLines", "line stmts next") # TODO Change "next" to "next_offset" for clarity.
 
 # Symbol table entry
 # Value - Value of the variable

@@ -7,7 +7,7 @@ from collections import namedtuple
 import sys
 from enum import Enum
 
-from basic_types import statements, lexer_token, BasicSyntaxError, BasicInternalError, assert_syntax, ste, SymbolType
+from basic_types import ProgramLine, lexer_token, BasicSyntaxError, BasicInternalError, assert_syntax, ste, SymbolType
 from parsed_statements import ParsedStatement, ParsedStatementIf, ParsedStatementFor
 from basic_lexer import lexer_token, Lexer, NUMBERS, LETTERS
 from basic_expressions import Expression
@@ -322,19 +322,6 @@ class Keywords(Enum):
     RETURN = KB(stmt_return)
 
 
-class ProgramLine:
-    """
-    Represents one line of a program. A line may have multiple statements:
-        100 PRINT X:IF X>3:THEN Y=7: GOTO 100
-    """
-    def __init__(self):
-        self._statments = []
-        self._conditional_statements = []
-
-    def append(self, statement):
-        self._statements.append(statement)
-
-
 def tokenize_statements(commands_text:str):
     list_of_statements = []
     options = [cmd for cmd in Keywords.__members__.values()]
@@ -364,7 +351,7 @@ def tokenize_statements(commands_text:str):
 
     return list_of_statements
 
-def tokenize_line(program_line: object) -> statements:
+def tokenize_line(program_line: object) -> ProgramLine:
     """
     Converts the line into a partially digested form. tokenizing basic is mildly annoying,
     as there may not be a delimiter between the cmd and the args. Example:
@@ -386,11 +373,11 @@ def tokenize_line(program_line: object) -> statements:
     else:
         commands_text = smart_split(partial)
     list_of_statements = tokenize_statements(commands_text)
-    s = statements(number, list_of_statements, -1)
+    s = ProgramLine(number, list_of_statements, -1)
     return s
 
 
-def tokenize(program_lines:list[str]) -> list[statements]:
+def tokenize(program_lines:list[str]) -> list[ProgramLine]:
     tokenized_lines = []
     last_line = None
     for line in program_lines:
@@ -404,10 +391,10 @@ def tokenize(program_lines:list[str]) -> list[statements]:
     finished_lines = []
     if len(tokenized_lines): # Deal with zero length files.
         for i in range(len(tokenized_lines)-1):
-            finished_lines.append(statements(tokenized_lines[i].line,
+            finished_lines.append(ProgramLine(tokenized_lines[i].line,
                                              tokenized_lines[i].stmts,
                                              i+1))
-        finished_lines.append(statements(tokenized_lines[-1].line,
+        finished_lines.append(ProgramLine(tokenized_lines[-1].line,
                                          tokenized_lines[-1].stmts,
                                          None))
     return finished_lines
