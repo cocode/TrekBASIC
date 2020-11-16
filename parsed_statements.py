@@ -9,6 +9,15 @@ class ParsedStatement:
     Base class for a statement that requires no extra processing.
     """
     def __init__(self, keyword, args):
+        """
+        Represents a (partially, optianally) pre-processed form of a statement.
+
+        We should be doing more processing on program load, so as to do less when executing.
+        For example, we should tokenize expressions here, so we don't have to do it every
+        time we execute the line.
+        :param keyword: The keyword for the line, for example: IF
+        :param args: Any unparsed arguments. ParsedSatement subclasses may consume this.
+        """
         self.keyword = keyword
         self.args = args
 
