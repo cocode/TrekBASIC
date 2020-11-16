@@ -20,11 +20,14 @@ STATEMENTS: "PRINT X" and "GOTO 100"
 KEYWORDS "PRINT", and "GOTO"
 
 TODO on interpreter.
-0. Support dialects. At least the two star trek programs I have.
-1. Starting to parse some statements (like FOR) at load time. Should lex any expressions at load time.
-2. Need tuples for function calls FNA(x,y,z) and array subscripts A(1,2,3)
-    0.0 Note that these subscripts can be expressions.
-    1. Current function and array code only works for single, literal values.
+0. Add support for automatically understanding new two-character operators.
+    FIX lexer.
+1. Fully support two-dimensional arrays.
+    A. Need tuples for function calls FNA(x,y,z) and array subscripts A(1,2,3)
+        0 Note that these subscripts can be expressions.
+        1. Current function and array code only works for single, literal values.
+2. Support dialects. At least the two star trek programs I have. (basic_dialects.py)
+3. Starting to parse some statements (like FOR) at load time. Should lex any expressions at load time.
 3. Boolean expressions?
 4. built in functions: ABS SGN SQR EXP LOG LOG10
 5. String functions, like LEFT, LEN, etc.
@@ -36,11 +39,12 @@ TODO on interpreter.
 10. Write a command line shell, like we used to have with load and run (no editor, though), and maybe breakpoints
    Should we precompute expressions to ASTs on load? - Yes, but not done yet.
 11. Split tests, tests of basic, vs. tests of internal functions.
-
-   It would be nice to have a BASIC command line environment.
+12. Rename OP classes in basic operations to not be all upppercase.
+13. It would be nice to have a BASIC command line environment.
     LOAD, RUN, BREAKPOINT
     Implement >= and <= and !=? How does basic do != ? Maybe <>
-
+14. Split stmts out of basic_interpreter.
+    A. One for Exector, One for Statements, one for printing.
     TODO Fix functions to store their extra into in the symbol table, not in the "op" parameter.
         1. store data in symbol table
         2. Use it
