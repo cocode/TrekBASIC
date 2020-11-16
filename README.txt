@@ -20,41 +20,24 @@ STATEMENTS: "PRINT X" and "GOTO 100"
 KEYWORDS "PRINT", and "GOTO"
 
 TODO on interpreter.
-Use lambda with BINOP to cut the number of OP classes 90%
-Is it ok to do some processing at load time? If I do, then some errors may raise their exception
-on program load time. Is this a problem? I'll have to change a few tests, if I do, like "if with no then"
-0. Need tuples for function calls FNA(x,y,z) and array subscripts A(1,2,3)
+0. Support dialects. At least the two star trek programs I have.
+1. Starting to parse some statements (like FOR) at load time. Should lex any expressions at load time.
+2. Need tuples for function calls FNA(x,y,z) and array subscripts A(1,2,3)
     0.0 Note that these subscripts can be expressions.
     1. Current function and array code only works for single, literal values.
-1. Should probably split symbol table from executor. It would cut circular references. DONE
-2. Expressions will probably be the hardest
-    a. Expression evaulation DONE
-    b. Expression assignment DONE - mostly,
-        c. Array assignment.
-    c. Support parens! DONE
-    d. Unary minus - Currently causing problems.
-3. Built in functions.
-    INT, RND - DONE
-    currently, we pass symbols in to the Expression, but that means they bypass get_symbol, which
-    can hide format changes in the symbol table, like I just made.
-4. Convert the program execution to a class.
-5. Write smaller test programs.
-6. Implement subroutines (GOTO)
-7. Implement FOR loops
-8. Write "renum" utility. Split all multiline statements, and renumber at increments of 10
+3. Boolean expressions?
+4. built in functions: ABS SGN SQR EXP LOG LOG10
+5. String functions, like LEFT, LEN, etc.
+6. Convert the program execution to a class.
+7. Write smaller test programs.
+8. Implement FOR loops
+9. Write "renum" utility. Split all multiline statements, and renumber at increments of 10
    Then reformat the startrek source.
-
-   write exponentiation test 2**3**2
-   I THINK DONE fix all assertraises to use "with" style
-   DONE  assert_syntax should not take a line. The line is from the executor, and it will catch and add the line
-   Should we precompute expressions to ASTs on load?
+10. Write a command line shell, like we used to have with load and run (no editor, though), and maybe breakpoints
+   Should we precompute expressions to ASTs on load? - Yes, but not done yet.
 
    It would be nice to have a BASIC command line environment.
     LOAD, RUN, BREAKPOINT
-   Use ControlLocation class for any reference to control location, including execution.
-   Should have a function for doing a goto. It's only one line now:
-    self._goto = ControlLocation(index, offset)
-    but it should only be in one place.
     Implement >= and <= and !=? How does basic do != ? Maybe <>
 
     TODO Fix functions to store their extra into in the symbol table, not in the "op" parameter.
@@ -65,6 +48,5 @@ on program load time. Is this a problem? I'll have to change a few tests, if I d
         pass that information into FUNC_MONO_OP
     TODO Fix the lexer to allow all two character operators, and to require no changes if more are added.
     TODO Replace namedtuple for ste with dataclass (maybe)
-    TODO need to make sure we suport get_symbol_count() for nested scopes. But see next item, so maybe not
     TODO Search and destroy for literal strings used for what should be enums.
     TODO what does get_additional do?
