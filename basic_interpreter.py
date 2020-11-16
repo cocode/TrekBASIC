@@ -489,6 +489,7 @@ class Executor:
                     print(F"Syntax Error in line {current.line}: {bse.message}")
                     if self._stack_trace:
                         raise bse
+                    self._run = False
                 except Exception as e:
                     traceback.print_exc()
                     raise BasicInternalError(F"Internal error in line {current.line}: {e}")
