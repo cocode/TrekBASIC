@@ -11,8 +11,13 @@ ARRAY_ACCESS="@"
 lexer_token = namedtuple("Token", "token type")
 #statement = namedtuple("Subs", "keyword args")
 
-# Statements has a line number, and a list of statement.
-statements = namedtuple("Statement", "line stmts next")
+# Represents one line in a basic program, which may be composed of multiple statements
+# line: The line of the statement, 100 in 100 PRINT:PRINT:END
+# stmts: A list of statements
+# next: This is an int that DOES NOT represent the line, it represents an index into the list of lines, or -1
+#       for the last line.
+# TODO Rename to 'ProgramLine'
+statements = namedtuple("Statement", "line stmts next") # TODO Change "next" to "next_offset" for clarity.
 
 # Symbol table entry
 # Value - Value of the variable

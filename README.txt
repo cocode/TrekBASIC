@@ -51,9 +51,9 @@ on program load time. Is this a problem? I'll have to change a few tests, if I d
 
    It would be nice to have a BASIC command line environment.
     LOAD, RUN, BREAKPOINT
-   Use ControlTransfer class for any reference to control location, including execution.
+   Use ControlLocation class for any reference to control location, including execution.
    Should have a function for doing a goto. It's only one line now:
-    self._goto = ControlTransfer(line, offset)
+    self._goto = ControlLocation(index, offset)
     but it should only be in one place.
     Implement >= and <= and !=? How does basic do != ? Maybe <>
 
@@ -67,3 +67,7 @@ on program load time. Is this a problem? I'll have to change a few tests, if I d
     TODO Replace namedtuple for ste with dataclass (maybe)
     TODO need to make sure we suport get_symbol_count() for nested scopes. But see next item, so maybe not
     TODO Search and destroy for literal strings used for what should be enums.
+    TODO what does get_additional do?
+    TODO I need new names! We use 'line' both for the 100 "100 PRINT X", and for the index into the
+         array of lines. (and we use offset for the index into the list of stmts on a line, so we
+         can't use that. Maybe line_number, index_number and offset?

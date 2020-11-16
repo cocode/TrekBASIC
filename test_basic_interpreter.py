@@ -67,7 +67,11 @@ class Test(TestCase):
         self.assertEqual(820, results.line)
         self.assertEqual(1, len(results.stmts))
         self.assertEqual(Keywords.FOR, results.stmts[0].keyword)
-        self.assertEqual("I=1TO8", results.stmts[0].args)
+        p = results.stmts[0]
+        self.assertEqual("I", p._index_clause)
+        self.assertEqual("1", p._start_clause)
+        self.assertEqual("8", p._to_clause)
+        self.assertEqual("1", p._step_clause)
 
     def test_token_exp(self):
         multi_exp = "T=INT(RND(1)*20+20)*100:T0=T:T9=25+INT(RND(1)*10):D0=0:E=3000:E0=E"
@@ -139,10 +143,6 @@ class Test(TestCase):
         self.assertTrue(isinstance(results, statements))
         self.assertEqual(530, results.line)
         self.assertEqual(4, len(results.stmts))
-
-        result = results.stmts[0]
-        self.assertEqual(Keywords.FOR, result.keyword)
-        self.assertEqual('I=1TO9', result.args)
 
         result = results.stmts[1]
         self.assertEqual(Keywords.LET, result.keyword)
@@ -627,3 +627,46 @@ class Test(TestCase):
         self.assert_value(executor, "C", 11)
         self.assertFalse(executor.is_symbol_defined("D"))
 
+    # For loop tests
+    #   Simple 1..10
+    #   Nested
+    #   FOR and NEXT in the middle of different lines.
+    #   Check the we detect mismatch loop indices.
+    #   STEP other than 1
+    # TODO
+    # O. Need some way to tell if this is the first time I've started the for, or if we are comnig back from the next!
+         # Could split it into two statements: I=1:FOR TO 10 STEP 1 and have the next to the modified FOR stmt.
+    # 1. add a for / next stack to executor
+    # 2. add a for method to start a for to the executor
+    # 3. add a next method to the exector
+    #    add a custom statement parser for FOR.
+    # 4. Make stmt_for and stmt_next
+    # 5. start, and and step can all be expressions.
+    # 6. According to quitebasic.com, you can change the step and end values while the loop is running, but not the start.
+#     10 LET j=10
+# 100 for i = 1 to j step 2
+# 110 LET j = j + 1
+# 115 print i;" ";j
+# 120 next i
+    def test_for(self):
+        listing = [
+            '100 J=0:FOR I=1TO10',
+            '110 J=J+2',
+            '120 NEXTI',
+        ]
+        executor = self.runit(listing)
+        self.assert_value(executor, "I", 11)
+        self.assert_value(executor, "J", 20)
+
+    def test_get_next_stmt(self):
+        listing = [
+            '100 J=0:FOR I=1TO10',
+            '110 J=J+2',
+            '120 NEXTI',
+        ]
+        program = tokenize(listing)
+        self.assertEqual(len(listing), len(program))
+        executor = Executor(program)
+        ct = executor.get_next_stmt()
+        self.assertEqual(0, ct.index)
+        self.assertEqual(1, ct.offset)

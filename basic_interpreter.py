@@ -2,12 +2,13 @@
 Basic interpreter to run superstartrek.
 It's not intended (yet) to run ANY basic program.
 """
+import traceback
 from collections import namedtuple
 import sys
 from enum import Enum
 
 from basic_types import statements, lexer_token, BasicSyntaxError, BasicInternalError, assert_syntax, ste, SymbolType
-from parsed_statements import ParsedStatement, ParsedStatementIf
+from parsed_statements import ParsedStatement, ParsedStatementIf, ParsedStatementFor
 from basic_lexer import lexer_token, Lexer, NUMBERS, LETTERS
 from basic_expressions import Expression
 from basic_symbols import SymbolTable
@@ -75,7 +76,7 @@ def stmt_print(executor, stmt):
 def stmt_goto(executor, stmt):
     destination = stmt.args.strip()
     assert_syntax(str.isdigit(destination), F"Goto target is not an int ")
-    executor.goto(int(destination))
+    executor.goto_line(int(destination))
     return None
 
 
@@ -86,9 +87,25 @@ def stmt_gosub(executor, stmt):
     return None
 
 
-def stmt_for(executor, stmt):
-    pass
-    #raise Exception("Not implmented")
+def stmt_for(executor, stmt:ParsedStatementFor):
+    var = stmt._index_clause
+    start = stmt._start_clause
+    start = eval_expression(executor, start)
+    is_valid_identifier(var)
+    executor.put_symbol(var, start, SymbolType.VARIABLE, None)
+    executor.do_for(var, start, stmt._to_clause, stmt._step_clause, executor.get_next_stmt())
+
+
+def stmt_next(executor, stmt):
+    index = stmt.args.strip()
+    var, to_clause, step_clause, loop_top = executor.peek_next(index)
+    value = executor.get_symbol(var)
+    to_value = eval_expression(executor._symbols, to_clause)
+    step_value = eval_expression(executor._symbols, step_clause)
+    value = value + step_value
+    executor.put_symbol(var, value, SymbolType.VARIABLE, None)
+    if value <= to_value:
+        executor._goto_location(loop_top)
 
 
 def is_valid_identifier(variable:str):
@@ -194,8 +211,6 @@ def stmt_dim(executor, stmt):
             value = [[0] * size_y] * size_x
         executor.put_symbol(name, value, SymbolType.ARRAY, arg=None) # Not right, but for now.
 
-def stmt_next(executor, stmt):
-    pass
 
 def stmt_if(executor, stmt):
     """
@@ -210,7 +225,7 @@ def stmt_if(executor, stmt):
     e = Expression()
     result = e.eval(tokens, symbols=executor._symbols)
     if not result:
-        executor.goto_next()
+        executor.goto_next_line()
 
 
 def stmt_input(executor, stmt):
@@ -269,6 +284,15 @@ def parse_args_if(cmd, text):
     p = ParsedStatementIf(cmd, text)
     return p
 
+def parse_args_for(cmd, text):
+    """
+    Parse the args of an if statement
+    :param text:
+    :return:
+    """
+    p = ParsedStatementFor(cmd, text)
+    return p
+
 class KB:
     def __init__(self, exec, parse=parse_args):
         self._parser = parse
@@ -285,7 +309,7 @@ class Keywords(Enum):
     DEF = KB(stmt_def) # User defined functions
     DIM = KB(stmt_dim)
     END = KB(stmt_end)
-    FOR = KB(stmt_for)
+    FOR = KB(stmt_for, parse_args_for)
     GOTO = KB(stmt_goto)
     GOSUB = KB(stmt_gosub)
     IF = KB(stmt_if, parse_args_if)
@@ -398,13 +422,20 @@ def load_program(program_filename):
 
 
 # Target of a control transfer
-ControlTransfer = namedtuple("ControlTransfer", "line offset")
-
+# index: The index into the Executor._program list
+# offset: The index into the Exector._program[x].stmts list.
+ControlLocation = namedtuple("ControlLocation", "index offset")
+# var: the index variable
+# stop: The ending value, and expression
+# step: The step, and expression. both expressions can change during loop execution
+# stmt: Used to tell if we are initializing the loop, or looping
+# Note: we don't need to save "start" it's only used on setup.
+ForRecord = namedtuple("ForRecord", "var stop step stmt")
 
 class Executor:
     def __init__(self, program, trace=False):
         self._program = program
-        self._current = program[0]
+        self._index = 0
         self._internal_symbols = SymbolTable()
         self._symbols = self._internal_symbols.get_nested_scope()
         self._run = False
@@ -416,6 +447,7 @@ class Executor:
         self._statement_offset = 0
         self._gosub_stack = []
         self._stmt_index = 0
+        self._for_stack = []
 
     def set_trace(self, value):
         self._trace = value
@@ -424,6 +456,10 @@ class Executor:
         self._run = False
 
     def run_program(self):
+        # Vocabulary I will use going forward:
+        # LINE refers to a basic line number
+        # INDEX refers to the index into the list of LINES (self._program)
+        # OFFSET refers to the index into the current LINE's list of statements.
         self._internal_symbols.put_symbol("INT", "⌊", SymbolType.FUNCTION, arg=lambda x : int(x))
         self._internal_symbols.put_symbol("RND", "⌊", SymbolType.FUNCTION, arg=lambda x : int(x))
 
@@ -432,11 +468,12 @@ class Executor:
         self._count_stmts = 0
         self._statement_offset = 0
         while self._run:
+            current = self._program[self._index]
             self._count_lines += 1
             if self._trace:
-                print(F"{self._current.line}: ")
+                print(F"{current.line}: ")
             # Get the statements on the current line
-            stmts = self._current.stmts
+            stmts = current.stmts
             for self._stmt_index in range(self._statement_offset, len(stmts)):
                 s = stmts[self._stmt_index]
                 self._count_stmts += 1
@@ -448,27 +485,51 @@ class Executor:
                 except BasicSyntaxError as bse:
                     # TODO: This needs a bit more thought. The tests are checking for exceptions,
                     # TODO and don't need the print statement. The user just needs the message printed.
-                    print(F"Syntax Error in line {self.get_line().line}: {bse.message}")
+                    print(F"Syntax Error in line {current.line}: {bse.message}")
                     raise bse
                 except Exception as e:
-                    raise BasicInternalError(F"Internal error in line {self.get_line()}: {e}")
+                    traceback.print_exc()
+                    raise BasicInternalError(F"Internal error in line {current.line}: {e}")
                 if not self._run:
                     break # Don't do the rest of the line
                 if self._goto: # If a goto has happened.
                     if self._trace:
-                        print(F"\tGOTO/GOSUB/RETURN from line {self._current.line} TO {self._goto}.")
+                        print(F"\tGOTO/GOSUB/RETURN from line {current.line}:{self._stmt_index} TO {self._goto}.")
 
-                    self._current = self._goto.line
+                    self._index = self._goto.index
                     self._statement_offset = self._goto.offset
                     self._goto = None
                     # Note: Have to check for a goto within a line! 100 print:print:goto 100:print "shouldn't see this"
                     break # This will skip the "else" which does the normal "step to next line"
             else:
-                if self._current.next is None:
+                if current.next is None:
                     self._run = False
                 else:
-                    self._current = self._program[self._current.next]
+                    self._index = current.next
                 self._statement_offset = 0
+
+    def do_for(self, var, start, stop, step, stmt):
+        # Note that var and start are evaluated before beginning, but stop and step
+        # get re-evaluated at each loop
+        assert_syntax(len(self._for_stack) < 1000, "FORs nested too deeply")
+        self._for_stack.append(ForRecord(var, stop, step, stmt))
+
+    def peek_next(self, var):
+        """
+        Checks to see if we are on the correct next, and get
+        :param var:
+        :return:
+        """
+        assert_syntax(len(self._for_stack) > 0, "NEXT without FOR")
+        for_record = self._for_stack[-1]
+        assert_syntax(for_record.var==var, F"Wrong NEXT. Expected {for_record.var}, got {var}")
+        return for_record
+
+
+    def do_next(self, var):
+        assert_syntax(len(self._for_stack) > 0, "NEXT without FOR")
+        for_record = self._for_stack.pop()
+        assert_syntax(for_record.var==var, F"Wrong NEXT. Expected {for_record.var}, got {var}")
 
     def get_symbol_count(self):
         """
@@ -481,43 +542,79 @@ class Executor:
         # TODO Maybe check is_valid_variable here? Have to allow user defined functions, and built-ins, though.
         self._symbols.put_symbol(symbol, value, symbol_type, arg)
 
-    def get_line(self):
-        return self._current
+    def _find_line(self, line_number):
+        for index, possible in enumerate(self._program):
+            if possible.line == line_number:
+                return ControlLocation(index=index, offset=0)
+        raise BasicSyntaxError(F"No line {line_number} found.")
 
-    def goto(self, line):
-        for possible in self._program:
-            if possible.line == line:
-                self._goto = ControlTransfer(line=possible, offset=0)
-                return
-        raise BasicSyntaxError(F"No line {line} found to GOTO.")
+    def goto_line(self, line):
+        target = self._find_line(line)
+        self._goto_location(target)
 
-    def gosub(self, line):
-        for possible in self._program:
-            if possible.line == line:
-                self._gosub_stack.append((self._current, self._stmt_index+1))
-                self._goto = ControlTransfer(line=possible, offset=0)
-                return
-        raise BasicSyntaxError(F"No line {line} found to GOSUB.")
+    def _goto_location(self, ct):
+        """
+        This does an internal control transfer. It uses an index into the self._program list,
+        rather than a BASIC line number.
+
+        Note this does not change the location directly, it sets a flag so they will be changed later.
+        :param ct:
+        :return:
+        """
+        assert ControlLocation == type(ct)
+        self._goto = ct
+
+    def gosub(self, line_number):
+        go_to = self._find_line(line_number)
+        return_to = self.get_next_stmt()
+        self._gosub_stack.append(return_to)
+        self._goto_location(go_to)
+        return
 
     def do_return(self):
         assert_syntax(len(self._gosub_stack), "RETURN without GOSUB")
-        line, offset = self._gosub_stack.pop()
-        self._goto = ControlTransfer(line, offset)
+        return_to = self._gosub_stack.pop()
+        self._goto_location(return_to)
         return
 
-    def goto_next(self):
+    def get_next_stmt(self):
+        """
+        Get a pointer to the next statement that would normally be executed.
+        This is the next statement, if there are more statements on this line,
+        or the next line.
+        This is used it for loops to set where the NEXT will return to
+        GOSUB should also use this, but don't yet.
+        :return: ControlLocation Object, pointing to the next statement.
+        """
+        # 'line' refers to an index into the self._program list, not a basic line number.
+        current_index = self._index
+        current_offset = self._stmt_index
+        current_offset += 1
+        if current_offset >= len(self._program[current_index].stmts):
+            current_index = self._program[current_index].next
+            current_offset = 0
+        return ControlLocation(current_index, current_offset)
+
+    def _get_next_line(self):
+        next_index = self._program[self._index].next
+        if next_index is None:
+            return None
+
+        return ControlLocation(next_index, 0)
+
+    def goto_next_line(self):
         """
         This is used by "IF ... THEN...", if the condition is false. It moves us to the next line, instead
         of continuing with the THEN clause.
         :param line:
         :return:
         """
-        next = self._current.next
-        if next is None:
+        location = self._get_next_line()
+        if location is None:
             self._run = False
-        else:
-            line = self._program[next].line
-            self.goto(line)
+            return
+
+        self._goto_location(location) # why do we need to hunt for the line? We know the index, and can go directly.
 
     def is_symbol_defined(self, symbol):
         """
@@ -526,7 +623,10 @@ class Executor:
         """
         return self._symbols.is_symbol_defined(symbol)
 
-    def get_symbol(self, symbol):
+    def get_symbol(self, symbol): # TODO Delete this. use get_symbol_value
+        return self.get_symbol_value(symbol)
+
+    def get_symbol_value(self, symbol):
         """
         :param symbol:
         :return:

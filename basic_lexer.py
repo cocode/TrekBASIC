@@ -61,6 +61,8 @@ class Lexer:
         index = 0
 
         def cur():
+            if text is None:
+                assert(0)
             if index == len(text):
                 return None
             return text[index]

@@ -2,6 +2,8 @@
 This file contains the classes used to represent parsed statements.
 """
 from basic_types import assert_syntax
+
+
 class ParsedStatement:
     """
     Base class for a statement that requires no extra processing.
@@ -27,3 +29,24 @@ class ParsedStatementIf(ParsedStatement):
 
     def get_additional(self):
         return self._additional
+
+class ParsedStatementFor(ParsedStatement):
+    """
+    Base class for a statement that has been processed.
+    """
+    def __init__(self, keyword, args):
+        super().__init__(keyword, "")
+        eq = args.find("=")
+        to = args.find("TO")
+        step = args.find("STEP")
+        assert_syntax(eq != -1, "No = found for FOR")
+        assert_syntax(to != -1, "No TO found for FOR")
+        self._index_clause = args[:eq].strip()
+        self._start_clause = args[eq+1:to].strip()
+        end_to = step if step != -1 else None
+        self._to_clause = args[to+2:end_to].strip()
+        if step == -1:
+            self._step_clause = '1'
+        else:
+            self._step_clause = args[step+4:].strip()
+
