@@ -542,9 +542,11 @@ class Test(TestCase):
             '100 R1=1.0',
             '110 K3=-1',
             '120 IFR1>.98THENK3=12',
+            '130 IFR1<.98THENK4=15',
         ]
         executor= self.runit(listing)
         self.assert_value(executor,"K3", 12)
+        self.assertFalse(executor.is_symbol_defined("K4"))
 
     def test_if2(self):
         # TODO we don't handle nested if thens
@@ -698,6 +700,25 @@ class Test(TestCase):
         ]
         executor = self.runit(listing)
         self.assert_value(executor, "K", 300)
+
+    def test_on_goto_2(self):
+        listing = [
+            '100 Z4=4:Z5=8',
+            '9030 IFZ5<=4THENONZ4GOTO9040,9050,9060,9070,9080,9090,9100,9110',
+            '9035 GOTO9120',
+            '9040 G2$="ANTARES":GOTO9210',
+            '9050 G2$="RIGEL":GOTO9210',
+            '9060 G2$="PROCYON":GOTO9210',
+            '9070 G2$="VEGA":GOTO9210',
+            '9080 G2$="CANOPUS":GOTO9210',
+            '9090 G2$="ALTAIR":GOTO9210',
+            '9100 G2$="SAGITTARIUS":GOTO9210',
+            '9110 G2$="POLLUX":GOTO9210',
+            '9120 REM',
+            '9210 END'
+        ]
+        executor = self.runit(listing)
+        self.assertFalse(executor.is_symbol_defined("G2$"))
 
     def test_on_gosub(self):
         listing = [

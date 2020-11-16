@@ -156,7 +156,9 @@ class Operators(Enum):
     COMMA=         OpDef(',',    0.5,  BINOP_COMMA() )
     EQUALS=        OpDef('=',    1,  OP() )
     GT=            OpDef('>',    3,  BINOP_STR_NUM(lambda x, y: x > y))
+    GTE=           OpDef('>=',   3,  BINOP_STR_NUM(lambda x, y: x >= y))
     LT=            OpDef('<',    3,  BINOP_STR_NUM(lambda x, y: x < y))
+    LTE=           OpDef('<=',   3,  BINOP_STR_NUM(lambda x, y: x <= y))
     NE=            OpDef('<>',   3,  BINOP_STR_NUM(lambda x, y: x != y))
     # May be semantic differences between python "and" and basic "AND".
     # Python lets you AND to ints, basic does not. BINOP_BOOL maybe?

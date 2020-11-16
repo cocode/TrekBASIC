@@ -108,9 +108,15 @@ class Lexer:
                         yield lexer_token(found, "id")
                 elif c in OPERATORS:
                     first = consume()
-                    if cur() == ">":
+                    if first == "<" and cur() == ">":
                         consume()
                         yield lexer_token("<>", "op")
+                    elif first == "<" and cur() == "=":
+                        consume()
+                        yield lexer_token("<=", "op")
+                    elif first == ">" and cur() == "=":
+                        consume()
+                        yield lexer_token(">=", "op")
                     else:
                         yield lexer_token(first, "op")
                 elif c in NUMBERS or c == '.':
