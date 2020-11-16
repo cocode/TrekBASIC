@@ -55,3 +55,10 @@ TODO on interpreter.
     TODO Replace namedtuple for ste with dataclass (maybe)
     TODO Search and destroy for literal strings used for what should be enums.
     TODO what does get_additional do?
+
+Is comma a right associative operator that produces an array (or tuple, but it gets modified, or a new one created
+1,2 -> (1,2)
+3,(1,2) -> (3,1,2)
+Maybe move the operators enum to it's own file, so i t has no dependencies, and then use a dict
+for the mapping.
+could also move the lexing to parsed_ststements, and then basicopenarots wouldn;t ned the lexer
