@@ -800,7 +800,22 @@ class Test(TestCase):
         listing = [
             '1030 K3=0',
             '1540 IFK3=0THEN1590',
+            '1550 K3=9',
             '1590 END'
         ]
         executor = self.runit(listing)
-        #self.assert_value(executor, "B", 0)
+        self.assert_value(executor, "K3", 0)
+
+    def test_int_dup(self):
+        listing = [
+            '1030 I=INT(10.5)',
+        ]
+        executor = self.runit(listing)
+        self.assert_value(executor, "I", 10)
+
+    def test_left(self):
+        listing = [
+            '1540 Z$=LEFT$("ABCDEFGHI", 3)',
+        ]
+        executor = self.runit(listing)
+        self.assert_value(executor, "Z$", "ABC")

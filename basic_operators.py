@@ -130,12 +130,12 @@ class BINOP_STR_NUM(BINOP):
     """
     def check_args(self, stack):
         super().check_args(stack)
-        assert_syntax(stack[-1].type == "num" or stack[-1].type == "str", "Operand not string or number for '+'")
-        assert_syntax(stack[-2].type == "num" or stack[-2].type == "str", "Operand not string or number for '+'")
+        assert_syntax(stack[-1].type == "num" or stack[-1].type == "str", "Operand not string or number.'")
+        assert_syntax(stack[-2].type == "num" or stack[-2].type == "str", "Operand not string or number.")
         assert_syntax(stack[-1].type == stack[-2].type, "Operands don't match (string vs number) for '+'")
 
 
-class BINOP_COMMA(BINOP_STR_NUM):
+class BINOP_COMMA(BINOP):
     def eval2(self, first, second):
         if type(first) is not list:
             first = [first]
@@ -198,12 +198,18 @@ def get_op(token):
     :return: An instance of a class that handles that operation.
     """
     if token.type == SymbolType.FUNCTION:# and token.token.startswith("FN"):
+        # To add another internal function.
+        # 1. Add it here.
+        # 2. Add it to basic_lexer.BUILT_IN_FUNCTIONS
+        # 3. Add it to the list of internal functions in basic_interpreter.Executor.run_program
         if token.token == "INT":
             return MONO_OP(lambda x: int(x)) # Handles the built-in INT function # TODO we also define the functions in Excutor.
         if token.token == "RND":
             return MONO_OP(lambda x: random.random()) # Handles the built-in RND function
+        if token.token == "LEFT$":
+            return MONO_OP(lambda x: x[0][:int(x[1])]) # Handles the built-in LEFT$ function
         if token.token == "SGN":
-            return MONO_OP(lambda x: (x > 0) - (x < 0)) # Handles the built-in RND function
+            return MONO_OP(lambda x: (x > 0) - (x < 0)) # Handles the built-in SGN function
         op_def = get_op_def("∫") # Handles user defined functions.
         return op_def.cls
 
