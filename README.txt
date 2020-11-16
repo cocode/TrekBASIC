@@ -35,6 +35,7 @@ TODO on interpreter.
    Then reformat the startrek source.
 10. Write a command line shell, like we used to have with load and run (no editor, though), and maybe breakpoints
    Should we precompute expressions to ASTs on load? - Yes, but not done yet.
+11. Split tests, tests of basic, vs. tests of internal functions.
 
    It would be nice to have a BASIC command line environment.
     LOAD, RUN, BREAKPOINT

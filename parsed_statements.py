@@ -64,3 +64,30 @@ class ParsedStatementInput(ParsedStatement):
         self._prompt = args[:delim].strip()
         self._input_var = args[delim+1:].strip()
 
+
+class ParsedStatementOnGoto(ParsedStatement):
+    """
+    Handles ON X GOTO 100,200 as well as ON X GOSUB 100,200,300
+    """
+    def __init__(self, keyword, args):
+        super().__init__(keyword, "")
+
+        delim = args.find("GOTO")
+        self._op = "GOTO"
+        if delim == -1:
+            delim = args.find("GOSUB")
+            self._op = "GOSUB"
+
+        assert_syntax(delim != -1, F"No GOTO/GOSUB found for ON statement")
+        self._expression = args[:delim].strip()
+        lines = args[delim+len(self._op):].strip()
+        lines = lines.split(",")
+        lines2 = []
+        for line in lines:
+            line = line.strip()
+            assert_syntax(str.isdigit(line), F"Invalid line {line} for target of ON GOTO/GOSUB")
+            line = int(line)
+            lines2.append(line)
+        self._target_lines = lines2
+
+

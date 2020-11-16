@@ -8,7 +8,7 @@ import sys
 from enum import Enum
 
 from basic_types import ProgramLine, lexer_token, BasicSyntaxError, BasicInternalError, assert_syntax, ste, SymbolType
-from parsed_statements import ParsedStatement, ParsedStatementIf, ParsedStatementFor
+from parsed_statements import ParsedStatement, ParsedStatementIf, ParsedStatementFor, ParsedStatementOnGoto
 from parsed_statements import ParsedStatementInput
 from basic_lexer import lexer_token, Lexer, NUMBERS, LETTERS
 from basic_expressions import Expression
@@ -254,7 +254,19 @@ def stmt_input(executor, stmt):
     executor.put_symbol(var, result, SymbolType.VARIABLE, None)
 
 def stmt_on(executor, stmt):
-    pass
+    var = stmt._expression
+    op = stmt._op
+    result = eval_expression(executor._symbols, var)
+    assert_syntax(type(result) == int or type(result) == float, "Expression not numeric in ON GOTO/GOSUB")
+    result = int(result) - 1 # Basic is 1-based.
+    assert_syntax(result < len(stmt._target_lines), "No target for value of {result} in ON GOTO/GOSUB")
+    if op == "GOTO":
+        executor.goto_line(stmt._target_lines[result])
+    elif op == "GOSUB":
+        executor.gosub(stmt._target_lines[result])
+    else:
+        assert_syntax(False, "Bad format for ON statement.")
+
 
 def stmt_end(executor, stmt):
     print("Ending program")
@@ -314,7 +326,7 @@ class Keywords(Enum):
     INPUT = KB(stmt_input, ParsedStatementInput)
     LET = KB(stmt_let)
     NEXT = KB(stmt_next)
-    ON = KB(stmt_on) # Computed gotos
+    ON = KB(stmt_on, ParsedStatementOnGoto) # Computed gotos, gosubs
     PRINT = KB(stmt_print)
     REM = KB(stmt_rem)
     RETURN = KB(stmt_return)

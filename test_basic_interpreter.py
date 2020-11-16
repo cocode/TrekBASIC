@@ -8,16 +8,16 @@ from basic_interpreter import load_program, format_program, tokenize, Executor, 
 from basic_types import SymbolType, ProgramLine
 
 class Test(TestCase):
-    def assert_value(self, executor, symbol, expected_value):
+    def assert_value(self, executor:Executor, symbol:str, expected_value):
         value = executor.get_symbol(symbol)
         self.assertEqual(expected_value, value)
 
-    def assert_values(self, executor, expected_values):
+    def assert_values(self, executor:Executor, expected_values):
         """
         Verifies the symbol table contains the values passed in.
         Does NOT check for extra values.
         :param executor:
-        :param expected_values:
+        :param expected_values: dict of {var:value}
         :return: None. Raises an exception, if needed.
         """
         for item in expected_values.items():
@@ -682,6 +682,32 @@ class Test(TestCase):
         ct = executor.get_next_stmt()
         self.assertEqual(0, ct.index)
         self.assertEqual(1, ct.offset)
+
+    def test_on_goto(self):
+        listing = [
+            '100 J=2:ONJGOTO200,300,400',
+            '200 K=200:GOTO500',
+            '300 K=300:GOTO500',
+            '400 K=400:GOTO500',
+            '500 END',
+        ]
+        executor = self.runit(listing)
+        self.assert_value(executor, "K", 300)
+
+    def test_on_gosub(self):
+        listing = [
+            '100 J=2:ONJGOSUB200,300,400',
+            '110 Q=77',
+            '120 END',
+            '200 K=200:RETURN',
+            '300 K=300:RETURN',
+            '400 K=400:RETURN',
+            '500 END',
+        ]
+        executor = self.runit(listing)
+        self.assert_value(executor, "J", 2)
+        self.assert_value(executor, "K", 300)
+        self.assert_value(executor, "Q", 77)
 
     # Commenting out for now, as it blocks the tests. I need to get redirection done.
     # def test_input_1(self):
