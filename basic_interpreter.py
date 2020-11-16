@@ -64,11 +64,19 @@ def stmt_print(executor, stmt):
             assert_syntax(arg[0] =='"' and arg[-1] == '"', "String not properly quoted for 'PRINT'")
             output = arg[1:-1]
             print(output, end='')
-        else: # Variable
-            v = executor.get_symbol(arg)
-            print(F"{v:g}", end='')
-        if i < len(args) - 1:
-            print(" ", end='')
+        else: # Expression
+            v = eval_expression(executor._symbols, arg)
+            #v = executor.get_symbol(arg)
+            if type(v) == float:
+                print(F" {v:g} ", end='') # I'm trying to figure out the rules for spacing.
+                                          # NO spaces is wrong (see initial print out)
+                                          # Spaces around everything is wrong.
+                                          # Spaces around numbers but not strings seems to work, so far.
+            else:
+                print(F"{v}", end='')
+
+        # if i < len(args) - 1:
+        #     print(" ", end='')
     print()
     return None
 
@@ -156,11 +164,11 @@ def assign_variable(executor, variable, value):
         variable = variable[:i]
         is_valid_identifier(variable)
         target = executor.get_symbol(variable) # Array must exist. get_symbol will raise if is does not.
-        subscript0 = int(eval_expression(executor._symbols, subscripts[0]))
+        subscript0 = int(eval_expression(executor._symbols, subscripts[0])) - 1  # Basic has 1-based indexing.
         if len(subscripts) == 1:
             target[subscript0] = value
         else:
-            subscript1 = int(eval_expression(executor._symbols, subscripts[1]))
+            subscript1 = int(eval_expression(executor._symbols, subscripts[1])) -1  # Basic has 1-based indexing.
             target[subscript0][subscript1] = value
     else:
         is_valid_identifier(variable)
@@ -666,7 +674,7 @@ def print_formatted(program, f = sys.stdout):
 
 if __name__ == "__main__":
     program = load_program("superstartrek.bas")
-    executor = Executor(program, trace=True)
+    executor = Executor(program, trace=False)
     executor.run_program()
     import pprint
     pprint.pprint(executor.get_symbols())
