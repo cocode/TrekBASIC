@@ -15,6 +15,7 @@ class ParsedStatement:
     def get_additional(self):
         return [] # Only used by if statement
 
+
 class ParsedStatementIf(ParsedStatement):
     """
     Base class for a statement that has been processed.
@@ -29,6 +30,7 @@ class ParsedStatementIf(ParsedStatement):
 
     def get_additional(self):
         return self._additional
+
 
 class ParsedStatementFor(ParsedStatement):
     """
@@ -60,5 +62,5 @@ class ParsedStatementInput(ParsedStatement):
         delim = args.find(";")
         assert_syntax(delim != -1, "No ; found for INPUT statement")
         self._prompt = args[:delim].strip()
-        self._intput_var = args[delim+1:].strip()
+        self._input_var = args[delim+1:].strip()
 

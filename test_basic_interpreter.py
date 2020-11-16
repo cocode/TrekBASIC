@@ -682,3 +682,20 @@ class Test(TestCase):
         ct = executor.get_next_stmt()
         self.assertEqual(0, ct.index)
         self.assertEqual(1, ct.offset)
+
+    # Commenting out for now, as it blocks the tests. I need to get redirection done.
+    # def test_input_1(self):
+    #     listing = [
+    #         '100 INPUT"ENTER YOUR NAME:";A1$',
+    #     ]
+    #     executor, output = self.runit_capture(listing)
+    #     self.assertEqual("ENTER YOUR NAME:", output)
+    #     self.assertEqual('TOM', executor.get_symbol_value("A1$"))
+    #
+    # def test_input_2(self):
+    #     listing = [
+    #         '110 INPUT"ENTER YOUR AGE:";A'
+    #     ]
+    #     executor, output = self.runit_capture(listing)
+    #     self.assertEqual("ENTER YOUR AGE:", output)
+    #     self.assertEqual(3, executor.get_symbol_value("A"))

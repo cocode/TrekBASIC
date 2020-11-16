@@ -118,6 +118,8 @@ def stmt_next(executor, stmt):
     else:
         executor.do_next_pop(var)
 
+def is_string_variable(variable:str):
+    return variable.endswith("$")
 
 def is_valid_identifier(variable:str):
     """
@@ -240,7 +242,16 @@ def stmt_if(executor, stmt):
 
 
 def stmt_input(executor, stmt):
-    pass
+    var = stmt._input_var
+    is_valid_identifier(var)
+    prompt = stmt._prompt
+    # Not sure if this can be an expression. None are used in my examples, but why not?
+    prompt = eval_expression(executor._symbols, prompt)
+    print(prompt, end='')
+    result = input()
+    if not is_string_variable(var):
+        result = float(result)
+    executor.put_symbol(var, result, SymbolType.VARIABLE, None)
 
 def stmt_on(executor, stmt):
     pass
