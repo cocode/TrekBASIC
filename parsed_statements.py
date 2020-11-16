@@ -50,3 +50,15 @@ class ParsedStatementFor(ParsedStatement):
         else:
             self._step_clause = args[step+4:].strip()
 
+
+class ParsedStatementInput(ParsedStatement):
+    """
+    Base class for a statement that has been processed.
+    """
+    def __init__(self, keyword, args):
+        super().__init__(keyword, "")
+        delim = args.find(";")
+        assert_syntax(delim != -1, "No ; found for INPUT statement")
+        self._prompt = args[:delim].strip()
+        self._intput_var = args[delim+1:].strip()
+
