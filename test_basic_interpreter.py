@@ -795,3 +795,12 @@ class Test(TestCase):
             '1030 D=A(1,2)', # Too many dimensions
         ]
         self.runit_se(listing)
+
+    def test_example_0(self):
+        listing = [
+            '1030 K3=0',
+            '1540 IFK3=0THEN1590',
+            '1590 END'
+        ]
+        executor = self.runit(listing)
+        #self.assert_value(executor, "B", 0)

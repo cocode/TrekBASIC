@@ -367,9 +367,10 @@ def tokenize_line(program_line: object) -> ProgramLine:
     try:
         list_of_statements = tokenize_statements(commands_text)
     except BasicSyntaxError as bse:
-        print(F"Syntax Error in line {number}: {bse.message}")
+        print(F"Syntax Error in line {number}: {bse.message}: {program_line}")
+        print()
         raise bse
-    s = ProgramLine(number, list_of_statements, -1)
+    s = ProgramLine(number, list_of_statements, -1, source=program_line)
     return s
 
 
@@ -391,10 +392,12 @@ def tokenize(program_lines:list[str]) -> list[ProgramLine]:
         for i in range(len(tokenized_lines)-1):
             finished_lines.append(ProgramLine(tokenized_lines[i].line,
                                              tokenized_lines[i].stmts,
-                                             i+1))
+                                             i+1,
+                                             source=tokenized_lines[i].source))
         finished_lines.append(ProgramLine(tokenized_lines[-1].line,
                                          tokenized_lines[-1].stmts,
-                                         None))
+                                         None,
+                                         source=tokenized_lines[-1].source))
     return finished_lines
 
 
@@ -486,7 +489,8 @@ class Executor:
                 except BasicSyntaxError as bse:
                     # TODO: This needs a bit more thought. The tests are checking for exceptions,
                     # TODO and don't need the print statement. The user just needs the message printed.
-                    print(F"Syntax Error in line {current.line}: {bse.message}")
+                    print(F"Syntax Error in line {current.line}: {bse.message}: {current.source}")
+
                     if self._stack_trace:
                         raise bse
                     self._run = False
@@ -648,9 +652,9 @@ class Executor:
 
 if __name__ == "__main__":
     # Makes it to 1320 of superstartrek, and line 20 of startrek.bas
-    program = load_program("superstartrek.bas")
-    program = load_program("startrek.bas")
-    program = load_program("simple_test.bas")
+    program = load_program(sys.argv[1])
+    # program = load_program("startrek.bas")
+    # program = load_program("simple_test.bas")
     executor = Executor(program, trace=False)
     executor.run_program()
     import pprint

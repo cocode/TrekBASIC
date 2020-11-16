@@ -154,7 +154,7 @@ OpDef = namedtuple('OpDef','text prec cls') # Later, might want to add associati
 class Operators(Enum):
     CLOSE=         OpDef(')',    0,  OP() )
     COMMA=         OpDef(',',    0.5,  BINOP_COMMA() )
-    EQUALS=        OpDef('=',    1,  OP() )
+    EQUALS=        OpDef('=',    1,  BINOP_STR_NUM(lambda x, y: x == y) ) # BOOLEAN =
     GT=            OpDef('>',    3,  BINOP_STR_NUM(lambda x, y: x > y))
     GTE=           OpDef('>=',   3,  BINOP_STR_NUM(lambda x, y: x >= y))
     LT=            OpDef('<',    3,  BINOP_STR_NUM(lambda x, y: x < y))
