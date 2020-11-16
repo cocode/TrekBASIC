@@ -10,6 +10,7 @@ from collections import namedtuple
 from enum import Enum
 import random
 
+from basic_dialect import ARRAY_OFFSET
 from basic_types import lexer_token, assert_syntax, assert_internal, UNARY_MINUS, ARRAY_ACCESS, SymbolType
 
 import basic_expressions
@@ -80,7 +81,8 @@ class ARRAY_ACCESS_MONO_OP(MONO_OP):
         variable_type = op.symbols.get_symbol_type(array_name)
         assert_syntax(variable_type == SymbolType.ARRAY, "Array access to non-array variable '{variable}'")
         assert_syntax(int(first) == first, "Non-integral array subscript {first}'")
-        return variable[int(first)] # TODO This will only work for one dimensional arrays, that don't have expressions as subscripts.
+        subscript = int(first) - ARRAY_OFFSET
+        return variable[subscript] # TODO This will only work for one dimensional arrays, that don't have expressions as subscripts.
 
 
 class BINOP(OP):

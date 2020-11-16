@@ -9,6 +9,7 @@ from enum import Enum
 
 from basic_types import ProgramLine, lexer_token, BasicSyntaxError, BasicInternalError, assert_syntax, ste, SymbolType
 from parsed_statements import ParsedStatement, ParsedStatementIf, ParsedStatementFor
+from parsed_statements import ParsedStatementInput
 from basic_lexer import lexer_token, Lexer, NUMBERS, LETTERS
 from basic_expressions import Expression
 from basic_symbols import SymbolTable
@@ -240,6 +241,7 @@ def stmt_if(executor, stmt):
 
 def stmt_input(executor, stmt):
     pass
+
 def stmt_on(executor, stmt):
     pass
 
@@ -277,38 +279,13 @@ def stmt_def(executor, stmt):
 def stmt_return(executor, stmt):
     executor.do_return()
 
-def parse_args(cmd, text):
-    """
-    Parse the args of a statement that requires no further parsing, like "PRINT"
-    :param text:
-    :return:
-    """
-    return ParsedStatement(cmd, text)
-
-def parse_args_if(cmd, text):
-    """
-    Parse the args of an if statement
-    :param text:
-    :return:
-    """
-    p = ParsedStatementIf(cmd, text)
-    return p
-
-def parse_args_for(cmd, text):
-    """
-    Parse the args of an if statement
-    :param text:
-    :return:
-    """
-    p = ParsedStatementFor(cmd, text)
-    return p
 
 class KB:
-    def __init__(self, exec, parse=parse_args):
-        self._parser = parse
+    def __init__(self, exec, parser_class=ParsedStatement):
+        self._parser = parser_class
         self._exec = exec
 
-    def get_parser(self):
+    def get_parser_class(self):
         return self._parser
 
     def get_exec(self):
@@ -319,11 +296,11 @@ class Keywords(Enum):
     DEF = KB(stmt_def) # User defined functions
     DIM = KB(stmt_dim)
     END = KB(stmt_end)
-    FOR = KB(stmt_for, parse_args_for)
+    FOR = KB(stmt_for, ParsedStatementFor)
     GOTO = KB(stmt_goto)
     GOSUB = KB(stmt_gosub)
-    IF = KB(stmt_if, parse_args_if)
-    INPUT = KB(stmt_input)
+    IF = KB(stmt_if, ParsedStatementIf)
+    INPUT = KB(stmt_input, ParsedStatementInput)
     LET = KB(stmt_let)
     NEXT = KB(stmt_next)
     ON = KB(stmt_on) # Computed gotos
@@ -339,13 +316,13 @@ def tokenize_statements(commands_text:str):
         command = command.lstrip()
         for cmd in options:         # Can't just use a dict, because of lines like "100 FORX=1TO10"
             if command.startswith(cmd.name):
-                parser_for_keyword = cmd.value.get_parser()
+                parser_for_keyword = cmd.value.get_parser_class()
                 parsed_statement = parser_for_keyword(cmd, command[len(cmd.name):])
                 break
         else:
             # Assignment expression is the default
             cmd = Keywords.LET
-            parser_for_keyword = cmd.value.get_parser()
+            parser_for_keyword = cmd.value.get_parser_class()
             parsed_statement = parser_for_keyword(cmd, command)
 
         list_of_statements.append(parsed_statement)

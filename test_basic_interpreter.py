@@ -2,6 +2,7 @@ from io import StringIO
 from unittest import TestCase
 import sys
 
+from basic_dialect import ARRAY_OFFSET
 from basic_interpreter import tokenize_line, Keywords, smart_split
 from basic_interpreter import load_program, format_program, tokenize, Executor, BasicSyntaxError, is_valid_identifier
 from basic_types import SymbolType, ProgramLine
@@ -463,7 +464,7 @@ class Test(TestCase):
         # TODO Add an option. Add a getter to Executor, so the test can be independent.
         # TODO Need to handle array access in expressions. Including D$(1,2)
         self.assertEqual(0, A[0], 0) # Check for initialization
-        self.assertEqual(17, A[3])   # Verify assignment
+        self.assertEqual(17, A[3-ARRAY_OFFSET])   # Verify assignment.
 
     def test_array_assignment2(self):
         listing = [
@@ -474,7 +475,7 @@ class Test(TestCase):
         executor= self.runit(listing)
         A = executor.get_symbol("A")
         self.assertEqual(0, A[0], 0) # Check for initialization
-        self.assertEqual(7, A[6])   # Verify assignment
+        self.assertEqual(7, A[6-ARRAY_OFFSET])   # Verify assignment
 
     # TODO Need multi-dimensional array support in expression evaluation
     # def test_array_assignment3(self):
@@ -513,8 +514,8 @@ class Test(TestCase):
         # It looks like "startrek.bas" expects zero based, and superstartrek.bas expects 1
         # TODO Add an option. Add a getter to Executor, so the test can be independent.
         # TODO Need to handle array access in expressions. Including D$(1,2)
-        self.assertEqual(A[0], 0) # Check for initialization
-        self.assertEqual(A[3], 27) # Verify assignment
+        self.assertEqual(0, A[0]) # Check for initialization
+        self.assertEqual(27, A[3-ARRAY_OFFSET]) # Verify assignment
         self.assertEqual(27, Y) # Verify element access
         # TODO two dimensional arrays.
 
