@@ -172,7 +172,7 @@ def eval_expression(symbols, value):
     result = e.eval(tokens, symbols=symbols)
     return result
 
-def stmt_exp(executor, stmt):
+def stmt_let(executor, stmt):
     try:
         variable, value = stmt.args.split("=", 1)
     except Exception as e:
@@ -314,7 +314,7 @@ class Keywords(Enum):
     GOSUB = KB(stmt_gosub)
     IF = KB(stmt_if, parse_args_if)
     INPUT = KB(stmt_input)
-    LET = KB(stmt_exp)
+    LET = KB(stmt_let)
     NEXT = KB(stmt_next)
     ON = KB(stmt_on) # Computed gotos
     PRINT = KB(stmt_print)
