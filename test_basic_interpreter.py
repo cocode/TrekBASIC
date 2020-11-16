@@ -658,6 +658,17 @@ class Test(TestCase):
         self.assert_value(executor, "I", 11)
         self.assert_value(executor, "J", 20)
 
+    def test_for_nested(self):
+        listing = [
+            '100 K=0:FOR I=1TO10:FOR J = 1 TO 10',
+            '110 K=K+2',
+            '120 NEXTJ:NEXTI',
+        ]
+        executor = self.runit(listing)
+        self.assert_value(executor, "I", 11) # I think this is not visible in basic, but probably depends on dialect
+        self.assert_value(executor, "J", 11)
+        self.assert_value(executor, "K", 200)
+
     def test_get_next_stmt(self):
         listing = [
             '100 J=0:FOR I=1TO10',

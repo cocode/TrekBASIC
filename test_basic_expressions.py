@@ -68,6 +68,16 @@ class TestExpression(TestCase):
         value = expression.eval(tokens, symbols=symbol_table)
         self.assertEqual('ABC', value)
 
+    def test_eval9(self):
+        # Currently, our basic is LEFT associative for everything. That seems to have been common
+        # for BASICs, but seems to not be the mathematical standard.
+        tokens = self._lexer.lex('2^3^2')
+        self.assertEqual(5, len(tokens))
+        expression = Expression()
+        symbol_table = SymbolTable()
+        value = expression.eval(tokens, symbols=symbol_table)
+        self.assertEqual(64, value)
+
     def test_eval_parens1(self):
         tokens = self._lexer.lex("(7-3)")
         self.assertEqual(5, len(tokens))

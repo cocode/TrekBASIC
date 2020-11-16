@@ -98,7 +98,7 @@ def stmt_for(executor, stmt:ParsedStatementFor):
 
 def stmt_next(executor, stmt):
     index = stmt.args.strip()
-    var, to_clause, step_clause, loop_top = executor.peek_next(index)
+    var, to_clause, step_clause, loop_top = executor.do_next_peek(index)
     value = executor.get_symbol(var)
     to_value = eval_expression(executor._symbols, to_clause)
     step_value = eval_expression(executor._symbols, step_clause)
@@ -106,6 +106,8 @@ def stmt_next(executor, stmt):
     executor.put_symbol(var, value, SymbolType.VARIABLE, None)
     if value <= to_value:
         executor._goto_location(loop_top)
+    else:
+        executor.do_next_pop(var)
 
 
 def is_valid_identifier(variable:str):
@@ -501,7 +503,7 @@ class Executor:
         assert_syntax(len(self._for_stack) < 1000, "FORs nested too deeply")
         self._for_stack.append(ForRecord(var, stop, step, stmt))
 
-    def peek_next(self, var):
+    def do_next_peek(self, var):
         """
         Checks to see if we are on the correct next, and get
         :param var:
@@ -513,10 +515,11 @@ class Executor:
         return for_record
 
 
-    def do_next(self, var):
+    def do_next_pop(self, var):
         assert_syntax(len(self._for_stack) > 0, "NEXT without FOR")
         for_record = self._for_stack.pop()
         assert_syntax(for_record.var==var, F"Wrong NEXT. Expected {for_record.var}, got {var}")
+
 
     def get_symbol_count(self):
         """
