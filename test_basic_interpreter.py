@@ -291,6 +291,17 @@ class Test(TestCase):
         A = executor.get_symbol("A")
         self.assertTrue(A > 0 and A < 1.0)
 
+    def test_builtin_sgn(self):
+        listing = [
+            '1000 A=SGN(1)',
+            '1010 B=SGN(-3711)',
+            '1020 C=SGN(0)',
+        ]
+        executor= self.runit(listing)
+        self.assertEqual(3, executor.get_symbol_count())
+        self.assert_value(executor, "A", 1)
+        self.assert_value(executor, "B", -1)
+        self.assert_value(executor, "C", 0)
 
     def test_expressions(self):
         listing = [

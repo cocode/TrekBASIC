@@ -438,6 +438,8 @@ class Executor:
         # OFFSET refers to the index into the current LINE's list of statements.
         self._internal_symbols.put_symbol("INT", "⌊", SymbolType.FUNCTION, arg=lambda x : int(x))
         self._internal_symbols.put_symbol("RND", "⌊", SymbolType.FUNCTION, arg=lambda x : int(x))
+        # TODO These are dups of the lambdas in basic_operations, and the names are duped in basic_lexer
+        self._internal_symbols.put_symbol("SGN", "⌊", SymbolType.FUNCTION, arg=lambda x : (x > 0) - (x < 0))
 
         self._run = True
         self._count_lines = 0

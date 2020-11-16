@@ -176,9 +176,11 @@ def get_op(token):
     """
     if token.type == SymbolType.FUNCTION:# and token.token.startswith("FN"):
         if token.token == "INT":
-            return MONO_OP(lambda x: int(x)) # Handles the built-in INT function
+            return MONO_OP(lambda x: int(x)) # Handles the built-in INT function # TODO we also define the functions in Excutor.
         if token.token == "RND":
             return MONO_OP(lambda x: random.random()) # Handles the built-in RND function
+        if token.token == "SGN":
+            return MONO_OP(lambda x: (x > 0) - (x < 0)) # Handles the built-in RND function
         op_def = get_op_def("∫") # Handles user defined functions.
         return op_def.cls
 
