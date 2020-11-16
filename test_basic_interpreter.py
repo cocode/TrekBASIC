@@ -28,7 +28,7 @@ class Test(TestCase):
     def runit(self, listing, trace=False):
         program = tokenize(listing)
         self.assertEqual(len(listing), len(program))
-        executor = Executor(program, trace=trace)
+        executor = Executor(program, trace=trace, stack_trace=True)
         executor.run_program()
         return executor
 
@@ -174,7 +174,7 @@ class Test(TestCase):
 
     def test_load_program(self):
         program = load_program("simple_test.bas")
-        self.assertEqual(2, len(program))
+        self.assertEqual(5, len(program))
         with open("sample_output.txt", 'w') as f:
             for line in format_program(program):
                 print(line, file=f)
@@ -186,11 +186,9 @@ class Test(TestCase):
         self.assertEqual('Fred', executor.get_symbol("Z$"))
 
     def test_assignment2(self):
-        program = tokenize(['100 TOOLONGVARNAME="Fred"'])
+        program = ['100 TOOLONGVARNAME="Fred"']
         self.assertEqual(1, len(program))
-        executor = Executor(program)
-        with self.assertRaises(BasicSyntaxError):
-            executor.run_program()
+        self.runit_se(program)
 
     def test_dim(self):
         executor = self.runit(['100 DIM A(8), C(1,8)'])
@@ -422,18 +420,13 @@ class Test(TestCase):
         Tests with "suite" in the name test for errors.
         :return:
         """
-        program = tokenize(['100 DIM A(8'])
+        program = ['100 DIM A(8']
         self.assertEqual(1, len(program))
-        executor = Executor(program)
-        with self.assertRaises(BasicSyntaxError):
-            executor.run_program()
+        self.runit_se(program)
 
         # Assert they gave it a dim May not be right, some dialoects of basic assume 10
-        program = tokenize(['100 DIM C'])
-        self.assertEqual(1, len(program))
-        executor = Executor(program)
-        with self.assertRaises(BasicSyntaxError):
-            executor.run_program()
+        program = ['100 DIM C']
+        self.runit_se(program)
 
     def test_array_assignment_error(self):
         listing = [
@@ -762,3 +755,22 @@ class Test(TestCase):
         executor= self.runit(listing)
         self.assertEqual(0, executor.get_symbol_count())
         self.assertFalse(executor.is_symbol_defined("A"))
+
+    def test_array_access(self):
+        listing = [
+            '1000 DIMA(2)',
+            '1010 B=A(1)',
+            '1020 DIMC(2,3)',
+            '1030 C(1,2)=37',
+            '1040 D=C(1,2)',
+        ]
+        executor = self.runit(listing)
+        self.assert_value(executor, "B", 0)
+        self.assert_value(executor, "D", 37)
+
+    def test_array_access_error(self):
+        listing = [
+            '1000 DIMA(2)',
+            '1030 D=A(1,2)', # Too many dimensions
+        ]
+        self.runit_se(listing)

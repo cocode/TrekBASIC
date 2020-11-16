@@ -183,4 +183,23 @@ class TestExpression(TestCase):
         value = expression.eval(tokens)
         self.assertEqual(-4, value)
 
+    def test_comma(self):
+        tokens = self._lexer.lex('(1,2)')
+        self.assertEqual(5, len(tokens))
+        expression = Expression()
+        value = expression.eval(tokens)
+        self.assertEqual([1,2], value)
+
+        tokens = self._lexer.lex('(1,2,3,4,5)')
+        self.assertEqual(11, len(tokens))
+        expression = Expression()
+        value = expression.eval(tokens)
+        self.assertEqual([1,2,3,4,5], value)
+
+        tokens = self._lexer.lex('(1,2),(3,4)')
+        self.assertEqual(11, len(tokens))
+        expression = Expression()
+        value = expression.eval(tokens)
+        self.assertEqual([1,2,3,4], value)
+
 

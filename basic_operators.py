@@ -79,10 +79,23 @@ class ARRAY_ACCESS_MONO_OP(MONO_OP):
         array_name = op.arg
         variable = op.symbols.get_symbol(array_name)
         variable_type = op.symbols.get_symbol_type(array_name)
+        v = variable
         assert_syntax(variable_type == SymbolType.ARRAY, "Array access to non-array variable '{variable}'")
-        assert_syntax(int(first) == first, "Non-integral array subscript {first}'")
-        subscript = int(first) - ARRAY_OFFSET
-        return variable[subscript] # TODO This will only work for one dimensional arrays, that don't have expressions as subscripts.
+        if type(first) == list:
+            # Multidimensional array access
+            args = [int(arg)-ARRAY_OFFSET for arg in first] # TODO check type and syntax error. No strings, no arrays
+
+            v = variable
+            for arg in args:
+                assert_syntax(type(v) is list, "Too many array dimensions for {array_name} subscript.")
+                assert_syntax(arg < len(v), "Array subscript out of bounds for {array_name}")
+                v = v[arg]
+            return v
+        else:
+            # TODO should only need the above.
+            assert_syntax(int(first) == first, "Non-integral array subscript {first}'")
+            subscript = int(first) - ARRAY_OFFSET
+            return variable[subscript] # TODO This will only work for one dimensional arrays, that don't have expressions as subscripts.
 
 
 class BINOP(OP):
@@ -122,10 +135,17 @@ class BINOP_STR_NUM(BINOP):
         assert_syntax(stack[-1].type == stack[-2].type, "Operands don't match (string vs number) for '+'")
 
 
-class BINOP_MINUS(BINOP_NUM):
+class BINOP_COMMA(BINOP_STR_NUM):
     def eval2(self, first, second):
-        result = first - second
-        return result
+        if type(first) is not list:
+            first = [first]
+
+        if type(second) is list:
+            first.extend(second)
+        else:
+            first.append(second)
+
+        return first
 
 
 OpDef = namedtuple('OpDef','text prec cls') # Later, might want to add associativity (L TO R or R TO L)
@@ -133,6 +153,7 @@ OpDef = namedtuple('OpDef','text prec cls') # Later, might want to add associati
 # If any additions, ALSO MUST UPDATE basic_lexer.py:OPERATORS. TODO Fix this.
 class Operators(Enum):
     CLOSE=         OpDef(')',    0,  OP() )
+    COMMA=         OpDef(',',    0.5,  BINOP_COMMA() )
     EQUALS=        OpDef('=',    1,  OP() )
     GT=            OpDef('>',    3,  BINOP_STR_NUM(lambda x, y: x > y))
     LT=            OpDef('<',    3,  BINOP_STR_NUM(lambda x, y: x < y))
@@ -155,12 +176,12 @@ class Operators(Enum):
 
 
 OP_MAP={k.value.text:k for k in Operators}
-OPERATORS = [k for k in OP_MAP] # TODO This is supposed to replace lexer.OPERATORS, but it's not done yet.
+OPERATORS2 = [k for k in OP_MAP] # TODO This is supposed to replace lexer.OPERATORS, but it's not done yet.
 
 # Internal operations.
-OPERATORS.remove(Operators.ARRAY_ACCESS.value.text)
-OPERATORS.remove(Operators.FUNC.value.text)
-
+OPERATORS2.remove(Operators.ARRAY_ACCESS.value.text)
+OPERATORS2.remove(Operators.FUNC.value.text)
+OP_FIRST_CHAR=[a[0] for a in OPERATORS2]
 
 def get_op_def(operator:str):
     assert_syntax(operator in OP_MAP, F"Invalid operator {operator}")

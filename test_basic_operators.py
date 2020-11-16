@@ -1,6 +1,6 @@
 from unittest import TestCase
 from basic_lexer import Lexer
-from basic_operators import get_op, BINOP_MINUS, MINUS_MONO_OP
+from basic_operators import get_op, MINUS_MONO_OP, BINOP_COMMA
 from basic_types import lexer_token
 
 
@@ -98,3 +98,16 @@ class Test(TestCase):
         minus = MINUS_MONO_OP()
         answer = minus.eval(stack, op=None)
         self.assertEqual(-3.14, answer.token)
+
+    def test_comma(self):
+        stack = []
+        tokens = self._lexer.lex('1,2')
+        self.assertEqual(3, len(tokens))
+        stack.append(tokens[0])
+        stack.append(tokens[2])
+        binop = get_op(tokens[1])
+        self.assertIsInstance(binop, BINOP_COMMA)
+        answer = binop.eval(stack, op=None)
+        self.assertEqual([1,2], answer.token)
+
+

@@ -9,19 +9,16 @@ I think you have to know that Y is a variable, and can't be longer than one lett
 just grab sequences of letters.
 """
 
-from collections import namedtuple
-import sys
-from enum import Enum, auto
-
 from basic_types import lexer_token, BasicSyntaxError, assert_syntax
 
 NUMBERS = "0123456789]"
 LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-OPERATORS = "()^*/+-=><"
+OPERATORS = "()^*/+-=><,"
 BOOLEAN_OPERATORS=["AND", "OR"]
 BUILT_IN_FUNCTIONS=["INT", "RND", "SGN"] # TODO get this from the function definitons
 #KEYWORDS=["DEF", "DIM", "END", "FOR", "GOTO", "GOSUB", "IF", "INPUT", "LET", "NEXT", "ON", "PRINT", "REM", "RETURN"]
 FN_OPERATORS=["FN"+chr(c) for c in range(ord("A"), ord("Z"))]
+# Operators made from letters, not symbols.
 TEXT_OPERATORS=BOOLEAN_OPERATORS + BUILT_IN_FUNCTIONS + FN_OPERATORS
 
 
