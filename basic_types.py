@@ -62,3 +62,14 @@ class SymbolType(Enum):
     VARIABLE = auto()
     FUNCTION = auto()
     ARRAY = auto()
+
+# Records the ending status of the program.
+class RunStatus(Enum):
+    RUN=auto()          # Running normally
+    END_CMD=auto()
+    END_OF_PROGRAM=auto()
+    END_ERROR_SYNTAX=auto()
+    END_ERROR_INTERNAL=auto()
+    BREAK_CODE=auto()
+    BREAK_DATA=auto()
+

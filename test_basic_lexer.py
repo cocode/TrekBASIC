@@ -1,6 +1,6 @@
 from unittest import TestCase
 from basic_types import BasicSyntaxError
-from basic_lexer import Lexer, lexer_token
+from basic_lexer import Lexer
 
 
 class TestLexer(TestCase):

@@ -4,6 +4,7 @@ from basic_lexer import Lexer
 from basic_types import ste, BasicSyntaxError, SymbolType
 from basic_symbols import SymbolTable
 
+
 class TestExpression(TestCase):
     def setUp(self):
         self._lexer = Lexer()

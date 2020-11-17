@@ -9,7 +9,7 @@ I think you have to know that Y is a variable, and can't be longer than one lett
 just grab sequences of letters.
 """
 
-from basic_types import lexer_token, BasicSyntaxError, assert_syntax
+from basic_types import lexer_token, BasicSyntaxError
 
 NUMBERS = "0123456789]"
 LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"

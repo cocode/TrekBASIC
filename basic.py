@@ -4,7 +4,6 @@ Main program for running a basic program.
 import sys
 import argparse
 import pprint
-from contextlib import nullcontext
 
 from basic_interpreter import load_program, Executor
 

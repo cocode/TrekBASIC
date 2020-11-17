@@ -5,8 +5,9 @@ import sys
 from basic_dialect import ARRAY_OFFSET
 from basic_interpreter import tokenize_line, Keywords, RunStatus
 from basic_utils import smart_split, format_program
-from basic_interpreter import load_program, tokenize, Executor, BasicSyntaxError, is_valid_identifier
-from basic_types import SymbolType, ProgramLine, UndefinedSymbol
+from basic_interpreter import load_program, tokenize, Executor, BasicSyntaxError
+from basic_statements import is_valid_identifier
+from basic_types import SymbolType, ProgramLine, RunStatus
 
 
 class Test(TestCase):

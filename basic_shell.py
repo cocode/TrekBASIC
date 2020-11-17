@@ -1,5 +1,5 @@
 """
-Main program for runningebugging a basic program.
+Main program for running a BASIC program.
 """
 import sys
 import pprint

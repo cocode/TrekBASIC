@@ -5,14 +5,12 @@ Implementation for basic operators, such as add, subtract, etc.
 # TODO: Need to rewrite lexer to handle multi-character tokens for >=, <=
 
 
-
 from collections import namedtuple
 from enum import Enum
 import random
 
 from basic_dialect import ARRAY_OFFSET
-from basic_types import lexer_token, assert_syntax, assert_internal, UNARY_MINUS, ARRAY_ACCESS, SymbolType, \
-    BasicSyntaxError
+from basic_types import lexer_token, assert_syntax, SymbolType, BasicSyntaxError
 
 import basic_expressions
 from basic_lexer import Lexer
@@ -200,6 +198,7 @@ class BINOP_COMMA(BINOP):
 
 
 OpDef = namedtuple('OpDef','text prec cls') # Later, might want to add associativity (L TO R or R TO L)
+
 
 # If any additions, ALSO MUST UPDATE basic_lexer.py:OPERATORS. TODO Fix this.
 class Operators(Enum):
