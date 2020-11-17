@@ -1,5 +1,5 @@
 """
-Main program for debugging a basic program.
+Main program for runningebugging a basic program.
 """
 import sys
 import pprint
@@ -10,7 +10,7 @@ from basic_types import UndefinedSymbol, BasicSyntaxError
 from basic_interpreter import load_program, Executor, eval_expression
 
 
-class Command:
+class BasicShell:
     def __init__(self, program_file):
         self._program_file = program_file
         self.executor = None
@@ -249,5 +249,5 @@ if __name__ == "__main__":
         print("Usage: python3 basic_intrpreter.py name_of_program.bas")
         sys.exit(1)
     cmd = None
-    debugger = Command(args.program)
+    debugger = BasicShell(args.program)
     debugger.do_command()
