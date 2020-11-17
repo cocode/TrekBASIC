@@ -80,6 +80,7 @@ class Command:
         offset = cl.offset
         return F"Line: {program_line.line:6}: Clause: {offset}"
 
+
     def cmd_for_stack(self, args):
         """
         Dumps the for/next stack, so you can see if you are in any loops.
@@ -91,8 +92,8 @@ class Command:
         print("For/next stack:")
         if len(self.executor._for_stack) == 0:
             print("\t<empty>")
-        for cl in self.executor._for_stack:
-            print("\t", self.format_cl(cl))
+        for for_record in self.executor._for_stack:
+            print("\t", for_record)
 
     def cmd_gosub_stack(self, args):
         """
@@ -149,7 +150,7 @@ class Command:
             print("Breakpoint!")
             self.print_current(None)
         elif rc == 2:
-            print("Data Breakpoint!")
+            print(F"Data Breakpoint before line {self.executor._program[self.executor._index].line} {self.executor._statement_offset}")
             self.print_current(None)
         else:
             print("Program completed.")
