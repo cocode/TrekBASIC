@@ -14,67 +14,6 @@ from basic_utils import smart_split
 from basic_statements import Keywords
 
 
-# def is_string_variable(variable:str):
-#     return variable.endswith("$")
-#
-#
-# def is_valid_identifier(variable:str):
-#     """
-#     Checks if the identifier is a valid variable name to assign to.
-#     Assumes that spaces have already been removed.
-#     Does not recognize internal functions, or user defined functions.
-#     :param variable: The variable name to check.
-#     :return: None. Raises an exception if the name is not valid.
-#     """
-#     assert_syntax(len(variable) >= 1, F"Zero length variable name.")
-#     assert_syntax(len(variable) <= 3, F"Variable {variable} too long.")
-#     assert_syntax(variable[0] in LETTERS, F"Variable {variable} must start with a letters.")
-#     if len(variable) == 1:
-#         return
-#     if len(variable) == 2 and variable[1] == '$':
-#         return
-#     assert_syntax(variable[1] in NUMBERS, "Second char of {variable} must be a number or $.")
-#     if len(variable) == 2:
-#         return
-#     assert_syntax(variable[2] == '$', F"Invalid variable name {variable}")
-#
-#
-# def assign_variable(executor, variable, value):
-#     """
-#     Variable assignment can include assigning array elements.
-#     :param variable:
-#     :param value:
-#     :return:
-#     """
-#     variable = variable.replace(" ", "")
-#     # Need to handle two dimensional array element assignment.
-#     i = variable.find("(")
-#     if i != -1:
-#         # Array reference
-#         j = variable.find(")", i+1)
-#         if j == -1:
-#             raise BasicSyntaxError(F"Missing ) in in array assignment to {variable}")
-#         if i+1 == j:
-#             raise BasicSyntaxError(F"Missing array subscript in assignment to {variable}")
-#
-#         subscripts = variable[i+1:j].split(",")
-#         variable = variable[:i]
-#         is_valid_identifier(variable)
-#         subscripts = [int(eval_expression(executor._symbols, subscript)) - 1 for subscript in subscripts]
-#         executor.put_symbol_element(variable, value, subscripts)
-#     else:
-#         is_valid_identifier(variable)
-#         executor.put_symbol(variable, value, symbol_type=SymbolType.VARIABLE, arg=None)
-#
-#
-# def eval_expression(symbols, value):
-#     lexer = Lexer()
-#     tokens = lexer.lex(value)
-#     e = Expression()
-#     result = e.eval(tokens, symbols=symbols)
-#     return result
-#
-
 def tokenize_statements(commands_text:list[str]):
     """
     Parses individual statements. A ine of the program may have multiple statements in it.
