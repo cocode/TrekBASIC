@@ -7,7 +7,9 @@ import argparse
 
 from basic_types import UndefinedSymbol, BasicSyntaxError
 
-from basic_interpreter import load_program, Executor, eval_expression, RunStatus
+from basic_interpreter import load_program, Executor
+from basic_statements import eval_expression
+from basic_types import RunStatus
 
 
 class BasicShell:
