@@ -7,7 +7,7 @@ import argparse
 
 from basic_types import UndefinedSymbol, BasicSyntaxError
 
-from basic_interpreter import load_program, Executor, eval_expression
+from basic_interpreter import load_program, Executor, eval_expression, RunStatus
 
 
 class BasicShell:
@@ -54,7 +54,7 @@ class BasicShell:
                 return
             start_line_number = int(args[0])
             try:
-                cl = self.executor._find_line(start_line_number)
+                cl = self.executor.find_line(start_line_number)
             except BasicSyntaxError as e:
                 print("Line number not found.")
                 return
@@ -67,13 +67,13 @@ class BasicShell:
                     return
                 count = int(args[1])
         else:
-            index = self.executor._index
-        for i in range(count):
-            if index >= len(self.executor._program):
-                break
-            program_line = self.executor._program[index]
-            print(program_line.source)
-            index = program_line.next
+            index = self.executor.get_current_index()
+            if index is None:
+                # Program has finished running.
+                index = 0
+        lines = self.executor.get_program_lines(index, count)
+        for line in lines:
+            print(line)
 
     def format_cl(self, cl):
         program_line = self.executor._program[cl.index]
@@ -88,7 +88,6 @@ class BasicShell:
         :return:
         """
         count = 10
-        index = self.executor._index
         print("For/next stack:")
         if len(self.executor._for_stack) == 0:
             print("\t<empty>")
@@ -101,7 +100,6 @@ class BasicShell:
         :param args: Not used.
         :return:
         """
-        index = self.executor._index
         print("GOSUB stack:")
         if len(self.executor._gosub_stack) == 0:
             print("\t<empty>")
@@ -146,14 +144,14 @@ class BasicShell:
 
     def cmd_run(self, args):
         rc = self.executor.run_program(self._breakpoints, self._data_breakpoints)
-        if rc == 1:
+        if rc == RunStatus.BREAK_CODE:
             print("Breakpoint!")
             self.print_current(None)
-        elif rc == 2:
+        elif rc == RunStatus.BREAK_DATA:
             print(F"Data Breakpoint before line {self.executor._program[self.executor._index].line} {self.executor._statement_offset}")
             self.print_current(None)
         else:
-            print("Program completed.")
+            print(F"Program completed with return of {rc}.")
 
     def cmd_break(self, args):
         """

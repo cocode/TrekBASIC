@@ -22,10 +22,11 @@ if __name__ == "__main__":
     if args.trace:
         with open("tracefile.txt", "w") as f:
             executor = Executor(program, trace_file=f)
-            executor.run_program()
+            rc = executor.run_program()
     else:
         executor = Executor(program)
-        executor.run_program()
+        rc = executor.run_program()
+    print(F"Program completed with a status of {rc}")
 
     if args.symbols:
         pprint.pprint(executor._symbols.dump())

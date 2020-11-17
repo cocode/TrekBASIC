@@ -3,7 +3,7 @@ from unittest import TestCase
 import sys
 
 from basic_dialect import ARRAY_OFFSET
-from basic_interpreter import tokenize_line, Keywords
+from basic_interpreter import tokenize_line, Keywords, RunStatus
 from basic_utils import smart_split, format_program
 from basic_interpreter import load_program, tokenize, Executor, BasicSyntaxError, is_valid_identifier
 from basic_types import SymbolType, ProgramLine, UndefinedSymbol
@@ -902,3 +902,24 @@ class Test(TestCase):
         ]
         executor = self.runit(listing)
         self.assert_value(executor, "A", -9999)
+
+    def test_run_status(self):
+        executor = self.runit(['1000 A=3'])
+        self.assertEqual(RunStatus.END_OF_PROGRAM, executor._run)
+        executor = self.runit(['1000 A=3:END:A=4'])
+        self.assertEqual(RunStatus.END_CMD, executor._run)
+        # Check case of IF on last line, with a False condition
+        executor = self.runit(['1000 A=3:A=4:IFA=3THENGOTO1000'])
+        self.assertEqual(RunStatus.END_OF_PROGRAM, executor._run)
+        # Syntax Error
+        executor = self.runit_se(['1000 A='])
+
+    def test_run_status(self):
+        program = tokenize(['1000 A=3:ERROR'])
+        executor = Executor(program)
+        try:
+            executor.run_program()
+        except:
+            pass
+        self.assertEqual(RunStatus.END_ERROR_INTERNAL, executor._run)
+
