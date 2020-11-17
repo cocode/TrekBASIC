@@ -278,6 +278,9 @@ def stmt_def(executor, stmt):
 def stmt_return(executor, stmt):
     executor.do_return()
 
+def stmt_width(executor, stmt):
+    pass
+
 
 class KB:
     def __init__(self, exec, parser_class=ParsedStatement):
@@ -307,6 +310,7 @@ class Keywords(Enum):
     PRINT = KB(stmt_print)
     REM = KB(stmt_rem)
     RETURN = KB(stmt_return)
+    WIDTH = KB(stmt_width) # To support another version of superstartrek I found. Ignored
 
 
 def tokenize_statements(commands_text:str):
@@ -331,7 +335,7 @@ def tokenize_statements(commands_text:str):
         commands_array = smart_split(additional_text)
         for i in range(len(commands_array)):
             # Handle special case of "IF x THEN X=3:100"
-            if commands_array[i].isdigit():
+            if commands_array[i].strip().isdigit():
                 commands_array[i] = "GOTO "+commands_array[i]
         additional = tokenize_statements(commands_array)
         list_of_statements.extend(additional)
@@ -469,21 +473,29 @@ class Executor:
         self._internal_symbols.put_symbol("RIGHT$", "⌊", SymbolType.FUNCTION, arg=None)
         self._internal_symbols.put_symbol("MID$", "⌊", SymbolType.FUNCTION, arg=None)
         self._internal_symbols.put_symbol("LEN", "⌊", SymbolType.FUNCTION, arg=None)
+        self._internal_symbols.put_symbol("TAB", "⌊", SymbolType.FUNCTION, arg=None)
 
         self._run = True
         self._count_lines = 0
         self._count_stmts = 0
         self._statement_offset = 0
+        self._return_code = None
         random.seed(1)
 
-    def run_program(self, breaklist = []):
+    def run_program(self, breaklist = [], data_breakpoints = []):
+        self._data_breakpoints = data_breakpoints
         while self._run:
             self.execute_current_line()
             current = self._program[self._index]
             line = current.line
             if line in breaklist:
                 return 1
-        return 0
+        x = self._return_code
+        if x is not None:
+            self._return_code = None
+        else:
+            x = 0
+        return x
 
     def execute_current_line(self):
             current = self._program[self._index]
@@ -570,6 +582,9 @@ class Executor:
         # TODO Maybe check is_valid_variable here? Have to allow user defined functions, and built-ins, though.
         if self._trace_file:
             print(F"\t\t{symbol}={value}, {symbol_type}", file=self._trace_file)
+        if self._data_breakpoints and symbol in self._data_breakpoints:
+            self._run = False
+            self._return_code = 2
         self._symbols.put_symbol(symbol, value, symbol_type, arg)
 
     def put_symbol_element(self, symbol, value, subscripts):
