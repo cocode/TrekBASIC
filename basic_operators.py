@@ -257,6 +257,8 @@ def get_op(token):
             return STR_OP(lambda x: x[0][int(x[1])-1:int(x[1])-1+int(x[2])], token.token, 3)
         if token.token == "STR$":
             return STR_MONO_OP(lambda x: str(x), return_type="str")
+        if token.token == "SPACE$":
+            return STR_MONO_OP(lambda x: " "*int(x), return_type="str")
         if token.token == "LEN":
             return STR_OP(lambda x: len(x), token.token, 1, "num") # This needs to return an int, unlike the other str functions.
         if token.token == "TAB":

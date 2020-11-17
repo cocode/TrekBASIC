@@ -848,6 +848,13 @@ class Test(TestCase):
         executor = self.runit(listing)
         self.assert_value(executor, "Z$", "7.0")
 
+    def test_space_dollar(self):
+        listing = [
+            '1540 Z$=SPACE$(3+4)',
+        ]
+        executor = self.runit(listing)
+        self.assert_value(executor, "Z$", "       ")
+
     def test_len(self):
         listing = [
             '1000 A$="TOM"',
