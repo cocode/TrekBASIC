@@ -202,4 +202,10 @@ class TestExpression(TestCase):
         value = expression.eval(tokens)
         self.assertEqual([1,2,3,4], value)
 
+    def test_types_x(self):
+        tokens = self._lexer.lex('"a" + "b" + "c"')
+        self.assertEqual(5, len(tokens))
+        expression = Expression()
+        value = expression.eval(tokens)
+        self.assertEqual("abc", value)
 

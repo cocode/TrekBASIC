@@ -839,3 +839,12 @@ class Test(TestCase):
             '1540 Z$=MID$("ABCDEFGHI", 4)',
         ]
         self.runit_se(listing)
+
+    def test_len(self):
+        listing = [
+            '1000 A$="TOM"',
+            '1040 A=LEN(A$)',
+        ]
+        executor = self.runit(listing)
+        self.assert_value(executor, "A$", "TOM")
+        self.assert_value(executor, "A", 3)

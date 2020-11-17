@@ -30,8 +30,9 @@ class OP:
 
 
 class MONO_OP:
-    def __init__(self, lam=None):
+    def __init__(self, lam=None, return_type=None):
         self._lambda = lam
+        self._return_type = return_type
 
     def check_args(self, stack):
         assert_syntax(len(stack) >= 1, "Not enough operands for binary operator")
@@ -44,20 +45,22 @@ class MONO_OP:
         self.check_args(stack)
         first = stack.pop()
         answer = self.eval1(first.token, op=op)
-        return lexer_token(answer, "num")
+        return_type = self._return_type if self._return_type is not None else first.type
+        return lexer_token(answer, return_type)
 
 
 class STR_OP(MONO_OP):
     """
     Base class for the string operations. LEFT$, MID$, RIGHT$
     """
-    def __init__(self, lam, name, arg_count):
+    def __init__(self, lam, name, arg_count, return_type=None):
         """
-
-        :param name: Just for debugging.
+        :param lam: A function that executes this command
+        :param name: Just for debugging and error messages.
         :param arg_count: The number of arguments the function takes.
+        :param return_type: The return type of eval(). If None, uses the type of the first argument.
         """
-        self._lambda = lam
+        super().__init__(lam=lam, return_type=return_type)
         self._name = name
         self._arg_count = arg_count
 
@@ -65,11 +68,14 @@ class STR_OP(MONO_OP):
         super().check_args(stack)
         # Functions get their arguments in an array of parameters
         args = stack[-1].token
-        assert(isinstance(args, list))
+        if not isinstance(args, list):
+            # Right now, function args are delivered in a list, only if there is more than one. TODO
+            args = [args]
         assert_syntax(len(args) == self._arg_count, F"Wrong number of arguments {len(args)} for {self._name}")
         assert_syntax(isinstance(args[0], str), "First operand of {self._name} must be a string.")
-        is_number = isinstance(args[1], int) or isinstance(args[1], float)
-        assert_syntax(is_number, "Second operand of {self._name} must be a number.")
+        if self._arg_count >= 2:
+            is_number = isinstance(args[1], int) or isinstance(args[1], float)
+            assert_syntax(is_number, "Second operand of {self._name} must be a number.")
         if self._arg_count == 3:
             is_number = isinstance(args[2], int) or isinstance(args[2], float)
             assert_syntax(is_number, "Third operand of {self._name} must be a number.")
@@ -146,7 +152,7 @@ class BINOP(OP):
         second = stack.pop()
         first = stack.pop()
         answer = self.eval2(first.token, second.token)
-        return lexer_token(answer, "num")
+        return lexer_token(answer, first.type)
 
 
 class BINOP_NUM(BINOP):
@@ -244,6 +250,8 @@ def get_op(token):
             return STR_OP(lambda x: x[0][-int(x[1]):], token.token, 2)
         if token.token == "MID$":
             return STR_OP(lambda x: x[0][int(x[1])-1:int(x[1])-1+int(x[2])], token.token, 3)
+        if token.token == "LEN":
+            return STR_OP(lambda x: len(x), token.token, 1, "num") # This needs to return an int, unlike the other str functions.
         if token.token == "SGN":
             return MONO_OP(lambda x: (x > 0) - (x < 0)) # Handles the built-in SGN function
         op_def = get_op_def("∫") # Handles user defined functions.
