@@ -6,7 +6,6 @@ import pprint
 import argparse
 
 from basic_types import UndefinedSymbol
-from basic_utils import format_line
 
 
 from basic_interpreter import load_program, Executor, eval_expression
@@ -72,6 +71,11 @@ class Command:
             print(program_line.source)
             index = program_line.next
 
+    def format_cl(self, cl):
+        program_line = self.executor._program[cl.index]
+        offset = cl.offset
+        return F"Line: {program_line.line:6}: Clause: {offset}"
+
     def cmd_for_stack(self, args):
         """
         Dumps the for/next stack, so you can see if you are in any loops.
@@ -83,8 +87,8 @@ class Command:
         print("For/next stack:")
         if len(self.executor._for_stack) == 0:
             print("\t<empty>")
-        for i in self.executor._for_stack:
-            print("\t", i)
+        for cl in self.executor._for_stack:
+            print("\t", self.format_cl(cl))
 
     def cmd_gosub_stack(self, args):
         """
@@ -96,8 +100,8 @@ class Command:
         print("GOSUB stack:")
         if len(self.executor._gosub_stack) == 0:
             print("\t<empty>")
-        for i in self.executor._gosub_stack:
-            print("\t", i)
+        for cl in self.executor._gosub_stack:
+            print("\t", self.format_cl(cl))
 
     def cmd_quit(self, args):
         sys.exit(0)
@@ -188,8 +192,17 @@ class Command:
         while True:
             print("> ", end='')
             cmd_line = input()
+
+            # Make ?A$ work, not just ? A$
+            if cmd_line.startswith("?") and len(cmd_line) > 1 and cmd_line[1] != ' ':
+                cmd_line = "? " + cmd_line[1:]
+
             info = cmd_line.split(" ", 1)
             cmd = info[0]
+            # Make ?A$ work, not just ? A$
+            if cmd.startswith("?") and len(cmd) > 1 and cmd[1] != ' ':
+                cmd = "? " + cmd[1:]
+
             if len(info) > 1:
                 args = info[1]
             else:
