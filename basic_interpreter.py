@@ -30,6 +30,10 @@ def stmt_rem(executor, stmt):
 # TODO can print be more complex? PRINT A$,"ABC",B$. I think it can
 def stmt_print(executor, stmt):
     arg = stmt.args.strip()
+    if arg.endswith(";"):
+        no_cr = True
+    else:
+        no_cr = False
     args = arg.split(";")
     for i, arg in enumerate(args):
         arg = arg.strip()
@@ -38,6 +42,7 @@ def stmt_print(executor, stmt):
         if arg[0] == '"': # quoted string
             assert_syntax(arg[0] =='"' and arg[-1] == '"', "String not properly quoted for 'PRINT'")
             output = arg[1:-1]
+            output.replace(" ", "*") # TODO delete this line.
             print(output, end='')
         else: # Expression
             v = eval_expression(executor._symbols, arg)
@@ -52,7 +57,8 @@ def stmt_print(executor, stmt):
 
         # if i < len(args) - 1:
         #     print(" ", end='')
-    print()
+    if not no_cr:
+        print()
     return None
 
 
