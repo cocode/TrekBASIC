@@ -437,6 +437,8 @@ class Executor:
         self._internal_symbols = None
         self._symbols = None
         self.init_symbols()
+        self.setup_program()
+
 
     def init_symbols(self):
         self._internal_symbols = SymbolTable()
@@ -449,7 +451,7 @@ class Executor:
     def halt(self):
         self._run = False
 
-    def run_program(self):
+    def setup_program(self):
         # Vocabulary I will use going forward:
         # LINE refers to a basic line number
         # INDEX refers to the index into the list of LINES (self._program)
@@ -467,7 +469,12 @@ class Executor:
         self._count_stmts = 0
         self._statement_offset = 0
         random.seed(1)
+
+    def run_program(self):
         while self._run:
+            self.execute_current_line()
+
+    def execute_current_line(self):
             current = self._program[self._index]
             self._count_lines += 1
             if self._trace_file:
@@ -498,7 +505,8 @@ class Executor:
                     break # Don't do the rest of the line
                 if self._goto: # If a goto has happened.
                     if self._trace_file:
-                        print(F"\tGOTO/GOSUB/RETURN from line {current.line}:{self._stmt_index} TO {self._goto}.",
+                        destination_line = self._program[self._goto.index].line
+                        print(F"\tControl Transfer from line {current.line}:{self._stmt_index} TO line {destination_line}: {self._goto}.",
                               file=self._trace_file)
 
                     self._index = self._goto.index
@@ -512,6 +520,9 @@ class Executor:
                 else:
                     self._index = current.next
                 self._statement_offset = 0
+
+    def get_current_line(self):
+        return self._program[self._index]
 
     def do_for(self, var, start, stop, step, stmt):
         # Note that var and start are evaluated before beginning, but stop and step
@@ -553,7 +564,7 @@ class Executor:
     def put_symbol_element(self, symbol, value, subscripts):
         # TODO Maybe check is_valid_variable here? Have to allow user defined functions, and built-ins, though.
         if self._trace_file:
-            print(F"\t\t{symbol}={value}, array element", file=self._trace_file)
+            print(F"\t\t{symbol}{subscripts}={value}, array element", file=self._trace_file)
         target = self.get_symbol(symbol)
         target_type = self.get_symbol_type(symbol)
         assert_syntax(target_type==SymbolType.ARRAY, "Can't subscript a non-array")
