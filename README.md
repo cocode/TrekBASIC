@@ -86,3 +86,4 @@ Useful manual: https://files.eric.ed.gov/fulltext/ED083819.pdf
 According to that, and a vague memory, arrays can have the same name as normal variables.
 Syntax Error in line 4060: SyntaxError: Can't subscript non-array N of type SymbolType.VARIABLE: 4060 FORI=Q1-1TOQ1+1:N(1)=-1:N(2)=-2:N(3)=-3:FORJ=Q2-1TOQ2+1
 
+I refactored all the program files into different pieces, now i should refactor the tests to match.

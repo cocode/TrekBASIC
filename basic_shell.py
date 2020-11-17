@@ -7,7 +7,8 @@ import argparse
 
 from basic_types import UndefinedSymbol, BasicSyntaxError
 
-from basic_interpreter import load_program, Executor
+from basic_interpreter import Executor
+from basic_loading import load_program
 from basic_statements import eval_expression
 from basic_types import RunStatus
 
