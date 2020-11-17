@@ -9,7 +9,8 @@ from basic_types import UndefinedSymbol
 from basic_utils import format_line
 
 
-from basic_interpreter import load_program, Executor
+from basic_interpreter import load_program, Executor, eval_expression
+
 
 class Command:
     def __init__(self, program_file):
@@ -71,18 +72,57 @@ class Command:
             print(program_line.source)
             index = program_line.next
 
+    def cmd_for_stack(self, args):
+        """
+        Dumps the for/next stack, so you can see if you are in any loops.
+        :param args: Not used.
+        :return:
+        """
+        count = 10
+        index = self.executor._index
+        print("For/next stack:")
+        if len(self.executor._for_stack) == 0:
+            print("\t<empty>")
+        for i in self.executor._for_stack:
+            print("\t", i)
+
+    def cmd_gosub_stack(self, args):
+        """
+        Dumps the gosub stack, so you can see if you are in any loops.
+        :param args: Not used.
+        :return:
+        """
+        index = self.executor._index
+        print("GOSUB stack:")
+        if len(self.executor._gosub_stack) == 0:
+            print("\t<empty>")
+        for i in self.executor._gosub_stack:
+            print("\t", i)
+
     def cmd_quit(self, args):
         sys.exit(0)
 
     def cmd_symbols(self, args):
-        pprint.pprint(self.executor._symbols.dump())
+        if args:
+            try:
+                pprint.pprint(self.executor.get_symbol(args))
+                pprint.pprint(self.executor.get_symbol_type(args))
+            except UndefinedSymbol as us:
+                print(F"The symbol '{args}' is not defined.")
+        else:
+            pprint.pprint(self.executor._symbols.dump())
 
     def cmd_print(self, args):
+        if not args:
+            self.usage("?")
+            return
+
         try:
-            pprint.pprint(self.executor.get_symbol(args))
-            pprint.pprint(self.executor.get_symbol_type(args))
-        except UndefinedSymbol as us:
-            print(F"The symbol '{args}' is not defined.")
+            result = eval_expression(self.executor._symbols, args)
+        except:
+            print("Invalid expression")
+            return
+        print(result)
 
     def cmd_next(self, args):
         self.print_current("")
@@ -126,14 +166,16 @@ class Command:
 
     commands = {
         "break": (cmd_break, "Usage: break LINE or break list break clear"),
+        "forstack": (cmd_for_stack, "Usage: fors"),
+        "gosubs": (cmd_gosub_stack, "Usage: gosubs"),
         "help": (cmd_help, "Usage: help"),
         "load": (cmd_load, "Usage: load <program>"),
         "list": (cmd_list, "Usage: list start count"),
         "quit": (cmd_quit, "Usage: quit"),
         "run": (cmd_run, "Usage: run"),
         "next": (cmd_next, "Usage: next"),
-        "sym": (cmd_symbols, "Usage: sym"),
-        "?": (cmd_print, "Usage: ? variablename"),
+        "sym": (cmd_symbols, "Usage: sym <symbol>"),
+        "?": (cmd_print, "Usage: ? expression"),
     }
 
     def find_command(self, prefix):
