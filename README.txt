@@ -62,3 +62,6 @@ Is comma a right associative operator that produces an array (or tuple, but it g
 Maybe move the operators enum to it's own file, so i t has no dependencies, and then use a dict
 for the mapping.
 could also move the lexing to parsed_ststements, and then basicopenarots wouldn;t ned the lexer
+
+Functions should get an artg with type "array", not "num"
+Operator eval functions need to return the correct type, not just always "num". Start by returning the type passed in
