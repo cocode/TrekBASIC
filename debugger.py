@@ -84,7 +84,7 @@ class Command:
         except UndefinedSymbol as us:
             print(F"The symbol '{args}' is not defined.")
 
-    def cmd_step(self, args):
+    def cmd_next(self, args):
         self.print_current("")
         self.executor.execute_current_line()
 
@@ -131,10 +131,16 @@ class Command:
         "list": (cmd_list, "Usage: list start count"),
         "quit": (cmd_quit, "Usage: quit"),
         "run": (cmd_run, "Usage: run"),
-        "step": (cmd_step, "Usage: step"),
+        "next": (cmd_next, "Usage: next"),
         "sym": (cmd_symbols, "Usage: sym"),
         "?": (cmd_print, "Usage: ? variablename"),
     }
+
+    def find_command(self, prefix):
+        matches = [cmd for cmd in self.commands if cmd.startswith(prefix)]
+        if len(matches) == 1:
+            return matches[0]
+        return None
 
     def do_command(self):
         while True:
@@ -146,6 +152,9 @@ class Command:
                 args = info[1]
             else:
                 args = None
+            match = self.find_command(cmd)
+            if match:
+                cmd = match
             if cmd not in self.commands:
                 print(F"Unknown command {cmd}")
                 self.cmd_help(args)
