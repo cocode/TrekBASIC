@@ -833,3 +833,9 @@ class Test(TestCase):
         ]
         executor = self.runit(listing)
         self.assert_value(executor, "Z$", "DEF")
+
+    def test_mid_2(self):
+        listing = [
+            '1540 Z$=MID$("ABCDEFGHI", 4)',
+        ]
+        self.runit_se(listing)

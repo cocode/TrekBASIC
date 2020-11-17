@@ -47,6 +47,38 @@ class MONO_OP:
         return lexer_token(answer, "num")
 
 
+class STR_OP(MONO_OP):
+    """
+    Base class for the string operations. LEFT$, MID$, RIGHT$
+    """
+    def __init__(self, lam, name, arg_count):
+        """
+
+        :param name: Just for debugging.
+        :param arg_count: The number of arguments the function takes.
+        """
+        self._lambda = lam
+        self._name = name
+        self._arg_count = arg_count
+
+    def check_args(self, stack):
+        super().check_args(stack)
+        # Functions get their arguments in an array of parameters
+        args = stack[-1].token
+        assert(isinstance(args, list))
+        assert_syntax(len(args) == self._arg_count, F"Wrong number of arguments {len(args)} for {self._name}")
+        assert_syntax(isinstance(args[0], str), "First operand of {self._name} must be a string.")
+        is_number = isinstance(args[1], int) or isinstance(args[1], float)
+        assert_syntax(is_number, "Second operand of {self._name} must be a number.")
+        if self._arg_count == 3:
+            is_number = isinstance(args[2], int) or isinstance(args[2], float)
+            assert_syntax(is_number, "Third operand of {self._name} must be a number.")
+
+    def eval1(self, first, op):
+        if self._lambda:
+            return self._lambda(first)
+
+
 class MINUS_MONO_OP(MONO_OP):
     def eval1(self, first, op):
         return -first
@@ -207,11 +239,11 @@ def get_op(token):
         if token.token == "RND":
             return MONO_OP(lambda x: random.random()) # Handles the built-in RND function
         if token.token == "LEFT$":
-            return MONO_OP(lambda x: x[0][:int(x[1])])
+            return STR_OP(lambda x: x[0][:int(x[1])], token.token, 2)
         if token.token == "RIGHT$":
-            return MONO_OP(lambda x: x[0][-int(x[1]):])
+            return STR_OP(lambda x: x[0][-int(x[1]):], token.token, 2)
         if token.token == "MID$":
-            return MONO_OP(lambda x: x[0][int(x[1])-1:int(x[1])-1+int(x[2])])
+            return STR_OP(lambda x: x[0][int(x[1])-1:int(x[1])-1+int(x[2])], token.token, 3)
         if token.token == "SGN":
             return MONO_OP(lambda x: (x > 0) - (x < 0)) # Handles the built-in SGN function
         op_def = get_op_def("∫") # Handles user defined functions.
