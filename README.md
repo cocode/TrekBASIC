@@ -35,6 +35,7 @@ A LINE is made up of multiple STATEMENTS, each one beginning with a KEYWORD.
 
 ## TODO on interpreter
 
+1. Use ControlLocation for the current instrcution record in Executor
 0. Add support for automatically understanding new two-character operators.
     FIX lexer.
 1. Fully support N-dimensional arrays. Two-dimensionsal is are working, but might want cleanup.
@@ -75,8 +76,11 @@ for the mapping.
 
 Desperately need step over vs step into
 
+## References
+1. https://madexp.com/wp-content/uploads/2018/02/Microsoft_Basic_8086Xenix_Reference.pdf
+2. http://www.classiccmp.org/cini/pdf/Apple/AppleSoft%20II%20Basic%20Programming%20Manual.PDF
 
-NEW:
+## Known Issues
 Syntax Error in line 2290: SyntaxError: Undefined variable: 'C': 2290 IF C$>="a" AND C$<="z" THEN X$=X$+CHR$(ASC(C$)-32) ELSE X$=X$+C$
 Useful manual: https://files.eric.ed.gov/fulltext/ED083819.pdf
 According to that, and a vague memory, arrays can have the same name as normal variables.
