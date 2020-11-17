@@ -4,22 +4,18 @@ It's not intended (yet) to run ALL basic programs.
 """
 import traceback
 from collections import namedtuple
-import sys
 from enum import Enum
 import random
 
-from basic_types import ProgramLine, lexer_token, BasicSyntaxError, BasicInternalError, assert_syntax, ste, SymbolType
+from basic_types import ProgramLine, BasicSyntaxError, BasicInternalError, assert_syntax, SymbolType
 from parsed_statements import ParsedStatement, ParsedStatementIf, ParsedStatementFor, ParsedStatementOnGoto
 from parsed_statements import ParsedStatementInput
-from basic_lexer import lexer_token, Lexer, NUMBERS, LETTERS
+from basic_lexer import Lexer, NUMBERS, LETTERS
 from basic_expressions import Expression
 from basic_symbols import SymbolTable
 from basic_utils import smart_split
 
 
-
-
-# For now, don't tokenize in advance
 def stmt_rem(executor, stmt):
     """
     Does nothing.
@@ -27,8 +23,13 @@ def stmt_rem(executor, stmt):
     """
     return None
 
-# TODO can print be more complex? PRINT A$,"ABC",B$. I think it can
 def stmt_print(executor, stmt):
+    """
+    Prints output.
+    :param executor: The program execution environment. Contains variables in its SymbolTable
+    :param stmt: This print statement, contains parameters to the PRINT command.
+    :return: None
+    """
     arg = stmt.args.strip()
     if arg.endswith(";"):
         no_cr = True
@@ -98,8 +99,10 @@ def stmt_next(executor, stmt):
     else:
         executor.do_next_pop(var)
 
+
 def is_string_variable(variable:str):
     return variable.endswith("$")
+
 
 def is_valid_identifier(variable:str):
     """
@@ -157,6 +160,7 @@ def eval_expression(symbols, value):
     result = e.eval(tokens, symbols=symbols)
     return result
 
+
 def stmt_let(executor, stmt):
     try:
         variable, value = stmt.args.split("=", 1)
@@ -172,8 +176,16 @@ def stmt_clear(executor, stmt):
     # Clear statement removes all variables.
     executor.init_symbols()
 
+
 def stmt_dim(executor, stmt):
-    # TODO Handle variables in array dimensions?
+    """
+    Declares an array. Initializes it to zeros.
+
+    TODO Handle more than two dimensions.
+    :param executor:
+    :param stmt:
+    :return:
+    """
     stmts = smart_split(stmt.args.strip(), "(", ")", ",")
     for s in stmts:
         s = s.strip()
@@ -206,7 +218,7 @@ def stmt_if(executor, stmt):
     it continues to execute the clauses after the THEN.
     :param executor:
     :param stmt:
-    :return:
+    :return: None
     """
     lexer = Lexer()
     tokens = lexer.lex(stmt.args)
@@ -228,6 +240,7 @@ def stmt_input(executor, stmt):
     if not is_string_variable(var):
         result = float(result)
     executor.put_symbol(var, result, SymbolType.VARIABLE, None)
+
 
 def stmt_on(executor, stmt):
     var = stmt._expression
@@ -275,10 +288,20 @@ def stmt_def(executor, stmt):
     value = value.strip()
     executor.put_symbol(variable, value, SymbolType.FUNCTION, arg)
 
+
 def stmt_return(executor, stmt):
     executor.do_return()
 
+
 def stmt_width(executor, stmt):
+    """
+    The WIDTH statement is only for compatibility with some versions of BASIC. It set the width of the screen.
+
+    Ignored.
+    :param executor:
+    :param stmt:
+    :return:
+    """
     pass
 
 
@@ -314,6 +337,16 @@ class Keywords(Enum):
 
 
 def tokenize_statements(commands_text:str):
+    """
+    Parses individual statements. A ine of the program may have multiple statements in it.
+
+    This line has three statements.
+
+    100 A=3:PRINT"A is equal to";A:X=6
+
+    :param commands_text:
+    :return:
+    """
     list_of_statements = []
     options = [cmd for cmd in Keywords.__members__.values()]
     for command in commands_text:
@@ -341,6 +374,7 @@ def tokenize_statements(commands_text:str):
         list_of_statements.extend(additional)
 
     return list_of_statements
+
 
 def tokenize_line(program_line: object) -> ProgramLine:
     """
@@ -411,16 +445,19 @@ def load_program(program_filename):
     return program
 
 
-# Target of a control transfer
+# Target of a control transfer. Used by GOTO, GOSUB, NEXT, etc.
+# TODO This should be a mutable class, and we should use it for the current instruction
 # index: The index into the Executor._program list
-# offset: The index into the Exector._program[x].stmts list.
+# offset: The index into the Executor._program[x].stmts list.
 ControlLocation = namedtuple("ControlLocation", "index offset")
+
 # var: the index variable
 # stop: The ending value, and expression
 # step: The step, and expression. both expressions can change during loop execution
 # stmt: Used to tell if we are initializing the loop, or looping
 # Note: we don't need to save "start" it's only used on setup.
 ForRecord = namedtuple("ForRecord", "var stop step stmt")
+
 
 class Executor:
     def __init__(self, program:list[ProgramLine], trace_file=None, stack_trace=False):
