@@ -62,10 +62,3 @@ def print_formatted(program, f = sys.stdout):
     lines = format_program(program)
     for line in lines:
         print(line)
-
-
-# def print_formatted(program, start, end, f = sys.stdout):
-#     lines = format_program(program)
-#     for line in lines[]:
-#         print(line)
-
