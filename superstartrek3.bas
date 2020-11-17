@@ -1,3 +1,4 @@
+1 REM https://github.com/lwiest/BASICCompiler/blob/master/samples/STARTREK.BAS
 1000 REM *** Based on Super Star Trek from "101 BASIC Computer Games" by David Ahl
 1010 REM *** Modified and corrected by Lorenz Wiest 12-MAY-2014 (Final Version)
 1020 REM *** (1) Adjusted coordinate system (X => left, Y => down)
@@ -666,7 +667,7 @@
 7650 REM *** Match sector ******************************************************
 7660 REM
 7670 Z1=INT(Z1+0.5) : Z2=INT(Z2+0.5)
-7680 S8=(Z2-1)*24+(Z1-1)*3++1
+7680 S8=(Z2-1)*24+(Z1-1)*3+1
 7690 Z3=0 : IF MID$(Q$,S8,3)=A$ THEN Z3=1
 7700 RETURN
 7710 REM
