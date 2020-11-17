@@ -7,7 +7,16 @@ from basic_symbols import SymbolTable
 
 
 class Expression:
+    """
+    A class for evaluating BASIC expressions. See evalI()
+    """
     def one_op(self, op_stack, data_stack):
+        """
+        Perform one operation.
+        :param op_stack: The operation stack, for example '*'
+        :param data_stack: The operand stack.
+        :return: None, it pushes the result back onto the data stack.
+        """
         from basic_operators import get_op, get_precedence
 
         current_op = op_stack.pop()
@@ -19,13 +28,13 @@ class Expression:
 
     def eval(self, tokens:list[lexer_token], *, symbols=None) -> lexer_token:
         """
-        evalulates an expression, like "2+3*5-A+RND()"
-        :param symbols: a COPY!!! of the symbol table from the Executor
+        Evalulates an expression, like "2+3*5-A+RND()"
+        :param symbols: Symbols (BASIC variables) to use when evaluating the expression
         :param tokens: the incoming list[lexer_token]
-        :return:
+        :return: A lexer token with the result and the type.
         """
         from basic_operators import get_op, get_precedence # Import it in two places, so the IDE knows it's there.
-        # "-" is ambigous. It can mean subtraction or unary minus.
+        # "-" is ambiguous. It can mean subtraction or unary minus.
         # if "-" follows a data item, it's subtraction.
         # if "-" follows an operator, it's unary minus, unless the operator is )
         # Why ")"? I need to be able to express this better.
