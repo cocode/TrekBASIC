@@ -449,7 +449,10 @@ def load_program(program_filename):
 # TODO This should be a mutable class, and we should use it for the current instruction
 # index: The index into the Executor._program list
 # offset: The index into the Executor._program[x].stmts list.
-ControlLocation = namedtuple("ControlLocation", "index offset")
+class ControlLocation:
+    def __init__(self, index, offset):
+        self.index = index
+        self.offset = offset
 
 # var: the index variable
 # stop: The ending value, and expression
