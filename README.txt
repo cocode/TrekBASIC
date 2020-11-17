@@ -68,3 +68,6 @@ Operator eval functions need to return the correct type, not just always "num". 
 Maybe write trace to a file. With the variables on that line. Or build a debugger.
     X=3, Y=4
     100 IFX+Y>3THENPRINT"FOO"
+
+Add "trace on" and "trace off" statements to the language, to control writing of the trace file.
+Need to slush the trace file periodically. maybe every line.
