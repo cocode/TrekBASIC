@@ -135,18 +135,10 @@ def assign_variable(executor, variable, value):
             raise BasicSyntaxError(F"Missing array subscript in assignment to {variable}")
 
         subscripts = variable[i+1:j].split(",")
-        # TODO subscripts can be expressions!
-        if len(subscripts) > 2:
-            raise BasicSyntaxError('Three+ dimensional arrays are not supported')
         variable = variable[:i]
         is_valid_identifier(variable)
-        target = executor.get_symbol(variable) # Array must exist. get_symbol will raise if is does not.
-        subscript0 = int(eval_expression(executor._symbols, subscripts[0])) - 1  # Basic has 1-based indexing.
-        if len(subscripts) == 1:
-            target[subscript0] = value
-        else:
-            subscript1 = int(eval_expression(executor._symbols, subscripts[1])) -1  # Basic has 1-based indexing.
-            target[subscript0][subscript1] = value
+        subscripts = [int(eval_expression(executor._symbols, subscript)) - 1 for subscript in subscripts]
+        executor.put_symbol_element(variable, value, subscripts)
     else:
         is_valid_identifier(variable)
         executor.put_symbol(variable, value, symbol_type=SymbolType.VARIABLE, arg=None)
@@ -187,7 +179,6 @@ def stmt_dim(executor, stmt):
         if s[len(name)] == "$":
             name += "$"
         dimensions = s[len(name):]
-        # TODO This should be part of Executor. Then assert_syntax would know the line number.
         assert_syntax(dimensions[0] == '(',  "Missing (")
         assert_syntax(dimensions[-1] == ')', "Missing (")
         dimensions = dimensions[1:-1] # Remove parens
@@ -199,7 +190,7 @@ def stmt_dim(executor, stmt):
         if len(dimensions) == 2:
             size_x = int(dimensions[0].replace("(",''))
             size_y = int(dimensions[1].replace(")",''))
-            value = [[0] * size_y] * size_x
+            value = [ [0] * size_y for _ in range(size_x)] # wrong: [[0] * size_y] * size_x
         executor.put_symbol(name, value, SymbolType.ARRAY, arg=None) # Not right, but for now.
 
 
@@ -558,6 +549,20 @@ class Executor:
         if self._trace_file:
             print(F"\t\t{symbol}={value}, {symbol_type}", file=self._trace_file)
         self._symbols.put_symbol(symbol, value, symbol_type, arg)
+
+    def put_symbol_element(self, symbol, value, subscripts):
+        # TODO Maybe check is_valid_variable here? Have to allow user defined functions, and built-ins, though.
+        if self._trace_file:
+            print(F"\t\t{symbol}={value}, array element", file=self._trace_file)
+        target = self.get_symbol(symbol)
+        target_type = self.get_symbol_type(symbol)
+        assert_syntax(target_type==SymbolType.ARRAY, "Can't subscript a non-array")
+        v = target
+        for subscript in subscripts[:-1]:
+            v = v[subscript]
+        subscript = subscripts[-1]
+        v[subscript] = value
+        print(target)
 
     def _find_line(self, line_number):
         for index, possible in enumerate(self._program):

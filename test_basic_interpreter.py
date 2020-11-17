@@ -25,10 +25,10 @@ class Test(TestCase):
             self.assert_value(executor, item[0], item[1])
 
 
-    def runit(self, listing):
+    def runit(self, listing, trace_file=None):
         program = tokenize(listing)
         self.assertEqual(len(listing), len(program))
-        executor = Executor(program, stack_trace=True)
+        executor = Executor(program, trace_file=trace_file, stack_trace=True)
         executor.run_program()
         return executor
 
@@ -849,10 +849,17 @@ class Test(TestCase):
         self.assert_value(executor, "A$", "TOM")
         self.assert_value(executor, "A", 3)
 
-    # def test_example_99(self):
-    #     listing = [
-    #         "530 FORI=1TO9:C(I,1)=0:C(I,2)=0:NEXTI"
-    #     ]
-    #     executor = self.runit(listing)
-    #     self.assert_value(executor, "K3", 0)
+    def test_example_99(self):
+        listing = [
+            '100 DIMC(9,2)',
+            "530 FORI=1TO9:C(I,1)=I:C(I,2)=I+7:NEXTI"
+        ]
+        with open("tracefile.txt", "w") as f:
+            executor = self.runit(listing, trace_file=f)
+            C = executor.get_symbol("C")
+            print(C)
+            #self.assertEqual(6, C[2][0] )
+            executor.put_symbol_element("C", 37, [1, 1])
+            print(C)
+
 
