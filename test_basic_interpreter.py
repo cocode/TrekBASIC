@@ -854,12 +854,10 @@ class Test(TestCase):
             '100 DIMC(9,2)',
             "530 FORI=1TO9:C(I,1)=I:C(I,2)=I+7:NEXTI"
         ]
-        with open("tracefile.txt", "w") as f:
-            executor = self.runit(listing, trace_file=f)
-            C = executor.get_symbol("C")
-            print(C)
-            #self.assertEqual(6, C[2][0] )
-            executor.put_symbol_element("C", 37, [1, 1])
-            print(C)
+        executor = self.runit(listing)
+        C = executor.get_symbol("C")
+        self.assertEqual([3,10], C[2])
+
+
 
 

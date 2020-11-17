@@ -562,7 +562,6 @@ class Executor:
             v = v[subscript]
         subscript = subscripts[-1]
         v[subscript] = value
-        print(target)
 
     def _find_line(self, line_number):
         for index, possible in enumerate(self._program):
