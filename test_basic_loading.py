@@ -4,7 +4,8 @@ import sys
 
 from basic_statements import Keywords
 from basic_types import ProgramLine
-from basic_loading import tokenize_line
+from basic_loading import tokenize_line, load_program
+from basic_utils import format_program
 
 
 class Test(TestCase):
@@ -118,4 +119,10 @@ class Test(TestCase):
         self.assertEqual(Keywords.NEXT, result.keyword)
         self.assertEqual('I', result.args)
 
-
+    def test_load_program(self):
+        program = load_program("simple_test.bas")
+        self.assertEqual(5, len(program))
+        with open("sample_output.txt", 'w') as f:
+            for line in format_program(program):
+                print(line, file=f)
+            # TODO Compare output to source

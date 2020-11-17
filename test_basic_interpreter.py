@@ -55,27 +55,6 @@ class Test(TestCase):
         with self.assertRaises(BasicSyntaxError):
             executor = self.runit(listing)
 
-    def test_smart_split(self):
-        line = 'PRINT"YOUR MISSION: BEGINS":PRINT"AND ENDS"'
-        results = smart_split(line)
-        self.assertEqual(2, len(results))
-        self.assertEqual('PRINT"YOUR MISSION: BEGINS"', results[0])
-        self.assertEqual('PRINT"AND ENDS"', results[1])
-
-        line = "G(8,8),C(9,2),K(3,3),N(3),Z(8,8),D(8)"
-        results = smart_split(line, "(", ")", ",")
-        self.assertEqual(6, len(results))
-        self.assertEqual('G(8,8)', results[0])
-        self.assertEqual('C(9,2)', results[1])
-
-    def test_load_program(self):
-        program = load_program("simple_test.bas")
-        self.assertEqual(5, len(program))
-        with open("sample_output.txt", 'w') as f:
-            for line in format_program(program):
-                print(line, file=f)
-            # TODO Compare output to source
-
     def test_assignment(self):
         executor = self.runit(['100 Z$="Fred"'])
         self.assertEqual(1, executor.get_symbol_count())
