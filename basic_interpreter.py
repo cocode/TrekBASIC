@@ -6,6 +6,7 @@ import traceback
 from collections import namedtuple
 import sys
 from enum import Enum
+import random
 
 from basic_types import ProgramLine, lexer_token, BasicSyntaxError, BasicInternalError, assert_syntax, ste, SymbolType
 from parsed_statements import ParsedStatement, ParsedStatementIf, ParsedStatementFor, ParsedStatementOnGoto
@@ -421,7 +422,7 @@ ControlLocation = namedtuple("ControlLocation", "index offset")
 ForRecord = namedtuple("ForRecord", "var stop step stmt")
 
 class Executor:
-    def __init__(self, program:list[ProgramLine], trace=False, stack_trace=False):
+    def __init__(self, program:list[ProgramLine], trace_file=None, stack_trace=False):
         """
 
         :param program:
@@ -431,7 +432,7 @@ class Executor:
         self._program = program
         self._index = 0
         self._run = False
-        self._trace = trace
+        self._trace_file = trace_file
         self._stack_trace = stack_trace
         self._goto = None
         # _statement_offset is used when we transfer control into the middle of a line
@@ -451,8 +452,8 @@ class Executor:
         self._symbols = self._internal_symbols.get_nested_scope()
 
 
-    def set_trace(self, value):
-        self._trace = value
+    def set_trace_file(self, value):
+        self._trace_file = value
 
     def halt(self):
         self._run = False
@@ -474,18 +475,20 @@ class Executor:
         self._count_lines = 0
         self._count_stmts = 0
         self._statement_offset = 0
+        random.seed(1)
         while self._run:
             current = self._program[self._index]
             self._count_lines += 1
-            if self._trace:
-                print(F"{current.line}: ")
+            if self._trace_file:
+                print(F">{current.source}", file=self._trace_file)
             # Get the statements on the current line
             stmts = current.stmts
             for self._stmt_index in range(self._statement_offset, len(stmts)):
                 s = stmts[self._stmt_index]
                 self._count_stmts += 1
-                if self._trace:
-                    print("\t", s.keyword, s.args)
+                if self._trace_file:
+                    # TODO ParsedStatements should have a __str__. Not everything is in args anymore.`
+                    print(F"\t{s.keyword.name} {s.args}", file=self._trace_file)
                 execution_function = s.keyword.value.get_exec()
                 try:
                     execution_function(self, s)
@@ -503,8 +506,9 @@ class Executor:
                 if not self._run:
                     break # Don't do the rest of the line
                 if self._goto: # If a goto has happened.
-                    if self._trace:
-                        print(F"\tGOTO/GOSUB/RETURN from line {current.line}:{self._stmt_index} TO {self._goto}.")
+                    if self._trace_file:
+                        print(F"\tGOTO/GOSUB/RETURN from line {current.line}:{self._stmt_index} TO {self._goto}.",
+                              file=self._trace_file)
 
                     self._index = self._goto.index
                     self._statement_offset = self._goto.offset
@@ -551,6 +555,8 @@ class Executor:
 
     def put_symbol(self, symbol, value, symbol_type, arg):
         # TODO Maybe check is_valid_variable here? Have to allow user defined functions, and built-ins, though.
+        if self._trace_file:
+            print(F"\t\t{symbol}={value}, {symbol_type}", file=self._trace_file)
         self._symbols.put_symbol(symbol, value, symbol_type, arg)
 
     def _find_line(self, line_number):
@@ -650,20 +656,5 @@ class Executor:
         :return:
         """
         return self._symbols.get_symbol_type(symbol)
-
-
-
-if __name__ == "__main__":
-    # Makes it to 1320 of superstartrek, and line 20 of startrek.bas
-    if len(sys.argv) < 2:
-        print("Usage: python3 basic_intrpreter.py name_of_program.bas")
-        sys.exit(1)
-    program = load_program(sys.argv[1])
-    # program = load_program("startrek.bas")
-    # program = load_program("simple_test.bas")
-    executor = Executor(program, trace=False)
-    executor.run_program()
-    import pprint
-    pprint.pprint(executor._symbols.dump())
 
 
