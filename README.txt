@@ -63,5 +63,8 @@ Maybe move the operators enum to it's own file, so i t has no dependencies, and 
 for the mapping.
 could also move the lexing to parsed_ststements, and then basicopenarots wouldn;t ned the lexer
 
-Functions should get an artg with type "array", not "num"
+Functions should get an arg with type "array", not "num". which means comma should return "array"
 Operator eval functions need to return the correct type, not just always "num". Start by returning the type passed in
+Maybe write trace to a file. With the variables on that line. Or build a debugger.
+    X=3, Y=4
+    100 IFX+Y>3THENPRINT"FOO"
