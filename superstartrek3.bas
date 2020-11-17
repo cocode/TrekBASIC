@@ -76,7 +76,7 @@
 1750 PRINT "   There ";X0$;B9;"Starbase";X$;" in the Galaxy for resupplying your ship."
 1760 PRINT
 1770 PRINT "Hit RETURN when ready to accept command."
-1780 INPUT "",A$
+1780 INPUT "";A$
 1790 REM *** Here anytime new quadrant entered ***
 1800 Z4=Q1 : Z5=Q2 : K3=0 : B3=0 : S3=0 : G5=0 : D4=0.5*RND(1) : Z(Q1,Q2)=G(Q1,Q2)
 1810 IF Q1<1 OR Q1>8 OR Q2<1 OR Q2>8 THEN 1970
