@@ -23,15 +23,53 @@ class Command:
         executor = Executor(program)
         self.executor = executor
 
+    def usage(self, cmd):
+        """
+        Print usage for one command.
+        :param cmd:
+        :return:
+        """
+        tup = self.commands[cmd]
+        usage = tup[1]
+        print(usage)
+
     def cmd_load(self, args):
         if args is not None:
             self._program_file = args
         print("Loading ", self._program_file)
         self.load()
 
-    def cmd_print_current(self, args):
+    def print_current(self, args):
         line = self.executor.get_current_line()
         print(line.source)
+
+    def cmd_list(self, args):
+        count = 10
+        if args:
+            args = args.split()
+            args = [arg.strip() for arg in args]
+            if not str.isdigit(args[0]):
+                print(F"Invalid line number {args[0]}")
+                self.usage("list")
+                return
+            start_line_number = int(args[0])
+            cl = self.executor._find_line(start_line_number)
+            index = cl.index
+
+            if len(args) > 1:
+                if not str.isdigit(args[1]):
+                    print(F"Invalid count {args[1]}")
+                    self.usage("list")
+                    return
+                count = int(args[1])
+        else:
+            index = self.executor._index
+        for i in range(count):
+            if index >= len(self.executor._program):
+                break
+            program_line = self.executor._program[index]
+            print(program_line.source)
+            index = program_line.next
 
     def cmd_quit(self, args):
         sys.exit(0)
@@ -47,14 +85,14 @@ class Command:
             print(F"The symbol '{args}' is not defined.")
 
     def cmd_step(self, args):
-        self.cmd_print_current("")
+        self.print_current("")
         self.executor.execute_current_line()
 
     def cmd_run(self, args):
-        rc = self.executor.run_program(self._breakpoints) # should start from current line.
+        rc = self.executor.run_program(self._breakpoints)
         if rc == 1:
             print("Breakpoint!")
-            self.cmd_print_current(None)
+            self.print_current(None)
         else:
             print("Program completed.")
 
@@ -75,7 +113,7 @@ class Command:
             return
 
         if args is None or not str.isdigit(args):
-            print("Usage: break LINE or break list break clear")
+            self.usage("break")
             return
         self._breakpoints.append(int(args))
         print("Added breakpoint at line ", args)
@@ -83,18 +121,19 @@ class Command:
     def cmd_help(self, args):
         print("Commands are:")
         for key in self.commands:
-            print(F"\t{key}")
+            tup = self.commands[key]
+            print(F"\t{key}: {tup[1]}")
 
     commands = {
-        "break": cmd_break,
-        "help": cmd_help,
-        "load": cmd_load,
-        "line": cmd_print_current,
-        "quit": cmd_quit,
-        "run": cmd_run,
-        "step": cmd_step,
-        "sym": cmd_symbols,
-        "?": cmd_print,
+        "break": (cmd_break, "Usage: break LINE or break list break clear"),
+        "help": (cmd_help, "Usage: help"),
+        "load": (cmd_load, "Usage: load <program>"),
+        "list": (cmd_list, "Usage: list start count"),
+        "quit": (cmd_quit, "Usage: quit"),
+        "run": (cmd_run, "Usage: run"),
+        "step": (cmd_step, "Usage: step"),
+        "sym": (cmd_symbols, "Usage: sym"),
+        "?": (cmd_print, "Usage: ? variablename"),
     }
 
     def do_command(self):
@@ -108,10 +147,11 @@ class Command:
             else:
                 args = None
             if cmd not in self.commands:
-                print(F"Uknown command {cmd}")
+                print(F"Unknown command {cmd}")
                 self.cmd_help(args)
                 continue
-            function = self.commands[cmd]
+            tup = self.commands[cmd]
+            function = tup[0]
             function(self, args)
 
 

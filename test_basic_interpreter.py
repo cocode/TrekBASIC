@@ -6,7 +6,8 @@ from basic_dialect import ARRAY_OFFSET
 from basic_interpreter import tokenize_line, Keywords
 from basic_utils import smart_split, format_program
 from basic_interpreter import load_program, tokenize, Executor, BasicSyntaxError, is_valid_identifier
-from basic_types import SymbolType, ProgramLine
+from basic_types import SymbolType, ProgramLine, UndefinedSymbol
+
 
 class Test(TestCase):
     def assert_value(self, executor:Executor, symbol:str, expected_value):
