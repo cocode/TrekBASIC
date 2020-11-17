@@ -73,7 +73,7 @@ for the mapping.
 1. Add "trace on" and "trace off" statements to the language, to control writing of the trace file.
 1. Need to flush the trace file periodically. maybe every line.
 1. Maybe add "run" vs. "continue" for the debugging.
-
+1. make a run() function, and have "End program" and 'breakpoint' be different flags
 Desperately need step over vs step into
 
 ## References
