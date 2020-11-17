@@ -8,7 +8,7 @@ S3 Number of stars
 Array G current sector? No, I think it is the 8x8 galaxy of 8x8 sectors.
 Array K is the positions of the 1-3 klingons in this secor
 S is the current shield level. Under 200 gives a warning.
-E is energy. Total energy is S+E
+E is energy. Total energy is S+E, default energy level is E0
 
 Q1=FNR(1):Q2=FNR(1):S1=FNR(1):S2=FNR(1)
 

@@ -439,9 +439,10 @@ class Executor:
         # _statement_offset is used when we transfer control into the middle of a line
         # 100 PRINT"BEFORE":GOSUB 110:PRINT"AFTER"
         # When we RETURN, we should continue with PRINT"AFTER"
+        # _stmt_index is the current value, and it starts from _statement_offset after a control transfer.
         self._statement_offset = 0
-        self._gosub_stack = []
         self._stmt_index = 0
+        self._gosub_stack = []
         self._for_stack = []
         # PyCharm complains if these are defined anywhere outside of __init__
         self._internal_symbols = None
@@ -485,17 +486,18 @@ class Executor:
         random.seed(1)
 
     def run_program(self, breaklist = [], data_breakpoints = []):
+        self._run = True # May be false after a breakpoint and restart.
         self._data_breakpoints = data_breakpoints
         while self._run:
             self.execute_current_line()
-            current = self._program[self._index]
-            line = current.line
-            if line in breaklist:
-                return 1
+            if self._index is not None:
+                current = self._program[self._index]
+                line = current.line
+                if line in breaklist:
+                    return 1
         x = self._return_code
-        if x is not None:
-            self._return_code = None
-        else:
+        self._return_code = None
+        if x is None:
             x = 0
         return x
 
@@ -527,6 +529,11 @@ class Executor:
                     traceback.print_exc()
                     raise BasicInternalError(F"Internal error in line {current.line}: {e}")
                 if not self._run:
+                    # Remember where we were, so we can restart after a breakpoint
+                    # Otherwise, we'll just do the same line again when we restart
+                    cl = self.get_next_stmt()
+                    self._index = cl.index
+                    self._statement_offset = cl.offset
                     break # Don't do the rest of the line
                 if self._goto: # If a goto has happened.
                     if self._trace_file:

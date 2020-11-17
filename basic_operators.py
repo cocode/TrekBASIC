@@ -11,7 +11,8 @@ from enum import Enum
 import random
 
 from basic_dialect import ARRAY_OFFSET
-from basic_types import lexer_token, assert_syntax, assert_internal, UNARY_MINUS, ARRAY_ACCESS, SymbolType
+from basic_types import lexer_token, assert_syntax, assert_internal, UNARY_MINUS, ARRAY_ACCESS, SymbolType, \
+    BasicSyntaxError
 
 import basic_expressions
 from basic_lexer import Lexer
@@ -166,6 +167,13 @@ class BINOP_NUM(BINOP):
         assert_syntax(stack[-1].type == "num", "Operand not numeric for binary op")
         assert_syntax(stack[-2].type == "num", "Operand not numeric for binary op")
 
+class BINOP_NUM_DIV(BINOP):
+    def eval2(self, first, second):
+        if second == 0:
+            raise BasicSyntaxError("Division by zero")
+        if self._lambda:
+            return self._lambda(first, second)
+
 
 class BINOP_STR_NUM(BINOP):
     """
@@ -197,7 +205,7 @@ OpDef = namedtuple('OpDef','text prec cls') # Later, might want to add associati
 class Operators(Enum):
     CLOSE=         OpDef(')',    0,  OP() )
     COMMA=         OpDef(',',    0.5,  BINOP_COMMA() )
-    EQUALS=        OpDef('=',    1,  BINOP_STR_NUM(lambda x, y: x == y) ) # BOOLEAN =
+    EQUALS=        OpDef('=',    3,  BINOP_STR_NUM(lambda x, y: x == y) ) # BOOLEAN =
     GT=            OpDef('>',    3,  BINOP_STR_NUM(lambda x, y: x > y))
     GTE=           OpDef('>=',   3,  BINOP_STR_NUM(lambda x, y: x >= y))
     LT=            OpDef('<',    3,  BINOP_STR_NUM(lambda x, y: x < y))
@@ -211,7 +219,7 @@ class Operators(Enum):
     OR=            OpDef('OR',   2,  BINOP(lambda x, y: x or y))
     MINUS=         OpDef('-',    4,  BINOP_NUM(lambda x, y: x - y))
     PLUS=          OpDef('+',    4,  BINOP_STR_NUM(lambda x, y: x + y))
-    DIV=           OpDef('/',    5,  BINOP_NUM(lambda x, y: x / y))
+    DIV=           OpDef('/',    5,  BINOP_NUM_DIV(lambda x, y: x / y))
     MUL=           OpDef('*',    5,  BINOP_NUM(lambda x, y: x * y))
     EXP=           OpDef('^',    6,  BINOP_NUM(lambda x, y: x ** y))
     OPEN=          OpDef('(',    9,  OP())

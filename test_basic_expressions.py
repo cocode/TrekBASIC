@@ -209,3 +209,12 @@ class TestExpression(TestCase):
         value = expression.eval(tokens)
         self.assertEqual("abc", value)
 
+    def test_example_x(self):
+        tokens = self._lexer.lex('E>10 OR D(7)=0')
+        self.assertEqual(10, len(tokens))
+        s = SymbolTable()
+        s.put_symbol("E", 3000, SymbolType.VARIABLE, None)
+        s.put_symbol("D", [0,0,0,0, 0,0,0,0], SymbolType.ARRAY, None)
+        expression = Expression()
+        value = expression.eval(tokens, symbols=s)
+        self.assertEqual(True, value)

@@ -892,4 +892,13 @@ class Test(TestCase):
         executor = self.runit(listing)
         self.assert_value(executor, "A", 5)
 
-
+    def test_example_3(self):
+        listing = [
+            '1000 S=0:E=3000:DIMD(8):D(7)=0',
+            "2160 IF S+E>10 THEN IF E>10 OR D(7)=0 THEN 2240",
+            '2165 PRINT "WRONG!"',
+            '2170 A=5:END',
+            '2240 A=-9999',
+        ]
+        executor = self.runit(listing)
+        self.assert_value(executor, "A", -9999)
