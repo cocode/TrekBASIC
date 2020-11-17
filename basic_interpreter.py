@@ -1,6 +1,6 @@
 """
 Basic interpreter to run superstartrek.
-It's not intended (yet) to run ANY basic program.
+It's not intended (yet) to run ALL basic programs.
 """
 import traceback
 from collections import namedtuple
@@ -602,7 +602,7 @@ class Executor:
             print(F"\t\t{symbol}{subscripts}={value}, array element", file=self._trace_file)
         target = self.get_symbol(symbol)
         target_type = self.get_symbol_type(symbol)
-        assert_syntax(target_type==SymbolType.ARRAY, "Can't subscript a non-array")
+        assert_syntax(target_type==SymbolType.ARRAY, F"Can't subscript non-array {symbol} of type {target_type}")
         v = target
         for subscript in subscripts[:-1]:
             v = v[subscript]
