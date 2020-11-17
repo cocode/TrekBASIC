@@ -3,12 +3,10 @@ from unittest import TestCase
 import sys
 
 from basic_dialect import ARRAY_OFFSET
-from basic_statements import Keywords
-from basic_utils import smart_split, format_program
 from basic_interpreter import Executor, BasicSyntaxError
 from basic_statements import is_valid_identifier
-from basic_types import SymbolType, ProgramLine, RunStatus
-from basic_loading import tokenize_line, load_program, tokenize
+from basic_types import SymbolType, RunStatus
+from basic_loading import tokenize
 
 
 class Test(TestCase):
