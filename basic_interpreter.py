@@ -474,6 +474,7 @@ class Executor:
         self._internal_symbols.put_symbol("MID$", "⌊", SymbolType.FUNCTION, arg=None)
         self._internal_symbols.put_symbol("LEN", "⌊", SymbolType.FUNCTION, arg=None)
         self._internal_symbols.put_symbol("TAB", "⌊", SymbolType.FUNCTION, arg=None)
+        self._internal_symbols.put_symbol("STR$", "⌊", SymbolType.FUNCTION, arg=None)
 
         self._run = True
         self._count_lines = 0

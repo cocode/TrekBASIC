@@ -5,11 +5,30 @@ A$ can be the enterprise "<*>", a kingon "+k+", >!<
 K3 number of klingons
 B3 Number of bases
 S3 Number of stars
-G current sector?
+Array G current sector? No, I think it is the 8x8 galaxy of 8x8 sectors.
+Array K is the positions of the 1-3 klingons in this secor
+S is the current shield level. Under 200 gives a warning.
+E is energy. Total energy is S+E
+
+Q1=FNR(1):Q2=FNR(1):S1=FNR(1):S2=FNR(1)
+
+Q1, Q2 are the Quadrant, S1, S2 are the sector co-ordinates
 
 ## Line Numbers / Subroutines
+**1990** checks energy. It does not appear to be syntactically valid, but is
+not rasing an error
+
 8590: Generate some random numbers
+
 2060 Main? input
+
+6820 print status report
+
+1500 is the main sector status report.
+
+1600 goes here if the coordinates are out of the sector, chooses new position?
+
+1720 place klingons, if any Array K is the positions of the 1-3 klingons in this secor
 
 ## Tentative
 G might be the current sector, with the different items in different decimal places

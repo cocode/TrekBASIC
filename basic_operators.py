@@ -48,6 +48,11 @@ class MONO_OP:
         return_type = self._return_type if self._return_type is not None else first.type
         return lexer_token(answer, return_type)
 
+class STR_MONO_OP(MONO_OP):
+    def eval(self, stack, *, op):
+        r = super().eval(stack, op=op)
+        return r
+
 
 class STR_OP(MONO_OP):
     """
@@ -72,7 +77,7 @@ class STR_OP(MONO_OP):
             # Right now, function args are delivered in a list, only if there is more than one. TODO
             args = [args]
         assert_syntax(len(args) == self._arg_count, F"Wrong number of arguments {len(args)} for {self._name}")
-        assert_syntax(isinstance(args[0], str), "First operand of {self._name} must be a string.")
+        assert_syntax(isinstance(args[0], str), F"First operand of {self._name} must be a string.")
         if self._arg_count >= 2:
             is_number = isinstance(args[1], int) or isinstance(args[1], float)
             assert_syntax(is_number, "Second operand of {self._name} must be a number.")
@@ -250,10 +255,14 @@ def get_op(token):
             return STR_OP(lambda x: x[0][-int(x[1]):], token.token, 2)
         if token.token == "MID$":
             return STR_OP(lambda x: x[0][int(x[1])-1:int(x[1])-1+int(x[2])], token.token, 3)
+        if token.token == "STR$":
+            return STR_MONO_OP(lambda x: str(x), return_type="str")
         if token.token == "LEN":
             return STR_OP(lambda x: len(x), token.token, 1, "num") # This needs to return an int, unlike the other str functions.
+        if token.token == "TAB":
+            return MONO_OP(lambda x: print(" "*int(x)))
         if token.token == "SGN":
-            return MONO_OP(lambda x: (x > 0) - (x < 0)) # Handles the built-in SGN function
+            return MONO_OP(lambda x: (x > 0) - (x < 0))
         op_def = get_op_def("∫") # Handles user defined functions.
         return op_def.cls
 

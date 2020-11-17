@@ -841,6 +841,13 @@ class Test(TestCase):
         ]
         self.runit_se(listing)
 
+    def test_str_dollar(self):
+        listing = [
+            '1540 Z$=STR$(3+4)',
+        ]
+        executor = self.runit(listing)
+        self.assert_value(executor, "Z$", "7.0")
+
     def test_len(self):
         listing = [
             '1000 A$="TOM"',
@@ -850,7 +857,7 @@ class Test(TestCase):
         self.assert_value(executor, "A$", "TOM")
         self.assert_value(executor, "A", 3)
 
-    def test_example_99(self):
+    def test_example_1(self):
         listing = [
             '100 DIMC(9,2)',
             "530 FORI=1TO9:C(I,1)=I:C(I,2)=I+7:NEXTI"
@@ -859,6 +866,23 @@ class Test(TestCase):
         C = executor.get_symbol("C")
         self.assertEqual([3,10], C[2])
 
+    def test_example_2(self):
+        listing = [
+            '100 E=100:S=10:DIMD(7)',
+            '1990 IFS+E>10THENIFE>10ORD(7)=0THEN2060'
+            '2000 A=6:END',
+            '2060 A=5:END'
+        ]
+        executor = self.runit(listing)
+        self.assert_value(executor, "A", 5)
 
+    def test_example_2(self):
+        listing = [
+            '1000 B9=0',
+            "1630 IF B9<>0 THEN 1690",
+            '1690 A=5:END'
+        ]
+        executor = self.runit(listing)
+        self.assert_value(executor, "A", 5)
 
 

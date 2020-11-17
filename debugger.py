@@ -5,8 +5,7 @@ import sys
 import pprint
 import argparse
 
-from basic_types import UndefinedSymbol
-
+from basic_types import UndefinedSymbol, BasicSyntaxError
 
 from basic_interpreter import load_program, Executor, eval_expression
 
@@ -17,6 +16,7 @@ class Command:
         self.executor = None
         self.load()
         self._breakpoints = []
+        self._data_breakpoints = []
 
     def load(self):
         program = load_program(self._program_file)
@@ -53,7 +53,11 @@ class Command:
                 self.usage("list")
                 return
             start_line_number = int(args[0])
-            cl = self.executor._find_line(start_line_number)
+            try:
+                cl = self.executor._find_line(start_line_number)
+            except BasicSyntaxError as e:
+                print("Line number not found.")
+                return
             index = cl.index
 
             if len(args) > 1:
@@ -128,39 +132,55 @@ class Command:
             return
         print(result)
 
+
     def cmd_next(self, args):
+        """
+        Executes one program line, or until a control transfer. A NEXT from a FOR loop does a control
+        transfer each time.
+        :param args:  Not used.
+        :return: Noneblist
+        """
         self.print_current("")
         self.executor.execute_current_line()
 
     def cmd_run(self, args):
-        rc = self.executor.run_program(self._breakpoints)
+        rc = self.executor.run_program(self._breakpoints, self._data_breakpoints)
         if rc == 1:
             print("Breakpoint!")
+            self.print_current(None)
+        elif rc == 2:
+            print("Data Breakpoint!")
             self.print_current(None)
         else:
             print("Program completed.")
 
     def cmd_break(self, args):
         """
-        set a breakpoint
+        set a breakpoint. Breakpoints happen after the current LINE completes.
+        A data breakpoint stops execution AFTER the access is done.
         :param args:
         :return:
         """
         if args == "clear":
             self._breakpoints = []
+            self._data_breakpoints = []
             return
 
-        if args == "list":
+        if args == "list" or args == None:
             print("Breakpoints:")
             for i in self._breakpoints:
                 print("\t", i)
+            print("Data breakpoints:")
+            for i in self._data_breakpoints:
+                print("\t", i)
             return
 
-        if args is None or not str.isdigit(args):
-            self.usage("break")
-            return
-        self._breakpoints.append(int(args))
-        print("Added breakpoint at line ", args)
+        if str.isdigit(args):
+            self._breakpoints.append(int(args))
+            print("Added breakpoint at line ", args)
+        else:
+            self._data_breakpoints.append(args)
+            print("Added data breakpoint at line ", args)
 
     def cmd_help(self, args):
         print("Commands are:")
@@ -169,7 +189,7 @@ class Command:
             print(F"\t{key}: {tup[1]}")
 
     commands = {
-        "break": (cmd_break, "Usage: break LINE or break list break clear"),
+        "break": (cmd_break, "Usage: break LINE or break SYMBOL or break list break clear"),
         "forstack": (cmd_for_stack, "Usage: fors"),
         "gosubs": (cmd_gosub_stack, "Usage: gosubs"),
         "help": (cmd_help, "Usage: help"),

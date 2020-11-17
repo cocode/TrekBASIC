@@ -17,7 +17,7 @@ OPERATORS = "()^*/+-=><,"
 BOOLEAN_OPERATORS=["AND", "OR"]
 
 # TODO get this from the function definitons
-BUILT_IN_FUNCTIONS=["INT", "RND", "SGN", "LEFT$", "RIGHT$", "MID$", "LEN"]
+BUILT_IN_FUNCTIONS=["INT", "RND", "SGN", "LEFT$", "RIGHT$", "MID$", "LEN", "TAB", "STR$"]
 
 #KEYWORDS=["DEF", "DIM", "END", "FOR", "GOTO", "GOSUB", "IF", "INPUT", "LET", "NEXT", "ON", "PRINT", "REM", "RETURN"]
 FN_OPERATORS=["FN"+chr(c) for c in range(ord("A"), ord("Z"))]
