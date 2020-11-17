@@ -3,3 +3,4 @@ sample_output.txt
 venv
 __pycache__
 enum_test.py
+tracefile.txt
