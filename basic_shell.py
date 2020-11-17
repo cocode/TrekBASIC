@@ -159,6 +159,9 @@ class BasicShell:
         """
         set a breakpoint. Breakpoints happen after the current LINE completes.
         A data breakpoint stops execution AFTER the access is done.
+
+        TODO Add clause as optional. break 100 2
+        TODO Add read access breakpoints.
         :param args:
         :return:
         """
