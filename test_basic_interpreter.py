@@ -86,9 +86,8 @@ class Test(TestCase):
     def test_def(self):
         executor = self.runit(['100 DEF FNA(X)=X^2+1'])
         self.assertEqual(1, executor.get_symbol_count())
-        A = executor.get_symbol("FNA")
+        self.assert_value(executor, "FNA", "X^2+1")
         AT = executor.get_symbol_type("FNA")
-        self.assertEqual("X^2+1", A)
         self.assertEqual(SymbolType.FUNCTION, AT)
 
     def test_def2(self):
@@ -99,10 +98,8 @@ class Test(TestCase):
         ]
         executor= self.runit(listing)
         self.assertEqual(3, executor.get_symbol_count())
-        Y = executor.get_symbol("Y")
-        self.assertEqual(26, Y)
-        Z = executor.get_symbol("Z")
-        self.assertEqual(2402, Z)
+        self.assert_value(executor, "Y", 26)
+        self.assert_value(executor, "Z", 2402)
 
     def test_def3(self):
         listing = [
@@ -113,10 +110,8 @@ class Test(TestCase):
         ]
         executor= self.runit(listing)
         self.assertEqual(4, executor.get_symbol_count())
-        Y = executor.get_symbol("Y")
-        Z = executor.get_symbol("Z")
-        self.assertEqual(126, Y)
-        self.assertEqual(730, Z)
+        self.assert_value(executor, "Y", 126)
+        self.assert_value(executor, "Z", 730)
 
     def test_def4(self):
         listing = [
@@ -127,8 +122,7 @@ class Test(TestCase):
         ]
         executor= self.runit(listing)
         self.assertEqual(4, executor.get_symbol_count())
-        Z = executor.get_symbol("Z")
-        self.assertEqual(92, Z)
+        self.assert_value(executor, "Z", 92)
 
     def test_def5(self):
         listing = [
@@ -140,8 +134,7 @@ class Test(TestCase):
         ]
         executor= self.runit(listing)
         self.assertEqual(5, executor.get_symbol_count())
-        Z = executor.get_symbol("Z")
-        self.assertEqual(110, Z)
+        self.assert_value(executor, "Z", 110)
 
     def test_def6(self):
         listing = [
@@ -152,8 +145,7 @@ class Test(TestCase):
         ]
         executor= self.runit(listing)
         self.assertEqual(4, executor.get_symbol_count())
-        Z = executor.get_symbol("Z")
-        self.assertEqual(110, Z)
+        self.assert_value(executor, "Z", 110)
 
     def test_builtin_int(self):
         listing = [
@@ -161,8 +153,7 @@ class Test(TestCase):
         ]
         executor= self.runit(listing)
         self.assertEqual(1, executor.get_symbol_count())
-        A = executor.get_symbol("A")
-        self.assertEqual(1, A)
+        self.assert_value(executor, "A", 1)
 
     def test_builtin_rnd(self):
         listing = [
@@ -195,16 +186,11 @@ class Test(TestCase):
         ]
         executor= self.runit(listing)
         self.assertEqual(5, executor.get_symbol_count())
-        A = executor.get_symbol("A")
-        B = executor.get_symbol("B")
-        C = executor.get_symbol("C")
-        D = executor.get_symbol("D$")
-        E = executor.get_symbol("E$")
-        self.assertEqual(A, 3)
-        self.assertEqual(B, 4)
-        self.assertEqual(C, 7)
-        self.assertEqual(D, "ABC")
-        self.assertEqual(E, "ABCDEF")
+        self.assert_value(executor, "A", 3)
+        self.assert_value(executor, "B", 4)
+        self.assert_value(executor, "C", 7)
+        self.assert_value(executor, "D$", "ABC")
+        self.assert_value(executor, "E$", "ABCDEF")
 
     def test_expressions2(self):
         listing = [
@@ -234,8 +220,8 @@ class Test(TestCase):
         ]
         executor= self.runit(listing)
         self.assertEqual(1, executor.get_symbol_count())
-        B = executor.get_symbol("B")
-        self.assertEqual(B, 2)
+        self.assertFalse(executor.is_symbol_defined("A"))
+        self.assert_value(executor, "B", 2)
 
     def test_goto2(self):
         listing = [
@@ -244,11 +230,8 @@ class Test(TestCase):
         ]
         executor= self.runit(listing)
         self.assertEqual(2, executor.get_symbol_count())
-        A = executor.get_symbol("A")
-        self.assertEqual(A, 3)
-        B = executor.get_symbol("B")
-        self.assertEqual(B, 4000)
-
+        self.assert_value(executor, "A", 3)
+        self.assert_value(executor, "B", 4000)
 
     def test_gosub(self):
         listing = [
