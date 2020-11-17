@@ -31,6 +31,11 @@ class BasicSyntaxError(Exception):
         super(BasicSyntaxError, self).__init__(message)
         self.message = message
 
+class UndefinedSymbol(Exception):
+    def __init__(self, message):
+        super(UndefinedSymbol, self).__init__(message)
+        self.message = message
+
 
 class BasicInternalError(Exception):
     def __init__(self, message,):

@@ -470,9 +470,14 @@ class Executor:
         self._statement_offset = 0
         random.seed(1)
 
-    def run_program(self):
+    def run_program(self, breaklist = []):
         while self._run:
             self.execute_current_line()
+            current = self._program[self._index]
+            line = current.line
+            if line in breaklist:
+                return 1
+        return 0
 
     def execute_current_line(self):
             current = self._program[self._index]

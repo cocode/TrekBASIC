@@ -3,7 +3,7 @@ This handles the symbol table for the executor
 """
 import pprint
 
-from basic_types import ste, assert_syntax, SymbolType
+from basic_types import ste, assert_syntax, SymbolType, UndefinedSymbol
 
 
 class SymbolTable:
@@ -47,7 +47,9 @@ class SymbolTable:
         :param symbol:
         :return:
         """
-        assert_syntax(self.is_symbol_defined(symbol), F"Variable {symbol} does not exist.")
+        if not self.is_symbol_defined(symbol):
+            raise UndefinedSymbol(F"Variable {symbol} does not exist.")
+
         if self._is_local(symbol):
             return self._symbols[symbol].value
         return self._enclosing_scope.get_symbol(symbol)
