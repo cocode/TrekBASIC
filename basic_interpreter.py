@@ -654,6 +654,9 @@ class Executor:
 
 if __name__ == "__main__":
     # Makes it to 1320 of superstartrek, and line 20 of startrek.bas
+    if len(sys.argv) < 2:
+        print("Usage: python3 basic_intrpreter.py name_of_program.bas")
+        sys.exit(1)
     program = load_program(sys.argv[1])
     # program = load_program("startrek.bas")
     # program = load_program("simple_test.bas")
