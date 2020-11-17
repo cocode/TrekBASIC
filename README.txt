@@ -70,4 +70,12 @@ Maybe write trace to a file. With the variables on that line. Or build a debugge
     100 IFX+Y>3THENPRINT"FOO"
 
 Add "trace on" and "trace off" statements to the language, to control writing of the trace file.
-Need to slush the trace file periodically. maybe every line.
+Need to flush the trace file periodically. maybe every line.
+
+Maybe add "run" vs. "continue" for the debugging.
+
+Desperately need step over vs step into
+
+I think my bug is nested (on one line) if then. Even if I fix it, I think if then then then won't work. Wrong design
+
+It's the operator precedence of = I think. I have changed it. that test is passing, but others aren't now.
