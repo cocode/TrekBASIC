@@ -35,23 +35,21 @@ A LINE is made up of multiple STATEMENTS, each one beginning with a KEYWORD.
 
 ## TODO on interpreter
 
-1. Use ControlLocation for the current instrcution record in Executor
+1. Need to support "ELSE" for superstartrek3.bas
 0. Add support for automatically understanding new two-character operators.
     FIX lexer.
-1. Fully support N-dimensional arrays. Two-dimensionsal is are working, but might want cleanup.
-2. Support dialects. At least the two star trek programs I have. (basic_dialects.py)
+1. Fully support N-dimensional arrays. Two-dimensional is are working, but might want cleanup.
+2. Support dialects. At least the four star trek programs I have. (basic_dialects.py)
 3. Starting to parse some statements (like FOR) at load time. Should lex any expressions at load time.
    Should we precompute expressions to ASTs on load? - Yes, but not done yet.
-3. Boolean expressions?
-4. built in functions: ABS SGN SQR EXP LOG LOG10
+3. Boolean expressions? Seem to be working.
+4. built in functions: ABS SGN SQR EXP LOG LOG10. CHR$, ORD are needed for superstartrek3.bas 
 6. Convert the program execution to a class.
 7. Write smaller test programs.
 11. Split tests, tests of basic, vs. tests of internal functions.
 9. Write "renum" utility. Split all multiline statements, and renumber at increments of 10
    Then reformat the startrek source.
 12. Rename OP classes in basic operations to not be all upppercase.
-14. Split stmts out of basic_interpreter.py
-    A. One for Executor, One for Statements, one for printing.
 1. Fix functions to store their extra into in the symbol table, not in the "op" parameter.
     1. store data in symbol table
     2. Use it
@@ -63,18 +61,16 @@ A LINE is made up of multiple STATEMENTS, each one beginning with a KEYWORD.
 1.     TODO Search and destroy for literal strings used for what should be enums.
 1. Maybe move the operators enum to it's own file, so  it has no dependencies, and then use a dict
 for the mapping.
-1. could also move the lexing to parsed_ststements, and then basicopenarots wouldn;t ned the lexer
-1. Functions should get an arg with type "array", not "num". which means comma should return "array"
+1. could also move the lexing to parsed_statements, and then basic_openators.py wouldn't need the lexer
 1. Operator eval functions need to return the correct type, not just always "num". Start by returning the type passed in
-1. Maybe write trace to a file. With the variables on that line. Or build a debugger.
+1. Maybe write trace to a file. With the variables on that line. Or build a debugger. Debugger built.
     X=3, Y=4
     100 IFX+Y>3THENPRINT"FOO"
 
 1. Add "trace on" and "trace off" statements to the language, to control writing of the trace file.
 1. Need to flush the trace file periodically. maybe every line.
-1. Maybe add "run" vs. "continue" for the debugging.
-1. make a run() function, and have "End program" and 'breakpoint' be different flags
-1. You know, I don't need to pass the symbol_type everywhere. You can tell the type of a variable
+1. Maybe add "run" vs. "continue" for the debugging. Have single step now.
+1. You know, maybe I don't need to pass the symbol_type everywhere. You can tell the type of a variable
    from its name. FNx = function, $ == string, I guess you still have to know array vs. not.
 Desperately need step over vs step into for debugging.
 
