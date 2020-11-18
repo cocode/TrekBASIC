@@ -97,7 +97,8 @@ class Executor:
                 return self._run
 
             current = self.get_current_line()
-            if current.line in breaklist:
+            # If single step mode, allow them to go over the breakpoint they just hit.
+            if not single_step and current.line in breaklist:
                 self._run = RunStatus.BREAK_CODE
 
             if self._run != RunStatus.RUN:
