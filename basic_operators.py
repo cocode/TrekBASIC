@@ -119,10 +119,10 @@ class ARRAY_ACCESS_MONO_OP(MONO_OP):
     """
     def eval1(self, first, *, op):
         array_name = op.arg
-        variable = op.symbols.get_symbol(array_name)
-        variable_type = op.symbols.get_symbol_type(array_name)
-        v = variable
+        variable = op.symbols.get_symbol_value(array_name, SymbolType.ARRAY)
+        variable_type = op.symbols.get_symbol_type(array_name, SymbolType.ARRAY)
         assert_syntax(variable_type == SymbolType.ARRAY, "Array access to non-array variable '{variable}'")
+
         if type(first) == list:
             # Multidimensional array access
             args = [int(arg)-ARRAY_OFFSET for arg in first] # TODO check type and syntax error. No strings, no arrays

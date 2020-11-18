@@ -134,24 +134,31 @@ class BasicShell:
             return
         print(result)
 
-
     def cmd_next(self, args):
         """
         Executes one program line, or until a control transfer. A NEXT from a FOR loop does a control
         transfer each time.
+
+        TODO: Right now, this steps ONE STATEMENT at a time, not one line
         :param args:  Not used.
-        :return: Noneblist
+        :return: None
         """
         self.print_current("")
-        self.executor.execute_current_line()
+        self.cmd_run("step")
 
     def cmd_run(self, args):
-        rc = self.executor.run_program(self._breakpoints, self._data_breakpoints)
+        single_step = False
+        if args=="step":
+            single_step = True
+
+        rc = self.executor.run_program(self._breakpoints, self._data_breakpoints, single_step=single_step)
         if rc == RunStatus.BREAK_CODE:
             print("Breakpoint!")
             self.print_current(None)
         elif rc == RunStatus.BREAK_DATA:
-            print(F"Data Breakpoint before line {self.executor._program[self.executor._index].line} {self.executor._statement_offset}")
+            loc = self.executor.get_current_location()
+            line = self.executor.get_current_line()
+            print(F"Data Breakpoint before line {line.line} clause: {loc.offset}")
             self.print_current(None)
         else:
             print(F"Program completed with return of {rc}.")
@@ -172,12 +179,14 @@ class BasicShell:
             return
 
         if args == "list" or args == None:
-            print("Breakpoints:")
-            for i in self._breakpoints:
-                print("\t", i)
-            print("Data breakpoints:")
-            for i in self._data_breakpoints:
-                print("\t", i)
+            if self._breakpoints:
+                print("Breakpoints:")
+                for i in self._breakpoints:
+                    print("\t", i)
+            if self._data_breakpoints:
+                print("Data breakpoints:")
+                for i in self._data_breakpoints:
+                    print("\t", i)
             return
 
         if str.isdigit(args):

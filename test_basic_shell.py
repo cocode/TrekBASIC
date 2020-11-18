@@ -32,9 +32,12 @@ class TestBasicShell(TestCase):
     # def test_cmd_quit(self):
     #     self.fail()
     #
-    # def test_cmd_symbols(self):
-    #     self.fail()
-    #
+    def test_cmd_symbols(self):
+        # Just so it gets called.
+        b = BasicShell("simple_test.bas")
+        b.cmd_symbols(None)
+
+
     # def test_cmd_print(self):
     #     self.fail()
     #

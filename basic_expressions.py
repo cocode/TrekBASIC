@@ -26,6 +26,16 @@ class Expression:
         if result is not None:
             data_stack.append(result)
 
+    def get_type_from_name(self, current: lexer_token, tokens: list[lexer_token], token_index: int) -> SymbolType:
+        if len(current.token) <= 2 or (current.token.endswith('$') and len(current.token) <= 3):
+            if token_index + 1 < len(tokens) and tokens[token_index + 1].token == '(':
+                symbol_type = SymbolType.ARRAY
+            else:
+                symbol_type = SymbolType.VARIABLE
+        else:
+            symbol_type = SymbolType.FUNCTION
+        return symbol_type
+
     def eval(self, tokens:list[lexer_token], *, symbols=None) -> lexer_token:
         """
         Evalulates an expression, like "2+3*5-A+RND()"
@@ -45,10 +55,6 @@ class Expression:
 
         if len(tokens) == 0:
             raise BasicSyntaxError(F"No expression.")
-
-        # if len(tokens) == 1:
-        #     assert_syntax(tokens[0].type != 'op', F"Invalid expression.")
-        #     return tokens[0].token
 
         data_stack = []
         op_stack:OP_TOKEN = []
@@ -82,9 +88,17 @@ class Expression:
                     is_unary_context = True
             else:
                 if current.type == "id":
-                    assert_syntax(symbols.is_symbol_defined(current.token), F"Undefined variable: '{current.token}'")
-                    symbol_value = symbols.get_symbol(current.token)
-                    symbol_type = symbols.get_symbol_type(current.token)
+                    # TODO Problem: We now need to know the SymbolType of a variable to retrieve it
+                    # but we don't know it here. Maybe we can defer referencing it, until it is
+                    # used? At that point, we would know array vs function. I think.
+                    # I think this works:
+                    symbol_type = self.get_type_from_name(current, tokens, token_index)
+
+                    assert_syntax(symbols.is_symbol_defined(current.token, symbol_type), F"Undefined variable: '{current.token}'")
+                    symbol_value = symbols.get_symbol(current.token, symbol_type)
+                    symbol_type2 = symbols.get_symbol_type(current.token, symbol_type)
+                    # Changed the way that symbols tables work. Check that we are still consistent.
+                    assert(symbol_type == symbol_type2)
                     if symbol_type == SymbolType.VARIABLE:
                         if current.token.endswith("$"):
                             data_stack.append(lexer_token(symbol_value, "str"))
@@ -93,7 +107,7 @@ class Expression:
                     elif symbol_type == SymbolType.FUNCTION:
                         # Handle function as operators. Lower priority than "(", but higher than everything else.
                         # So don't append this to the data stack, append it to the op stack as a function.
-                        arg = symbols.get_symbol_arg(current.token)
+                        arg = symbols.get_symbol_arg(current.token, SymbolType.FUNCTION)
                         op_stack.append(OP_TOKEN(current.token, SymbolType.FUNCTION, arg, symbol_value, symbols=symbols))
                     else:
                         # Handle function as operators. Lower priority than "(", but higher than everything else.

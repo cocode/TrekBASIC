@@ -11,6 +11,15 @@ from basic_loading import tokenize
 
 class Test(TestCase):
     def assert_value(self, executor:Executor, symbol:str, expected_value):
+        """
+        Asserts the that symbol has the expected value
+
+        ONLY CHECKS THE SYMBOL TABLE SymbolTable.VARIABLE, not ARRAY, or FUNCTION
+        :param executor:
+        :param symbol:
+        :param expected_value:
+        :return:
+        """
         value = executor.get_symbol(symbol)
         self.assertEqual(expected_value, value)
 
@@ -77,8 +86,8 @@ class Test(TestCase):
     def test_dim(self):
         executor = self.runit(['100 DIM A(8), C(1,8)'])
         self.assertEqual(2, executor.get_symbol_count())
-        A = executor.get_symbol("A")
-        C = executor.get_symbol("C")
+        A = executor.get_symbol("A", SymbolType.ARRAY)
+        C = executor.get_symbol("C", SymbolType.ARRAY)
         self.assertEqual(8, len(A))
         self.assertEqual(1, len(C))
         self.assertEqual(8, len(C[0]))
@@ -86,8 +95,11 @@ class Test(TestCase):
     def test_def(self):
         executor = self.runit(['100 DEF FNA(X)=X^2+1'])
         self.assertEqual(1, executor.get_symbol_count())
-        self.assert_value(executor, "FNA", "X^2+1")
-        AT = executor.get_symbol_type("FNA")
+        # self.assert_value(executor, "FNA", "X^2+1")
+        value = executor.get_symbol("FNA", symbol_type=SymbolType.FUNCTION)
+        self.assertEqual("X^2+1", value)
+
+        AT = executor.get_symbol_type("FNA", SymbolType.FUNCTION)
         self.assertEqual(SymbolType.FUNCTION, AT)
 
     def test_def2(self):
@@ -319,7 +331,7 @@ class Test(TestCase):
             '110 A(3)=17',
         ]
         executor= self.runit(listing)
-        A = executor.get_symbol("A")
+        A = executor.get_symbol("A", SymbolType.ARRAY)
         # TODO Figure out if the language expects zero-based arrays, or one based.
         # It looks like "startrek.bas" expects zero based, and superstartrek.bas expects 1
         # TODO Add an option. Add a getter to Executor, so the test can be independent.
@@ -334,7 +346,7 @@ class Test(TestCase):
             '110 A(I5)=I5+1',
         ]
         executor= self.runit(listing)
-        A = executor.get_symbol("A")
+        A = executor.get_symbol("A", SymbolType.ARRAY)
         self.assertEqual(0, A[0], 0) # Check for initialization
         self.assertEqual(7, A[6-ARRAY_OFFSET])   # Verify assignment
 
@@ -369,8 +381,8 @@ class Test(TestCase):
             '120 Y=A(3)',
         ]
         executor= self.runit(listing)
-        A = executor.get_symbol("A")
-        Y = executor.get_symbol("Y")
+        A = executor.get_symbol("A", SymbolType.ARRAY)
+        Y = executor.get_symbol("Y", SymbolType.VARIABLE)
         # TODO Figure out if the language expects zero-based arrays, or one based.
         # It looks like "startrek.bas" expects zero based, and superstartrek.bas expects 1
         # TODO Add an option. Add a getter to Executor, so the test can be independent.
@@ -725,7 +737,7 @@ class Test(TestCase):
             "530 FORI=1TO9:C(I,1)=I:C(I,2)=I+7:NEXTI"
         ]
         executor = self.runit(listing)
-        C = executor.get_symbol("C")
+        C = executor.get_symbol("C", SymbolType.ARRAY)
         self.assertEqual([3,10], C[2])
 
     def test_example_2(self):
@@ -777,4 +789,27 @@ class Test(TestCase):
         except:
             pass
         self.assertEqual(RunStatus.END_ERROR_INTERNAL, executor._run)
+
+    def test_array_access_1(self):
+        listing = [
+            '1000 DIMA(3)',
+            '2160 X=A(3)',
+            '2170 A(2)=17',
+        ]
+        executor = self.runit(listing)
+        self.assert_value(executor, "X", 0)
+        A = executor.get_symbol("A", SymbolType.ARRAY)
+        self.assertTrue(A[1]==17)
+
+    def test_array_names(self):
+        # Test to see that array names don't conflict with scalar variable names.
+        listing = [
+            '1000 S=-17:DIMS(8)',
+            "2160 FORI=1TO8:S(I)=I*I:NEXTI",
+        ]
+        executor = self.runit(listing)
+        self.assert_value(executor, "S", -17)
+        S = executor.get_symbol("S", SymbolType.ARRAY)
+        for i in range(0,8):
+            self.assertTrue(S[i]==(i+1)*(i+1))
 

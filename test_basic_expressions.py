@@ -216,6 +216,21 @@ class TestExpression(TestCase):
         s = SymbolTable()
         s.put_symbol("E", 3000, SymbolType.VARIABLE, None)
         s.put_symbol("D", [0,0,0,0, 0,0,0,0], SymbolType.ARRAY, None)
+        s.dump()
         expression = Expression()
         value = expression.eval(tokens, symbols=s)
         self.assertEqual(True, value)
+
+    def test_get_type_from_name(self):
+        expression = Expression()
+        tokens = self._lexer.lex('A$')
+        self.assertEqual(SymbolType.VARIABLE, expression.get_type_from_name(tokens[0], tokens, 0))
+        tokens = self._lexer.lex('A$')
+        self.assertEqual(SymbolType.VARIABLE, expression.get_type_from_name(tokens[0], tokens, 0))
+        tokens = self._lexer.lex('A1$')
+        self.assertEqual(SymbolType.VARIABLE, expression.get_type_from_name(tokens[0], tokens, 0))
+        tokens = self._lexer.lex('STR$')
+        self.assertEqual(SymbolType.FUNCTION, expression.get_type_from_name(tokens[0], tokens, 0))
+        tokens = self._lexer.lex('A(')
+        self.assertEqual(SymbolType.ARRAY, expression.get_type_from_name(tokens[0], tokens, 0))
+

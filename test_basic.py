@@ -55,7 +55,7 @@ class Test(TestCase):
         # This doesn't actually test the output, but it's handy to have for debugging trace.
         listing = [
             '100 PRINT:PRINT:PRINT:PRINT',
-            '110 J=J+2',
+            '110 J=3+2',
             '120 PRINTJ',
         ]
         program = tokenize(listing)

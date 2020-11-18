@@ -76,7 +76,7 @@ def stmt_gosub(executor, stmt):
 
 
 def stmt_error(executor, stmt:ParsedStatement):
-    raise Exception("This is only for testing.")
+    raise Exception("THIS EXCEPTION IS EXPECTED. It is for testing.")
 
 
 def stmt_for(executor, stmt: ParsedStatementFor):

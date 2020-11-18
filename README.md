@@ -74,7 +74,9 @@ for the mapping.
 1. Need to flush the trace file periodically. maybe every line.
 1. Maybe add "run" vs. "continue" for the debugging.
 1. make a run() function, and have "End program" and 'breakpoint' be different flags
-Desperately need step over vs step into
+1. You know, I don't need to pass the symbol_type everywhere. You can tell the type of a variable
+   from its name. FNx = function, $ == string, I guess you still have to know array vs. not.
+Desperately need step over vs step into for debugging.
 
 ## References
 1. https://madexp.com/wp-content/uploads/2018/02/Microsoft_Basic_8086Xenix_Reference.pdf

@@ -72,4 +72,5 @@ class RunStatus(Enum):
     END_ERROR_INTERNAL=auto()
     BREAK_CODE=auto()
     BREAK_DATA=auto()
+    BREAK_STEP=auto()
 

@@ -72,7 +72,7 @@ class Executor:
         self._internal_symbols.put_symbol("SPACE$", "⌊", SymbolType.FUNCTION, arg=None)
         random.seed(1)
 
-    def run_program(self, breaklist:list[str]=[], data_breakpoints:list[str]=[]):
+    def run_program(self, breaklist:list[str]=[], data_breakpoints:list[str]=[], single_step=False):
         """
         Run the program. This can also be called to resume after a breakpoint.
 
@@ -84,6 +84,8 @@ class Executor:
         otherwise the line would execute again when continuing.
 
         :param breaklist: A list of str - program line numbers to break before.
+        :param data_breakpoints: A list of str - Variables to break AFTER they are WRITTEN. (not read)
+        :param single_step: If True, run one statement (not line) and then return
         :return: A value from RunStatus
         """
         self._run = RunStatus.RUN
@@ -136,9 +138,22 @@ class Executor:
 
                 self._location = self._goto
                 self._goto = None
+            if single_step:
+                self._run = RunStatus.BREAK_STEP
 
     def get_current_line(self):
         return self._program[self._location.index]
+
+    def get_current_location(self)->int:
+        """
+        Gets the index into self._program for the next line to be executed,
+        and the offset into that line.
+
+        Used externally by LIST.
+
+        :return: The index
+        """
+        return self._location
 
     def get_current_index(self)->int:
         """
@@ -159,7 +174,7 @@ class Executor:
         stop = start + count
         if stop >= length:
             stop = length - 1
-        lines = [line.source for line in self._program[start:]]
+        lines = [line.source for line in self._program[start:stop]]
         return lines
 
     def get_current_stmt(self):
@@ -205,22 +220,36 @@ class Executor:
         Get number of defined symbols. Used for testing. This deliberately does not count nested scopes.
         :return:
         """
-        return len(self._symbols)
+        return self._symbols.local_length()
 
-    def put_symbol(self, symbol, value, symbol_type, arg):
+    def put_symbol(self, symbol:str, value, symbol_type:SymbolType, arg:str)->None:
+        """
+        Adds a symbol to a the current symbol table.
+
+        Some versions of basic allow arrays to have the same names as scalar variables. You can tell the difference
+        by context. Here we get an explicit type. On get_symbol(), the caller will have to tell us.
+
+        :param symbol:
+        :param value:
+        :param symbol_type:
+        :param arg:
+        :return:
+        """
+
         # TODO Maybe check is_valid_variable here? Have to allow user defined functions, and built-ins, though.
         if self._trace_file:
             print(F"\t\t{symbol}={value}, {symbol_type}", file=self._trace_file)
-        if self._data_breakpoints and symbol in self._data_breakpoints:
+        if symbol in self._data_breakpoints:
             self._run = RunStatus.BREAK_DATA
+
         self._symbols.put_symbol(symbol, value, symbol_type, arg)
 
     def put_symbol_element(self, symbol, value, subscripts):
         # TODO Maybe check is_valid_variable here? Have to allow user defined functions, and built-ins, though.
         if self._trace_file:
             print(F"\t\t{symbol}{subscripts}={value}, array element", file=self._trace_file)
-        target = self.get_symbol(symbol)
-        target_type = self.get_symbol_type(symbol)
+        target = self.get_symbol(symbol, SymbolType.ARRAY)
+        target_type = self.get_symbol_type(symbol, SymbolType.ARRAY)
         assert_syntax(target_type==SymbolType.ARRAY, F"Can't subscript non-array {symbol} of type {target_type}")
         v = target
         for subscript in subscripts[:-1]:
@@ -303,35 +332,39 @@ class Executor:
 
         self._goto_location(location) # why do we need to hunt for the line? We know the index, and can go directly.
 
-    def is_symbol_defined(self, symbol):
+    def is_symbol_defined(self, symbol, symbol_type:SymbolType=SymbolType.VARIABLE):
         """
         :param symbol:
         :return: True if defined, else False
         """
-        return self._symbols.is_symbol_defined(symbol)
+        return self._symbols.is_symbol_defined(symbol, symbol_type)
 
-    def get_symbol(self, symbol): # TODO Delete this. use get_symbol_value
-        return self.get_symbol_value(symbol)
+    def get_symbol(self, symbol, symbol_type:SymbolType=SymbolType.VARIABLE):
+        # TODO Delete this. use get_symbol_value
+        return self.get_symbol_value(symbol, symbol_type)
 
-    def get_symbol_value(self, symbol):
+    def get_symbol_value(self, symbol, symbol_type:SymbolType=SymbolType.VARIABLE):
         """
         :param symbol:
+        :param symbol_type: Arrays, functions and Scalars all have their own namespaces
         :return:
         """
-        return self._symbols.get_symbol(symbol)
+        return self._symbols.get_symbol_value(symbol, symbol_type)
 
-    def get_symbol_type(self, symbol):
+    def get_symbol_type(self, symbol, symbol_type:SymbolType=SymbolType.VARIABLE):
         """
         :param symbol:
+        :param symbol_type: Arrays, functions and Scalars all have their own namespaces
         :return:
         """
-        return self._symbols.get_symbol_type(symbol)
+        return self._symbols.get_symbol_type(symbol, symbol_type)
 
-    def _get_current_line_number(self):
-        """
-        Gets the line_number that is next to be executed.
-        :return:
-        """
-        current = self._program[self._location.index]
-        line_number = current.line
-        return line_number
+    # Is this needed?
+    # def _get_current_line_number(self):
+    #     """
+    #     Gets the line_number that is next to be executed.
+    #     :return:
+    #     """
+    #     current = self._program[self._location.index]
+    #     line_number = current.line
+    #     return line_number
