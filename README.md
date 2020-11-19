@@ -36,26 +36,24 @@ A LINE is made up of multiple STATEMENTS, each one beginning with a KEYWORD.
 ## TODO on interpreter
 
 1. Need to support "ELSE" for superstartrek3.bas
-2. Can I re-raise exceptions differently, so I don't lose
+1. It should be possible to save code coverage data across multiple runs,
+   so I can get to 100% coverage.
+1.1. Should have better formatting to tell what lines I still need to execute.
+1. Can I re-raise exceptions differently, so I don't lose
 stack information for the original exception?
-3. Add code coverage to executor. Note: Coverage is by statement, not just by line.
-1. I hit an error, where A=205, PRINT(RIGHT$(STR$(X))) printed 5.0, because the base string was 205.0
-    I might need to convert things that are integers to "int", instead of "float"
-    For now, I'm fixing it in STR$
-0. Add support for automatically understanding new two-character operators.
+1. Add support for automatically understanding new two-character operators.
     FIX lexer.
 1. Fully support N-dimensional arrays. Two-dimensional is are working, but might want cleanup.
-2. Support dialects. At least the four star trek programs I have. (basic_dialects.py)
+2. Support dialects. At least for the four star trek programs I have. (basic_dialects.py)
 3. Starting to parse some statements (like FOR) at load time. Should lex any expressions at load time.
    Should we precompute expressions to ASTs on load? - Yes, but not done yet.
 3. Boolean expressions? Seem to be working.
-4. built in functions: ABS SGN SQR EXP LOG LOG10. CHR$, ORD are needed for superstartrek3.bas 
-6. Convert the program execution to a class.
+4. built in functions: EXP LOG LOG10. 
 7. Write smaller test programs.
 11. Split tests, tests of basic, vs. tests of internal functions.
 9. Write "renum" utility. Split all multiline statements, and renumber at increments of 10
    Then reformat the startrek source.
-12. Rename OP classes in basic operations to not be all upppercase.
+12. Rename OP classes in basic_operators.py to not be all upppercase.
 1. Fix functions to store their extra into in the symbol table, not in the "op" parameter.
     1. store data in symbol table
     2. Use it
