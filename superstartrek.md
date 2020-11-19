@@ -2,7 +2,8 @@
 
 ### VARIABLES
 A$ can be the enterprise "<*>", a kingon "+k+", >!<
-K3 number of klingons
+K3 number of klingons is a quadrant
+K9 Number of klingons in the galaxy
 B3 Number of bases
 S3 Number of stars
 Array G current sector? No, I think it is the 8x8 galaxy of 8x8 sectors.
@@ -15,6 +16,14 @@ Q1=FNR(1):Q2=FNR(1):S1=FNR(1):S2=FNR(1)
 Q1, Q2 are the Quadrant, S1, S2 are the sector co-ordinates
 
 ## Line Numbers / Subroutines
+All numbers are for supersstartrek.bas.
+2060 Main command input
+branches for each command: 2140 ONIGOTO2300,1980,4000,4260,4700,5530,5690,7290,6270
+4000 LRS
+4030 Print long range sensor results. N(3) is the current line's three squares. 
+    if n(x)<0, then that quadrant is out of the galaxy.
+    Z(8,8) is the record of the galaxy that you have already seen. You can print it with
+    comand "COM", followed by computer command 0
 **1990** checks energy. It does not appear to be syntactically valid, but is
 not rasing an error
 
