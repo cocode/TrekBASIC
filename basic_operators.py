@@ -211,29 +211,30 @@ OpDef = namedtuple('OpDef','text prec cls') # Later, might want to add associati
 
 # If any additions, ALSO MUST UPDATE basic_lexer.py:OPERATORS. TODO Fix this.
 class Operators(Enum):
-    CLOSE=         OpDef(')',    0,  OP())
-    COMMA=         OpDef(',', 1, BinOpComma())
-    EQUALS=        OpDef('=', 3, BinOpStrNum(lambda x, y: x == y)) # BOOLEAN =
-    GT=            OpDef('>', 3, BinOpStrNum(lambda x, y: x > y))
-    GTE=           OpDef('>=', 3, BinOpStrNum(lambda x, y: x >= y))
-    LT=            OpDef('<',  3, BinOpStrNum(lambda x, y: x < y))
-    LTE=           OpDef('<=', 3, BinOpStrNum(lambda x, y: x <= y))
-    NE=            OpDef('<>', 3, BinOpStrNum(lambda x, y: x != y))
+    CLOSE=         OpDef(')',   0,  OP())
+    COMMA=         OpDef(',',   1, BinOpComma())
+    EQUALS=        OpDef('=',   3, BinOpStrNum(lambda x, y: x == y)) # BOOLEAN =
+    GT=            OpDef('>',   3, BinOpStrNum(lambda x, y: x > y))
+    GTE=           OpDef('>=',  3, BinOpStrNum(lambda x, y: x >= y))
+    LT=            OpDef('<',   3, BinOpStrNum(lambda x, y: x < y))
+    LTE=           OpDef('<=',  3, BinOpStrNum(lambda x, y: x <= y))
+    NE=            OpDef('<>',  3, BinOpStrNum(lambda x, y: x != y))
     # May be semantic differences between python "and" and basic "AND".
     # Python lets you AND to ints, basic does not. BINOP_BOOL maybe?
-    # Basic only allows "AND" of booleans, I believe. TODO We should set the type
-    # Of the output of a BOOLEAN and, and check that an IF only uses a BOOLEAN
+    # Basic only allows "AND" of booleans, I believe.
+    # TODO We should set the type Of the output of a BOOLEAN and,
+    # and check that an IF only uses a BOOLEAN
     AND=           OpDef('AND', 2, BinOp(lambda x, y: x and y))
-    OR=            OpDef('OR', 2, BinOp(lambda x, y: x or y))
-    MINUS=         OpDef('-', 4, BinOpNum(lambda x, y: x - y))
-    PLUS=          OpDef('+', 4, BinOpStrNum(lambda x, y: x + y))
-    DIV=           OpDef('/', 5, BinOpNumDiv(lambda x, y: x / y))
-    MUL=           OpDef('*', 5, BinOpNum(lambda x, y: x * y))
-    EXP=           OpDef('^', 6, BinOpNum(lambda x, y: x ** y))
-    OPEN=          OpDef('(',    9,  OP())
-    FUNC=          OpDef('∫', 8, FuncMonoOp())
-    UNARY_MINUS=   OpDef('—', 7, MinusMonoOp()) # M-dash
-    ARRAY_ACCESS=  OpDef('@', 8, ArrayAccessMonoOp())
+    OR=            OpDef('OR',  2, BinOp(lambda x, y: x or y))
+    MINUS=         OpDef('-',   4, BinOpNum(lambda x, y: x - y))
+    PLUS=          OpDef('+',   4, BinOpStrNum(lambda x, y: x + y))
+    DIV=           OpDef('/',   5, BinOpNumDiv(lambda x, y: x / y))
+    MUL=           OpDef('*',   5, BinOpNum(lambda x, y: x * y))
+    EXP=           OpDef('^',   6, BinOpNum(lambda x, y: x ** y))
+    OPEN=          OpDef('(',   9,  OP())
+    FUNC=          OpDef('∫',   8, FuncMonoOp())
+    UNARY_MINUS=   OpDef('—',   7, MinusMonoOp()) # M-dash
+    ARRAY_ACCESS=  OpDef('@',   8, ArrayAccessMonoOp())
 
 
 OP_MAP={k.value.text:k for k in Operators}
