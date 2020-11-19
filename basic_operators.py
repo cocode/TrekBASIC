@@ -281,12 +281,10 @@ def get_op(token):
             return STR_MONO_OP(lambda x: chr(int(x)), return_type="str")
         if token.token == "ASC":
             return STR_MONO_OP(lambda x: ord(x), return_type="num")
-        if token.token == "SPACE$":
+        if token.token == "SPACE$" or token.token == "TAB":
             return STR_MONO_OP(lambda x: " "*int(x), return_type="str")
         if token.token == "LEN":
             return STR_OP(lambda x: len(x), token.token, 1, "num") # This needs to return an int, unlike the other str functions.
-        if token.token == "TAB":
-            return MONO_OP(lambda x: print(" "*int(x)))
         if token.token == "SGN":
             return MONO_OP(lambda x: (x > 0) - (x < 0))
         op_def = get_op_def("∫") # Handles user defined functions.
