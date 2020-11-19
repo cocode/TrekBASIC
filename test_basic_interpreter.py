@@ -626,6 +626,14 @@ class Test(TestCase):
         self.assertEqual("ENTER 59:", output)
         self.assertEqual(59, executor.get_symbol_value("A"))
 
+    def test_input_3(self):
+        listing = [
+            '110 INPUTW1'
+        ]
+        executor, output = self.runit_capture(listing, input=StringIO("91"))
+        self.assertEqual("", output)
+        self.assertEqual(91, executor.get_symbol_value("W1"))
+
     def test_input_4(self):
         listing = [
             '110 INPUT "ENTER 1,22:";X,Y'
