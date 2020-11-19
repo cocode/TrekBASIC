@@ -22,6 +22,7 @@ class BasicShell:
         self._data_breakpoints = []
 
     def load(self):
+        print("Loading ", self._program_file)
         program = load_program(self._program_file)
         executor = Executor(program)
         self.executor = executor
@@ -39,7 +40,6 @@ class BasicShell:
     def cmd_load(self, args):
         if args is not None:
             self._program_file = args
-        print("Loading ", self._program_file)
         self.load()
 
     def print_current(self, args):
@@ -156,9 +156,14 @@ class BasicShell:
         :return: None
         """
         self.print_current("")
-        self.cmd_run("step")
+        self.cmd_continue("step")
 
-    def cmd_run(self, args):
+    def cmd_continue(self, args):
+        """
+        Continue execution of a program from its current location.
+        :param args: if "step", then single steps the program one step.
+        :return: None
+        """
         single_step = False
         if args=="step":
             single_step = True
@@ -174,6 +179,11 @@ class BasicShell:
             self.print_current(None)
         else:
             print(F"Program completed with return of {rc}.")
+
+
+    def cmd_run(self, args):
+        self.load()
+        self.cmd_continue(args)
 
     def cmd_break(self, args):
         """
@@ -228,17 +238,24 @@ class BasicShell:
             print(F"\t{key}: {tup[1]}")
 
     commands = {
-        "break": (cmd_break, "Usage: break LINE or break SYMBOL or break list break clear"),
-        "forstack": (cmd_for_stack, "Usage: fors"),
-        "gosubs": (cmd_gosub_stack, "Usage: gosubs"),
+        "break": (cmd_break, "Usage: break LINE or break SYMBOL or break list break clear"+
+                  "\n\t\tSets a breakpoint on a line, or on writes to a variable"+
+                  "\n\t\tNote that if you have an array and a scale with the same"+
+                  "\n\t\tname, it will break on writes to either one."),
+        "continue": (cmd_continue, "Usage: continue\n\t\tContinues, after a breakpoint."),
+        "forstack": (cmd_for_stack, "Usage: fors\n\t\tPrints the FOR stack."),
+        "gosubs": (cmd_gosub_stack, "Usage: gosubs\n\t\tPrints the FOR stack."),
         "help": (cmd_help, "Usage: help"),
         "load": (cmd_load, "Usage: load <program>"),
         "list": (cmd_list, "Usage: list start count"),
         "quit": (cmd_quit, "Usage: quit"),
-        "run": (cmd_run, "Usage: run"),
+        "run": (cmd_run, "Usage: run\n\t\tRuns the program from the beginning."),
         "next": (cmd_next, "Usage: next"),
-        "sym": (cmd_symbols, "Usage: sym <symbol> <type>. Type is 'array' or 'function'. Defaults to scalars."),
-        "?": (cmd_print, "Usage: ? expression. Can't print single array variables. Use 'sym'"),
+        "sym": (cmd_symbols, "Usage: sym <symbol> <type>"+
+                "\n\t\tPrints the symbol table, or one entry."+
+                "\n\t\tType is 'variable', 'array' or 'function'. Defaults to 'variable'."),
+        "?": (cmd_print, "Usage: ? expression\n\t\tEvaluates and prints an expression."
+              "\n\t\tNote: You can't print single array variables. Use 'sym'"),
     }
 
     def find_command(self, prefix):
