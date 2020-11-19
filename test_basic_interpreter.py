@@ -726,7 +726,7 @@ class Test(TestCase):
             '1540 Z$=STR$(3+4)',
         ]
         executor = self.runit(listing)
-        self.assert_value(executor, "Z$", "7.0")
+        self.assert_value(executor, "Z$", "7")
 
     def test_space_dollar(self):
         listing = [

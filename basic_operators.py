@@ -53,6 +53,14 @@ class STR_MONO_OP(MONO_OP):
         r = super().eval(stack, op=op)
         return r
 
+class STR_DOLLAR_MONO_OP(STR_MONO_OP):
+    def eval1(self, first, op):
+        if isinstance(first, float):
+            if first == int(first):
+                first = int(first)
+        r = super().eval1(first, op=op)
+        return r
+
 
 class STR_OP(MONO_OP):
     """
@@ -266,7 +274,7 @@ def get_op(token):
         if token.token == "MID$":
             return STR_OP(lambda x: x[0][int(x[1])-1:int(x[1])-1+int(x[2])], token.token, 3)
         if token.token == "STR$":
-            return STR_MONO_OP(lambda x: str(x), return_type="str")
+            return STR_DOLLAR_MONO_OP(lambda x: str(x), return_type="str")
         if token.token == "CHR$":
             return STR_MONO_OP(lambda x: chr(int(x)), return_type="str")
         if token.token == "ASC":

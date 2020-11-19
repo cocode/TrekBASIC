@@ -34,7 +34,7 @@ def stmt_print(executor, stmt):
         no_cr = True
     else:
         no_cr = False
-    args = arg.split(";")
+    args = smart_split(arg, split_char=";")
     for i, arg in enumerate(args):
         arg = arg.strip()
         if len(arg) == 0:
@@ -48,7 +48,7 @@ def stmt_print(executor, stmt):
             v = eval_expression(executor._symbols, arg)
             #v = executor.get_symbol(arg)
             if type(v) == float:
-                print(F" {v:g} ", end='') # I'm trying to figure out the rules for spacing.
+                print(F" {v:g} ", end='') # I'm trying to figure out BASIC's rules for spacing.
                                           # NO spaces is wrong (see initial print out)
                                           # Spaces around everything is wrong.
                                           # Spaces around numbers but not strings seems to work, so far.
