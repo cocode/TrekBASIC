@@ -2,7 +2,8 @@
 Basic support for expressions.
 """
 
-from basic_types import lexer_token, BasicSyntaxError, assert_syntax, OP_TOKEN, UNARY_MINUS, ARRAY_ACCESS, SymbolType
+from basic_types import lexer_token, BasicSyntaxError, assert_syntax, OP_TOKEN, UNARY_MINUS, ARRAY_ACCESS, SymbolType, \
+    UndefinedSymbol
 from basic_symbols import SymbolTable
 
 
@@ -94,7 +95,8 @@ class Expression:
                     # I think this works:
                     symbol_type = self.get_type_from_name(current, tokens, token_index)
 
-                    assert_syntax(symbols.is_symbol_defined(current.token, symbol_type), F"Undefined variable: '{current.token}'")
+                    if not symbols.is_symbol_defined(current.token, symbol_type):
+                        raise UndefinedSymbol(F"Undefined variable: '{current.token}'")
                     symbol_value = symbols.get_symbol(current.token, symbol_type)
                     symbol_type2 = symbols.get_symbol_type(current.token, symbol_type)
                     # Changed the way that symbols tables work. Check that we are still consistent.
