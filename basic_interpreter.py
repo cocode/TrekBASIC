@@ -63,6 +63,7 @@ class Executor:
         self._internal_symbols.put_symbol("INT", "⌊", SymbolType.FUNCTION, arg=None) # TODO Should actual lambda be here?
         self._internal_symbols.put_symbol("RND", "⌊", SymbolType.FUNCTION, arg=None)
         self._internal_symbols.put_symbol("SGN", "⌊", SymbolType.FUNCTION, arg=None)
+        self._internal_symbols.put_symbol("SQR", "⌊", SymbolType.FUNCTION, arg=None)
         self._internal_symbols.put_symbol("LEFT$", "⌊", SymbolType.FUNCTION, arg=None)
         self._internal_symbols.put_symbol("RIGHT$", "⌊", SymbolType.FUNCTION, arg=None)
         self._internal_symbols.put_symbol("MID$", "⌊", SymbolType.FUNCTION, arg=None)
@@ -70,9 +71,11 @@ class Executor:
         self._internal_symbols.put_symbol("TAB", "⌊", SymbolType.FUNCTION, arg=None)
         self._internal_symbols.put_symbol("STR$", "⌊", SymbolType.FUNCTION, arg=None)
         self._internal_symbols.put_symbol("SPACE$", "⌊", SymbolType.FUNCTION, arg=None)
+        self._internal_symbols.put_symbol("CHR$", "⌊", SymbolType.FUNCTION, arg=None)
+        self._internal_symbols.put_symbol("ASC", "⌊", SymbolType.FUNCTION, arg=None)
         random.seed(1)
 
-    def run_program(self, breaklist:list[str]=[], data_breakpoints:list[str]=[], single_step=False):
+    def run_program(self, breaklist:list[tuple]=[], data_breakpoints:list[str]=[], single_step=False):
         """
         Run the program. This can also be called to resume after a breakpoint.
 
@@ -83,7 +86,7 @@ class Executor:
         allow control transfers for the statement to happen, like going to the next line,
         otherwise the line would execute again when continuing.
 
-        :param breaklist: A list of str - program line numbers to break before.
+        :param breaklist: A list of tuple - (program line numbers, clause) to break before.
         :param data_breakpoints: A list of str - Variables to break AFTER they are WRITTEN. (not read)
         :param single_step: If True, run one statement (not line) and then return
         :return: A value from RunStatus
@@ -97,9 +100,13 @@ class Executor:
                 return self._run
 
             current = self.get_current_line()
+            index = self.get_current_index()
             # If single step mode, allow them to go over the breakpoint they just hit.
-            if not single_step and current.line in breaklist:
-                self._run = RunStatus.BREAK_CODE
+            if not single_step:
+                for breakpoint in breaklist:
+                    if current.line == breakpoint[0]:
+                        if self._location.offset == breakpoint[1]:
+                            self._run = RunStatus.BREAK_CODE
 
             if self._run != RunStatus.RUN:
                 return self._run

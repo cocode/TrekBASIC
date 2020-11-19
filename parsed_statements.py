@@ -65,6 +65,7 @@ class ParsedStatementFor(ParsedStatement):
 class ParsedStatementInput(ParsedStatement):
     """
     Base class for a statement that has been processed.
+    TODO In superstartrek3.bas, input takes multiple prompt expressions, separated by semicolons
     """
     def __init__(self, keyword, args):
         super().__init__(keyword, "")
@@ -73,7 +74,10 @@ class ParsedStatementInput(ParsedStatement):
             self._prompt = ""
         else:
             self._prompt = args[:delim].strip()
-        self._input_var = args[delim+1:].strip()
+        input_vars = args[delim+1:].strip()
+        input_vars = input_vars.split(",")
+        input_vars = [v.strip() for v in input_vars]
+        self._input_vars = input_vars
 
 
 class ParsedStatementOnGoto(ParsedStatement):

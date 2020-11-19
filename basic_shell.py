@@ -5,9 +5,9 @@ import sys
 import pprint
 import argparse
 
-from basic_types import UndefinedSymbol, BasicSyntaxError
+from basic_types import UndefinedSymbol, BasicSyntaxError, SymbolType
 
-from basic_interpreter import Executor
+from basic_interpreter import Executor, ControlLocation
 from basic_loading import load_program
 from basic_statements import eval_expression
 from basic_types import RunStatus
@@ -113,14 +113,26 @@ class BasicShell:
         sys.exit(0)
 
     def cmd_symbols(self, args):
-        if args:
-            try:
-                pprint.pprint(self.executor.get_symbol(args))
-                pprint.pprint(self.executor.get_symbol_type(args))
-            except UndefinedSymbol as us:
-                print(F"The symbol '{args}' is not defined.")
-        else:
+        if args is None:
             pprint.pprint(self.executor._symbols.dump())
+            return
+
+        args = args.split()
+        if args:
+            symbol_type = SymbolType.VARIABLE
+            if len(args)>1:
+                if args[1] == "array":
+                    symbol_type = SymbolType.ARRAY
+                elif args[1] == "function":
+                    symbol_type = SymbolType.FUNCTION
+                elif args[1] == "variable":
+                    symbol_type = SymbolType.VARIABLE
+            try:
+                pprint.pprint(self.executor.get_symbol_value(args[0], symbol_type))
+                pprint.pprint(self.executor.get_symbol_type(args[0], symbol_type))
+            except UndefinedSymbol as us:
+                print(F"The symbol '{args[0]}' is not defined as a {symbol_type}.")
+                print(F"Types are 'variable', 'array' and 'function'. Default is 'variable'")
 
     def cmd_print(self, args):
         if not args:
@@ -189,9 +201,22 @@ class BasicShell:
                     print("\t", i)
             return
 
-        if str.isdigit(args):
-            self._breakpoints.append(int(args))
-            print("Added breakpoint at line ", args)
+        args = args.split()
+        if len(args) == 0: # Got nothing but whitespace.
+            self.usage("break")
+            return
+        if str.isdigit(args[0]):
+            if len(args) == 1:
+                offset = 0
+            else:
+                if not args[0].isdigit():
+                    self.usage()
+                    return
+                offset = int(args[1])
+            # Note this is not a ControlLocation, that's index, offset. We are working with line_number, offset
+            breakpoint = (int(args[0]), offset)
+            self._breakpoints.append(breakpoint)
+            print("Added breakpoint at line: ", args, " clause: ", offset)
         else:
             self._data_breakpoints.append(args)
             print("Added data breakpoint at line ", args)
@@ -212,8 +237,8 @@ class BasicShell:
         "quit": (cmd_quit, "Usage: quit"),
         "run": (cmd_run, "Usage: run"),
         "next": (cmd_next, "Usage: next"),
-        "sym": (cmd_symbols, "Usage: sym <symbol>"),
-        "?": (cmd_print, "Usage: ? expression"),
+        "sym": (cmd_symbols, "Usage: sym <symbol> <type>. Type is 'array' or 'function'. Defaults to scalars."),
+        "?": (cmd_print, "Usage: ? expression. Can't print single array variables. Use 'sym'"),
     }
 
     def find_command(self, prefix):

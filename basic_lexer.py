@@ -17,7 +17,8 @@ OPERATORS = "()^*/+-=><,"
 BOOLEAN_OPERATORS=["AND", "OR"]
 
 # TODO get this from the function definitons
-BUILT_IN_FUNCTIONS=["INT", "RND", "SGN", "LEFT$", "RIGHT$", "MID$", "LEN", "TAB", "STR$", "SPACE$"]
+BUILT_IN_FUNCTIONS=["INT", "RND", "SGN", "LEFT$", "RIGHT$", "MID$", "LEN", "TAB", "STR$", "SPACE$",
+                    "CHR$", "ASC", "SQR"]
 
 #KEYWORDS=["DEF", "DIM", "END", "FOR", "GOTO", "GOSUB", "IF", "INPUT", "LET", "NEXT", "ON", "PRINT", "REM", "RETURN"]
 FN_OPERATORS=["FN"+chr(c) for c in range(ord("A"), ord("Z"))]
@@ -31,7 +32,8 @@ class Lexer:
 
     def scan_for_keyword(self, array, text):
         """
-        find any strings matching an element of array in text.
+        Find any strings matching an element of array in text.
+
         :param array:
         :param text:
         :return:

@@ -7,3 +7,4 @@ EXPONENTIATION_OPERATOR: str='^'
 # Change to 1 for 1-based arrays, 0 for 0-based.
 ARRAY_OFFSET: int=1
 # TODO Arrays are in a different namespace than scalar variables.
+UPPERCASE_INPUT=1

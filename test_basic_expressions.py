@@ -234,3 +234,12 @@ class TestExpression(TestCase):
         tokens = self._lexer.lex('A(')
         self.assertEqual(SymbolType.ARRAY, expression.get_type_from_name(tokens[0], tokens, 0))
 
+
+    def test_tuples(self):
+        expression = Expression()
+        tokens = self._lexer.lex('1,2')
+        self.assertEqual(3, len(tokens))
+        expression = Expression()
+        s = SymbolTable()
+        value = expression.eval(tokens, symbols=s)
+        self.assertEqual([1.0,2.0], value)

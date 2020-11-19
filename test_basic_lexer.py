@@ -58,3 +58,5 @@ class TestLexer(TestCase):
         self.assertEqual(3, tokens[2].token)
 
 
+
+

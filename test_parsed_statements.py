@@ -1,5 +1,5 @@
 from unittest import TestCase
-from parsed_statements import ParsedStatementFor, ParsedStatementOnGoto
+from parsed_statements import ParsedStatementFor, ParsedStatementOnGoto, ParsedStatementInput
 
 
 class TestParsedStatementFor(TestCase):
@@ -28,3 +28,21 @@ class TestParsedStatementFor(TestCase):
         self.assertEqual("I5*10+1", p._expression)
         self.assertEqual("GOTO", p._op)
         self.assertEqual([100,200,300], p._target_lines)
+
+    def test_parsing_input(self):
+        p = ParsedStatementInput("INPUT", '"PROMPT IS HERE";A')
+        self.assertEqual("INPUT", p.keyword)
+        # The prompt is an expression. That's why the nested quotes.
+        self.assertEqual('"PROMPT IS HERE"', p._prompt)
+        self.assertEqual(["A"], p._input_vars)
+
+        p = ParsedStatementInput("INPUT", '"PROMPT IS HERE";A,B')
+        self.assertEqual("INPUT", p.keyword)
+        self.assertEqual('"PROMPT IS HERE"', p._prompt)
+        self.assertEqual(["A","B"], p._input_vars)
+
+        p = ParsedStatementInput("INPUT", 'A$;A,B')
+        self.assertEqual("INPUT", p.keyword)
+        self.assertEqual('A$', p._prompt)
+        self.assertEqual(["A","B"], p._input_vars)
+

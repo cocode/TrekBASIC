@@ -8,6 +8,7 @@ Implementation for basic operators, such as add, subtract, etc.
 from collections import namedtuple
 from enum import Enum
 import random
+from math import sqrt
 
 from basic_dialect import ARRAY_OFFSET
 from basic_types import lexer_token, assert_syntax, SymbolType, BasicSyntaxError
@@ -256,6 +257,8 @@ def get_op(token):
             return MONO_OP(lambda x: int(x)) # Handles the built-in INT function # TODO we also define the functions in Excutor.
         if token.token == "RND":
             return MONO_OP(lambda x: random.random()) # Handles the built-in RND function
+        if token.token == "SQR":
+            return MONO_OP(lambda x: sqrt(x)) # Handles the built-in RND function
         if token.token == "LEFT$":
             return STR_OP(lambda x: x[0][:int(x[1])], token.token, 2)
         if token.token == "RIGHT$":
@@ -264,6 +267,10 @@ def get_op(token):
             return STR_OP(lambda x: x[0][int(x[1])-1:int(x[1])-1+int(x[2])], token.token, 3)
         if token.token == "STR$":
             return STR_MONO_OP(lambda x: str(x), return_type="str")
+        if token.token == "CHR$":
+            return STR_MONO_OP(lambda x: chr(int(x)), return_type="str")
+        if token.token == "ASC":
+            return STR_MONO_OP(lambda x: ord(x), return_type="num")
         if token.token == "SPACE$":
             return STR_MONO_OP(lambda x: " "*int(x), return_type="str")
         if token.token == "LEN":

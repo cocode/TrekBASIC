@@ -4,6 +4,7 @@ that runs the program (Executor)
 """
 from enum import Enum
 
+from basic_dialect import UPPERCASE_INPUT
 from basic_types import BasicSyntaxError, assert_syntax
 from basic_types import SymbolType, RunStatus
 
@@ -233,17 +234,26 @@ def stmt_if(executor, stmt):
 
 
 def stmt_input(executor, stmt):
-    var = stmt._input_var
-    is_valid_identifier(var)
+    for var in stmt._input_vars:
+        is_valid_identifier(var)
     prompt = stmt._prompt
     # Not sure if this can be an expression. None are used in my examples, but why not?
     if prompt:
+        # TODO If we add semicolon an an op that behaves like comma, multi-element prompts should work.
         prompt = eval_expression(executor._symbols, prompt)
     print(prompt, end='')
     result = input()
-    if not is_string_variable(var):
-        result = float(result)
-    executor.put_symbol(var, result, SymbolType.VARIABLE, None)
+    result = result.split(",")
+    assert_syntax(len(result)== len(stmt._input_vars),
+                  F"Mismatched number of inputs. Expected {len(stmt._input_vars)} got {len(result)}")
+    for value, var in zip(result, stmt._input_vars):
+        if not is_string_variable(var):
+            value = float(value)
+        else:
+            if UPPERCASE_INPUT:
+                value = value.upper()
+
+        executor.put_symbol(var, value, SymbolType.VARIABLE, None)
 
 
 def stmt_on(executor, stmt):

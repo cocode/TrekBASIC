@@ -42,14 +42,20 @@ class Test(TestCase):
         executor.run_program()
         return executor
 
-    def runit_capture(self, listing):
+    def runit_capture(self, listing, input=None):
         old = sys.stdout
         output = StringIO()
         sys.stdout = output
+        if input is not None:
+            old_input = sys.stdin
+            sys.stdin = input
         try:
             executor = self.runit(listing)
         finally:
             sys.stdout = old
+            if input is not None:
+                sys.stdin = old_input
+
         program_output = output.getvalue()
         return executor, program_output
 
@@ -603,31 +609,30 @@ class Test(TestCase):
         self.assert_value(executor, "K", 300)
         self.assert_value(executor, "Q", 77)
 
-    # Disabling for now, as it blocks the tests. I need to get redirection done.
-    if False:
-        def test_input_1(self):
-            listing = [
-                '100 INPUT"ENTER YOUR NAME:";A1$',
-            ]
-            executor, output = self.runit_capture(listing)
-            self.assertEqual("ENTER YOUR NAME:", output)
-            self.assertEqual('TOM', executor.get_symbol_value("A1$"))
+    def test_input_1(self):
+        listing = [
+            '100 INPUT"ENTER YES:";A1$',
+        ]
+        executor, output = self.runit_capture(listing, input=StringIO("YES"))
+        self.assertEqual("ENTER YES:", output)
+        self.assertEqual('YES', executor.get_symbol_value("A1$"))
 
-        def test_input_2(self):
-            listing = [
-                '110 INPUT"ENTER YOUR AGE:";A'
-            ]
-            executor, output = self.runit_capture(listing)
-            self.assertEqual("ENTER YOUR AGE:", output)
-            self.assertEqual(3, executor.get_symbol_value("A"))
+    def test_input_2(self):
+        # You have to type in the answer!! There is no prompt.
+        listing = [
+            '110 INPUT "ENTER 59:";A'
+        ]
+        executor, output = self.runit_capture(listing, input=StringIO("59"))
+        self.assertEqual("ENTER 59:", output)
+        self.assertEqual(59, executor.get_symbol_value("A"))
 
-        def test_input_3(self):
-            # You have to type in the answer!!
-            listing = [
-                '110 INPUTW1'
-            ]
-            executor = self.runit(listing)
-            self.assertEqual(91, executor.get_symbol_value("W1"))
+    def test_input_4(self):
+        listing = [
+            '110 INPUT "ENTER 1,22:";X,Y'
+        ]
+        executor, output = self.runit_capture(listing, input=StringIO("1,22"))
+        self.assertEqual(1, executor.get_symbol_value("X"))
+        self.assertEqual(22, executor.get_symbol_value("Y"))
 
     def test_line_numbers(self):
         # You have to type in the answer!!
@@ -743,14 +748,14 @@ class Test(TestCase):
     def test_example_2(self):
         listing = [
             '100 E=100:S=10:DIMD(7)',
-            '1990 IFS+E>10THENIFE>10ORD(7)=0THEN2060'
+            '1990 IFS+E>10THENIFE>10ORD(7)=0THEN2060',
             '2000 A=6:END',
             '2060 A=5:END'
         ]
         executor = self.runit(listing)
         self.assert_value(executor, "A", 5)
 
-    def test_example_2(self):
+    def test_example_3(self):
         listing = [
             '1000 B9=0',
             "1630 IF B9<>0 THEN 1690",
@@ -759,16 +764,43 @@ class Test(TestCase):
         executor = self.runit(listing)
         self.assert_value(executor, "A", 5)
 
-    def test_example_3(self):
+    def test_example_4(self):
         listing = [
             '1000 S=0:E=3000:DIMD(8):D(7)=0',
-            "2160 IF S+E>10 THEN IF E>10 OR D(7)=0 THEN 2240",
+            '2160 IF S+E>10 THEN IF E>10 OR D(7)=0 THEN 2240',
             '2165 PRINT "WRONG!"',
             '2170 A=5:END',
             '2240 A=-9999',
         ]
         executor = self.runit(listing)
         self.assert_value(executor, "A", -9999)
+
+    # # It turns out basic DOES NOT have ORD, so I don't have this issue.
+    # # It still points out a weakness in my lexing.
+    # def test_example_5(self):
+    #     listing = [
+    #         '2260 X$=CHR$(32)',
+    #         '2270 C=ORD(X$)'
+    #     ]
+    #     executor = self.runit(listing)
+    #     self.assert_value(executor, "X$", " ")
+    #     self.assert_value(executor, "C", 32)
+
+    # Not implemented yet. Waiting for ELSE support
+    #
+    # def test_example_6(self):
+    #     listing = [
+    #         '2240 INPUT "Command ";A$',
+    #         '2250 IF LEN(A$)=0 THEN 2320',
+    #         '2260 X$=""',
+    #         '2270 FOR I=1 TO LEN(A$)',
+    #         '2280 C$=MID$(A$,I,1)',
+    #         '2290 IF C$>="a" AND C$<="z" THEN X$=X$+CHR$(ASC(C$)-32) ELSE X$=X$+C$',
+    #         '2300 NEXT I',
+    #     ]
+    #     executor = self.runit(listing)
+    #     self.assert_value(executor, "A", -9999)
+
 
     def test_run_status(self):
         executor = self.runit(['1000 A=3'])
