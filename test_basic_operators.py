@@ -1,6 +1,6 @@
 from unittest import TestCase
 from basic_lexer import Lexer
-from basic_operators import get_op, MINUS_MONO_OP, BINOP_COMMA
+from basic_operators import get_op, MinusMonoOp, BinOpComma
 from basic_types import lexer_token
 
 
@@ -95,7 +95,7 @@ class Test(TestCase):
         stack.append(tokens[0])
         # The lexer doesn't know the difference between unary minus and subtraction.
         # That comes from context, which the expression evaluation has.
-        minus = MINUS_MONO_OP()
+        minus = MinusMonoOp()
         answer = minus.eval(stack, op=None)
         self.assertEqual(-3.14, answer.token)
 
@@ -106,7 +106,7 @@ class Test(TestCase):
         stack.append(tokens[0])
         stack.append(tokens[2])
         binop = get_op(tokens[1])
-        self.assertIsInstance(binop, BINOP_COMMA)
+        self.assertIsInstance(binop, BinOpComma)
         answer = binop.eval(stack, op=None)
         self.assertEqual([1,2], answer.token)
 

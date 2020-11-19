@@ -29,7 +29,7 @@ class OP:
         return None
 
 
-class MONO_OP:
+class MonoOp:
     def __init__(self, lam=None, return_type=None):
         self._lambda = lam
         self._return_type = return_type
@@ -48,12 +48,12 @@ class MONO_OP:
         return_type = self._return_type if self._return_type is not None else first.type
         return lexer_token(answer, return_type)
 
-class STR_MONO_OP(MONO_OP):
+class StrMonoOp(MonoOp):
     def eval(self, stack, *, op):
         r = super().eval(stack, op=op)
         return r
 
-class STR_DOLLAR_MONO_OP(STR_MONO_OP):
+class StrDollarMonoOp(StrMonoOp):
     def eval1(self, first, op):
         if isinstance(first, float):
             if first == int(first):
@@ -62,7 +62,7 @@ class STR_DOLLAR_MONO_OP(STR_MONO_OP):
         return r
 
 
-class STR_OP(MONO_OP):
+class StrOp(MonoOp):
     """
     Base class for the string operations. LEFT$, MID$, RIGHT$
     """
@@ -98,13 +98,13 @@ class STR_OP(MONO_OP):
             return self._lambda(first)
 
 
-class MINUS_MONO_OP(MONO_OP):
+class MinusMonoOp(MonoOp):
     def eval1(self, first, op):
         return -first
 
 
 # TODO Basic allows for multiple arguments to a user defined function.
-class FUNC_MONO_OP(MONO_OP):
+class FuncMonoOp(MonoOp):
     """
     handles user defined functions.
     """
@@ -122,7 +122,7 @@ class FUNC_MONO_OP(MONO_OP):
 
 
 # TODO Basic allows for multiple arguments to array subscripts
-class ARRAY_ACCESS_MONO_OP(MONO_OP):
+class ArrayAccessMonoOp(MonoOp):
     """
     handles user defined functions.
     """
@@ -149,7 +149,7 @@ class ARRAY_ACCESS_MONO_OP(MONO_OP):
             return variable[subscript] # TODO This will only work for one dimensional arrays, that don't have expressions as subscripts.
 
 
-class BINOP(OP):
+class BinOp(OP):
     def __init__(self, lam=None):
         self._lambda = lam
 
@@ -168,13 +168,13 @@ class BINOP(OP):
         return lexer_token(answer, first.type)
 
 
-class BINOP_NUM(BINOP):
+class BinOpNum(BinOp):
     def check_args(self, stack):
         super().check_args(stack)
         assert_syntax(stack[-1].type == "num", "Operand not numeric for binary op")
         assert_syntax(stack[-2].type == "num", "Operand not numeric for binary op")
 
-class BINOP_NUM_DIV(BINOP):
+class BinOpNumDiv(BinOp):
     def eval2(self, first, second):
         if second == 0:
             raise BasicSyntaxError("Division by zero")
@@ -182,7 +182,7 @@ class BINOP_NUM_DIV(BINOP):
             return self._lambda(first, second)
 
 
-class BINOP_STR_NUM(BINOP):
+class BinOpStrNum(BinOp):
     """
     '+' is a special case, it can mean add, or it can mean string concatenation
     """
@@ -193,7 +193,7 @@ class BINOP_STR_NUM(BINOP):
         assert_syntax(stack[-1].type == stack[-2].type, "Operands don't match (string vs number) for '+'")
 
 
-class BINOP_COMMA(BINOP):
+class BinOpComma(BinOp):
     def eval2(self, first, second):
         if type(first) is not list:
             first = [first]
@@ -211,29 +211,29 @@ OpDef = namedtuple('OpDef','text prec cls') # Later, might want to add associati
 
 # If any additions, ALSO MUST UPDATE basic_lexer.py:OPERATORS. TODO Fix this.
 class Operators(Enum):
-    CLOSE=         OpDef(')',    0,  OP() )
-    COMMA=         OpDef(',',    0.5,  BINOP_COMMA() )
-    EQUALS=        OpDef('=',    3,  BINOP_STR_NUM(lambda x, y: x == y) ) # BOOLEAN =
-    GT=            OpDef('>',    3,  BINOP_STR_NUM(lambda x, y: x > y))
-    GTE=           OpDef('>=',   3,  BINOP_STR_NUM(lambda x, y: x >= y))
-    LT=            OpDef('<',    3,  BINOP_STR_NUM(lambda x, y: x < y))
-    LTE=           OpDef('<=',   3,  BINOP_STR_NUM(lambda x, y: x <= y))
-    NE=            OpDef('<>',   3,  BINOP_STR_NUM(lambda x, y: x != y))
+    CLOSE=         OpDef(')',    0,  OP())
+    COMMA=         OpDef(',', 1, BinOpComma())
+    EQUALS=        OpDef('=', 3, BinOpStrNum(lambda x, y: x == y)) # BOOLEAN =
+    GT=            OpDef('>', 3, BinOpStrNum(lambda x, y: x > y))
+    GTE=           OpDef('>=', 3, BinOpStrNum(lambda x, y: x >= y))
+    LT=            OpDef('<',  3, BinOpStrNum(lambda x, y: x < y))
+    LTE=           OpDef('<=', 3, BinOpStrNum(lambda x, y: x <= y))
+    NE=            OpDef('<>', 3, BinOpStrNum(lambda x, y: x != y))
     # May be semantic differences between python "and" and basic "AND".
     # Python lets you AND to ints, basic does not. BINOP_BOOL maybe?
     # Basic only allows "AND" of booleans, I believe. TODO We should set the type
     # Of the output of a BOOLEAN and, and check that an IF only uses a BOOLEAN
-    AND=           OpDef('AND',  2,  BINOP(lambda x, y: x and y) )
-    OR=            OpDef('OR',   2,  BINOP(lambda x, y: x or y))
-    MINUS=         OpDef('-',    4,  BINOP_NUM(lambda x, y: x - y))
-    PLUS=          OpDef('+',    4,  BINOP_STR_NUM(lambda x, y: x + y))
-    DIV=           OpDef('/',    5,  BINOP_NUM_DIV(lambda x, y: x / y))
-    MUL=           OpDef('*',    5,  BINOP_NUM(lambda x, y: x * y))
-    EXP=           OpDef('^',    6,  BINOP_NUM(lambda x, y: x ** y))
+    AND=           OpDef('AND', 2, BinOp(lambda x, y: x and y))
+    OR=            OpDef('OR', 2, BinOp(lambda x, y: x or y))
+    MINUS=         OpDef('-', 4, BinOpNum(lambda x, y: x - y))
+    PLUS=          OpDef('+', 4, BinOpStrNum(lambda x, y: x + y))
+    DIV=           OpDef('/', 5, BinOpNumDiv(lambda x, y: x / y))
+    MUL=           OpDef('*', 5, BinOpNum(lambda x, y: x * y))
+    EXP=           OpDef('^', 6, BinOpNum(lambda x, y: x ** y))
     OPEN=          OpDef('(',    9,  OP())
-    FUNC=          OpDef('∫',    8,  FUNC_MONO_OP())
-    UNARY_MINUS=   OpDef('—',    7,  MINUS_MONO_OP()) # M-dash
-    ARRAY_ACCESS=  OpDef('@',    8,  ARRAY_ACCESS_MONO_OP())
+    FUNC=          OpDef('∫', 8, FuncMonoOp())
+    UNARY_MINUS=   OpDef('—', 7, MinusMonoOp()) # M-dash
+    ARRAY_ACCESS=  OpDef('@', 8, ArrayAccessMonoOp())
 
 
 OP_MAP={k.value.text:k for k in Operators}
@@ -262,31 +262,31 @@ def get_op(token):
         # 2. Add it to basic_lexer.BUILT_IN_FUNCTIONS
         # 3. Add it to the list of internal functions in basic_interpreter.Executor.run_program
         if token.token == "INT":
-            return MONO_OP(lambda x: int(x)) # Handles the built-in INT function # TODO we also define the functions in Excutor.
+            return MonoOp(lambda x: int(x)) # Handles the built-in INT function # TODO we also define the functions in Excutor.
         if token.token == "ABS":
-            return MONO_OP(lambda x: abs(x)) # Handles the built-in INT function # TODO we also define the functions in Excutor.
+            return MonoOp(lambda x: abs(x)) # Handles the built-in INT function # TODO we also define the functions in Excutor.
         if token.token == "RND":
-            return MONO_OP(lambda x: random.random()) # Handles the built-in RND function
+            return MonoOp(lambda x: random.random()) # Handles the built-in RND function
         if token.token == "SQR":
-            return MONO_OP(lambda x: sqrt(x)) # Handles the built-in RND function
+            return MonoOp(lambda x: sqrt(x)) # Handles the built-in RND function
         if token.token == "LEFT$":
-            return STR_OP(lambda x: x[0][:int(x[1])], token.token, 2)
+            return StrOp(lambda x: x[0][:int(x[1])], token.token, 2)
         if token.token == "RIGHT$":
-            return STR_OP(lambda x: x[0][-int(x[1]):], token.token, 2)
+            return StrOp(lambda x: x[0][-int(x[1]):], token.token, 2)
         if token.token == "MID$":
-            return STR_OP(lambda x: x[0][int(x[1])-1:int(x[1])-1+int(x[2])], token.token, 3)
+            return StrOp(lambda x: x[0][int(x[1]) - 1:int(x[1]) - 1 + int(x[2])], token.token, 3)
         if token.token == "STR$":
-            return STR_DOLLAR_MONO_OP(lambda x: str(x), return_type="str")
+            return StrDollarMonoOp(lambda x: str(x), return_type="str")
         if token.token == "CHR$":
-            return STR_MONO_OP(lambda x: chr(int(x)), return_type="str")
+            return StrMonoOp(lambda x: chr(int(x)), return_type="str")
         if token.token == "ASC":
-            return STR_MONO_OP(lambda x: ord(x), return_type="num")
+            return StrMonoOp(lambda x: ord(x), return_type="num")
         if token.token == "SPACE$" or token.token == "TAB":
-            return STR_MONO_OP(lambda x: " "*int(x), return_type="str")
+            return StrMonoOp(lambda x: " " * int(x), return_type="str")
         if token.token == "LEN":
-            return STR_OP(lambda x: len(x), token.token, 1, "num") # This needs to return an int, unlike the other str functions.
+            return StrOp(lambda x: len(x), token.token, 1, "num") # This needs to return an int, unlike the other str functions.
         if token.token == "SGN":
-            return MONO_OP(lambda x: (x > 0) - (x < 0))
+            return MonoOp(lambda x: (x > 0) - (x < 0))
         op_def = get_op_def("∫") # Handles user defined functions.
         return op_def.cls
 
