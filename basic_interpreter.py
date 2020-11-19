@@ -2,7 +2,7 @@
 This module contains the class, Executor, that loads BASIC programs
 """
 import traceback
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 import random
 
 from basic_types import ProgramLine, BasicSyntaxError, BasicInternalError, assert_syntax
@@ -29,7 +29,7 @@ ForRecord = namedtuple("ForRecord", "var stop step stmt")
 
 
 class Executor:
-    def __init__(self, program:list[ProgramLine], trace_file=None, stack_trace=False):
+    def __init__(self, program:list[ProgramLine], trace_file=None, stack_trace=False, coverage=False):
         """
 
         :param program:
@@ -49,6 +49,9 @@ class Executor:
         self._symbols = None
 
         self._data_breakpoints = []
+        self._coverage = defaultdict(set) if coverage else None
+        if self._coverage:
+            print("Running with code coverage")
         self.init_symbols()
         self.setup_program()
 
@@ -135,6 +138,9 @@ class Executor:
                 traceback.print_exc()
                 self._run = RunStatus.END_ERROR_INTERNAL
                 raise BasicInternalError(F"Internal error in line {current.line}: {e}")
+
+            if self._coverage is not None:
+                self._coverage[current.line].add(self._location.offset)
 
             # Advance to next statement, on this line or the next
             self._location = self.get_next_stmt()

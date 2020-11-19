@@ -21,10 +21,10 @@ class BasicShell:
         self._breakpoints = []
         self._data_breakpoints = []
 
-    def load(self):
+    def load(self, coverage=False):
         print("Loading ", self._program_file)
         program = load_program(self._program_file)
-        executor = Executor(program)
+        executor = Executor(program, coverage=coverage)
         self.executor = executor
 
     def usage(self, cmd):
@@ -41,6 +41,29 @@ class BasicShell:
         if args is not None:
             self._program_file = args
         self.load()
+
+    def cmd_report(self, args):
+        coverage = self.executor._coverage
+        if coverage is None:
+            print("Coverage was not enabled for the last / current run.")
+
+        total_lines = len(self.executor._program)
+        total_stmts = 0
+        for p in self.executor._program:
+            total_stmts += len(p.stmts)
+
+        if total_stmts == 0:
+            print("Program is empty.")
+            return
+
+        executed_lines = len(coverage)
+        executed_stmts = 0
+        for s in coverage.values():
+            executed_stmts += len(s)
+        column=20
+        print(F'{"Total":>{column}} {"Executed":>{column}} {"Percent":>{column}}')
+        print(F"{total_lines:{column}} {executed_lines:{column}} {100*executed_lines/total_lines:{column}.1f}%")
+        print(F"{total_stmts:{column}} {executed_stmts:{column}} {100*executed_stmts/total_stmts:{column}.1f}%")
 
     def print_current(self, args):
         line = self.executor.get_current_line()
@@ -188,8 +211,11 @@ class BasicShell:
 
 
     def cmd_run(self, args):
-        self.load()
-        self.cmd_continue(args)
+        coverage = False
+        if args is not None and args=="coverage":
+            coverage = True
+        self.load(coverage=coverage)
+        self.cmd_continue(None)
 
     def cmd_break(self, args):
         """
@@ -253,9 +279,10 @@ class BasicShell:
         "gosubs": (cmd_gosub_stack, "Usage: gosubs\n\t\tPrints the FOR stack."),
         "help": (cmd_help, "Usage: help"),
         "load": (cmd_load, "Usage: load <program>"),
+        "report": (cmd_report, "Usage: report\n\t\tPrint code coverage report."),
         "list": (cmd_list, "Usage: list start count"),
         "quit": (cmd_quit, "Usage: quit"),
-        "run": (cmd_run, "Usage: run\n\t\tRuns the program from the beginning."),
+        "run": (cmd_run, "Usage: run <coverage>\n\t\tRuns the program from the beginning."),
         "next": (cmd_next, "Usage: next"),
         "sym": (cmd_symbols, "Usage: sym <symbol> <type>"+
                 "\n\t\tPrints the symbol table, or one entry."+
