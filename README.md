@@ -36,6 +36,12 @@ A LINE is made up of multiple STATEMENTS, each one beginning with a KEYWORD.
 ## TODO on interpreter
 
 1. Need to support "ELSE" for superstartrek3.bas
+2. Can I re-raise exceptions differently, so I don't lose
+stack information for the original exception?
+3. Add code coverage to executor. Note: Coverage is by statement, not just by line.
+1. I hit an error, where A=205, PRINT(RIGHT$(STR$(X))) printed 5.0, because the base string was 205.0
+    I might need to convert things that are integers to "int", instead of "float"
+    For now, I'm fixing it in STR$
 0. Add support for automatically understanding new two-character operators.
     FIX lexer.
 1. Fully support N-dimensional arrays. Two-dimensional is are working, but might want cleanup.
