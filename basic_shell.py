@@ -141,8 +141,14 @@ class BasicShell:
 
         try:
             result = eval_expression(self.executor._symbols, args)
-        except:
-            print("Invalid expression")
+        except UndefinedSymbol as e:
+            print(e.message)
+            return
+        except BasicSyntaxError as e:
+            print(e.message)
+            return
+        except Exception as e:
+            print("Exception: "+ e)
             return
         print(result)
 
