@@ -263,6 +263,8 @@ def get_op(token):
         # 3. Add it to the list of internal functions in basic_interpreter.Executor.run_program
         if token.token == "INT":
             return MONO_OP(lambda x: int(x)) # Handles the built-in INT function # TODO we also define the functions in Excutor.
+        if token.token == "ABS":
+            return MONO_OP(lambda x: abs(x)) # Handles the built-in INT function # TODO we also define the functions in Excutor.
         if token.token == "RND":
             return MONO_OP(lambda x: random.random()) # Handles the built-in RND function
         if token.token == "SQR":

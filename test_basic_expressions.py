@@ -243,3 +243,12 @@ class TestExpression(TestCase):
         s = SymbolTable()
         value = expression.eval(tokens, symbols=s)
         self.assertEqual([1.0,2.0], value)
+
+    def test_abs(self):
+        tokens = self._lexer.lex("ABS(-3-4)")
+        self.assertEqual(7, len(tokens))
+        expression = Expression()
+        s = SymbolTable()
+        s.put_symbol("ABS", "⌊", SymbolType.FUNCTION, arg=None)
+        value = expression.eval(tokens, symbols=s)
+        self.assertEqual(7, value)

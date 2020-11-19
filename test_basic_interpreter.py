@@ -728,6 +728,13 @@ class Test(TestCase):
         executor = self.runit(listing)
         self.assert_value(executor, "Z$", "7")
 
+    def test_abs(self):
+        listing = [
+            '1540 Z=ABS(-3*4)',
+        ]
+        executor = self.runit(listing)
+        self.assert_value(executor, "Z", 12)
+
     def test_space_dollar(self):
         listing = [
             '1540 Z$=SPACE$(3+4)',

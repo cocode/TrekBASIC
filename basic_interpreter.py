@@ -60,19 +60,20 @@ class Executor:
         self._trace_file = value
 
     def setup_program(self):
+        self._internal_symbols.put_symbol("ABS", "⌊", SymbolType.FUNCTION, arg=None)
+        self._internal_symbols.put_symbol("ASC", "⌊", SymbolType.FUNCTION, arg=None)
+        self._internal_symbols.put_symbol("CHR$", "⌊", SymbolType.FUNCTION, arg=None)
         self._internal_symbols.put_symbol("INT", "⌊", SymbolType.FUNCTION, arg=None) # TODO Should actual lambda be here?
+        self._internal_symbols.put_symbol("LEFT$", "⌊", SymbolType.FUNCTION, arg=None)
+        self._internal_symbols.put_symbol("LEN", "⌊", SymbolType.FUNCTION, arg=None)
+        self._internal_symbols.put_symbol("MID$", "⌊", SymbolType.FUNCTION, arg=None)
+        self._internal_symbols.put_symbol("RIGHT$", "⌊", SymbolType.FUNCTION, arg=None)
         self._internal_symbols.put_symbol("RND", "⌊", SymbolType.FUNCTION, arg=None)
         self._internal_symbols.put_symbol("SGN", "⌊", SymbolType.FUNCTION, arg=None)
         self._internal_symbols.put_symbol("SQR", "⌊", SymbolType.FUNCTION, arg=None)
-        self._internal_symbols.put_symbol("LEFT$", "⌊", SymbolType.FUNCTION, arg=None)
-        self._internal_symbols.put_symbol("RIGHT$", "⌊", SymbolType.FUNCTION, arg=None)
-        self._internal_symbols.put_symbol("MID$", "⌊", SymbolType.FUNCTION, arg=None)
-        self._internal_symbols.put_symbol("LEN", "⌊", SymbolType.FUNCTION, arg=None)
-        self._internal_symbols.put_symbol("TAB", "⌊", SymbolType.FUNCTION, arg=None)
-        self._internal_symbols.put_symbol("STR$", "⌊", SymbolType.FUNCTION, arg=None)
         self._internal_symbols.put_symbol("SPACE$", "⌊", SymbolType.FUNCTION, arg=None)
-        self._internal_symbols.put_symbol("CHR$", "⌊", SymbolType.FUNCTION, arg=None)
-        self._internal_symbols.put_symbol("ASC", "⌊", SymbolType.FUNCTION, arg=None)
+        self._internal_symbols.put_symbol("STR$", "⌊", SymbolType.FUNCTION, arg=None)
+        self._internal_symbols.put_symbol("TAB", "⌊", SymbolType.FUNCTION, arg=None)
         random.seed(1)
 
     def run_program(self, breaklist:list[tuple]=[], data_breakpoints:list[str]=[], single_step=False):
