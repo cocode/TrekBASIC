@@ -78,7 +78,8 @@ for the mapping.
 1. Maybe add "run" vs. "continue" for the debugging. Have single step now.
 1. You know, maybe I don't need to pass the symbol_type everywhere. You can tell the type of a variable
    from its name. FNx = function, $ == string, I guess you still have to know array vs. not.
-Desperately need step over vs step into for debugging.
+1. Desperately need step over vs step into for debugging.
+1. Need to clarify when BASIC would keep a number as an int vs. a float.
 
 ## References
 1. https://madexp.com/wp-content/uploads/2018/02/Microsoft_Basic_8086Xenix_Reference.pdf
