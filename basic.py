@@ -5,7 +5,8 @@ import sys
 import argparse
 import pprint
 
-from basic_interpreter import load_program, Executor
+from basic_interpreter import Executor
+from basic_loading import load_program
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run BASIC programs.')

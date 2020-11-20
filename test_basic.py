@@ -5,6 +5,7 @@ import sys
 from basic_interpreter import Executor
 from basic_types import BasicSyntaxError
 from basic_loading import tokenize
+import basic
 
 
 class Test(TestCase):
