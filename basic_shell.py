@@ -1,5 +1,12 @@
 """
 Main program for running a BASIC program.
+
+Commands can be abbreviated to the minimum unique substring.
+Commonly used commands should be one letter, if possible.
+c - continue
+n - next
+s - step
+
 """
 import sys
 import pprint
@@ -13,6 +20,38 @@ from basic_statements import eval_expression
 from basic_types import RunStatus
 
 
+def print_coverage_report(coverage, program, lines):
+    total_lines = len(program)
+    total_stmts = 0
+    for p in program:
+        total_stmts += len(p.stmts)
+
+    if total_stmts == 0:
+        print("Program is empty.")
+        return
+
+    executed_lines = len(coverage)
+    executed_stmts = 0
+    for s in coverage.values():
+        executed_stmts += len(s)
+    column = 20
+    print(F'{"Total":>{column}} {"Executed":>{column}} {"Percent":>{column}}')
+    print(F"{total_lines:{column}} {executed_lines:{column}} {100 * executed_lines / total_lines:{column}.1f}%")
+    print(F"{total_stmts:{column}} {executed_stmts:{column}} {100 * executed_stmts / total_stmts:{column}.1f}%")
+    # To start with, just print LINEs that have not been executed at all. Later we can get to statements.
+    if lines:
+        for l in program:
+            if l.line not in coverage:
+                slist = [i for i, j in enumerate(l.stmts)]
+                print(F"{l.line}: {slist}")
+            else:
+                # Line has had SOME of its statements executed.
+                slist = [i for i, j in enumerate(l.stmts)]
+                left = [i for i, j in enumerate(l.stmts) if i not in coverage[l.line]]
+                if len(left) != 0:
+                    print(F"{l.line}: {left} of {slist}")
+
+
 class BasicShell:
     def __init__(self, program_file):
         self._program_file = program_file
@@ -20,6 +59,7 @@ class BasicShell:
         self.load()
         self._breakpoints = []
         self._data_breakpoints = []
+        self._coverage = None
 
     def load(self, coverage=False):
         print("Loading ", self._program_file)
@@ -42,28 +82,27 @@ class BasicShell:
             self._program_file = args
         self.load()
 
-    def cmd_report(self, args):
+    def cmd_koverage(self, args):
+        """
+        Reports on code coverage.
+        Called coverage because we want "continue" to be a single character command.
+        I'd name it "coverage", but I don't want to conflict with "continue"
+
+        :param args: None, "load" or "save", "lines". Saving and loading allow you to do multiple runs, to see if you
+        can get to 100% coverage.
+        :return:
+        """
+        cmds = ["on", "off", "save", "load", "lines"]
+        if args is not None:
+            if args not in cmds:
+                self.usage("coverage")
+                return
+
         coverage = self.executor._coverage
         if coverage is None:
             print("Coverage was not enabled for the last / current run.")
+        print_coverage_report(self.executor._coverage, self.executor._program, args=='lines')
 
-        total_lines = len(self.executor._program)
-        total_stmts = 0
-        for p in self.executor._program:
-            total_stmts += len(p.stmts)
-
-        if total_stmts == 0:
-            print("Program is empty.")
-            return
-
-        executed_lines = len(coverage)
-        executed_stmts = 0
-        for s in coverage.values():
-            executed_stmts += len(s)
-        column=20
-        print(F'{"Total":>{column}} {"Executed":>{column}} {"Percent":>{column}}')
-        print(F"{total_lines:{column}} {executed_lines:{column}} {100*executed_lines/total_lines:{column}.1f}%")
-        print(F"{total_stmts:{column}} {executed_stmts:{column}} {100*executed_stmts/total_stmts:{column}.1f}%")
 
     def print_current(self, args):
         line = self.executor.get_current_line()
@@ -278,8 +317,9 @@ class BasicShell:
         "forstack": (cmd_for_stack, "Usage: fors\n\t\tPrints the FOR stack."),
         "gosubs": (cmd_gosub_stack, "Usage: gosubs\n\t\tPrints the FOR stack."),
         "help": (cmd_help, "Usage: help"),
-        "load": (cmd_load, "Usage: load <program>"),
-        "report": (cmd_report, "Usage: report\n\t\tPrint code coverage report."),
+        "load": (cmd_load, "Usage: load <program>\n\t\tRunning load clears coverage data."),
+        "koverage": (cmd_koverage, "Usage: koverage\n\t\tPrint code coverage report."+
+                     "\n\t\tkoverage on\n\t\tkoverage off\n\t\tkoverage clear\n\t\tkoverage report <save|load|list>"),
         "list": (cmd_list, "Usage: list start count"),
         "quit": (cmd_quit, "Usage: quit"),
         "run": (cmd_run, "Usage: run <coverage>\n\t\tRuns the program from the beginning."),

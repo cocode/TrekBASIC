@@ -29,12 +29,25 @@ ForRecord = namedtuple("ForRecord", "var stop step stmt")
 
 
 class Executor:
-    def __init__(self, program:list[ProgramLine], trace_file=None, stack_trace=False, coverage=False):
+    def restart(self):
+        self._location = ControlLocation(0,0)
+        self._goto = None
+        self._gosub_stack = []
+        self._for_stack = []
+
+
+    def __init__(self, program:list[ProgramLine],
+                 trace_file=None, stack_trace=False,
+                 coverage=False,
+                 record_inputs=False):
         """
 
         :param program:
         :param trace_file: Save a list of lines executed to a file for debugging
+        :param record_inputs: TBD Record a list of lines entered by the user. Used for building test scripts.
         :param stack_trace: Rethrow BasicSyntaxErrors, so we get a stack trace.
+        :param coverage: None, or a dict of (line_number:set of statements). Set to [] to enable coverage. Set to
+        a coverage from a previous run, to add to that run
         """
         self._program = program
         self._location = ControlLocation(0,0)
@@ -47,7 +60,6 @@ class Executor:
         # PyCharm complains if these are defined anywhere outside of __init__
         self._internal_symbols = None
         self._symbols = None
-
         self._data_breakpoints = []
         self._coverage = defaultdict(set) if coverage else None
         if self._coverage:
@@ -373,6 +385,23 @@ class Executor:
         :return:
         """
         return self._symbols.get_symbol_type(symbol, symbol_type)
+
+    def do_print(self, msg, **kwargs):
+        """
+        This function exists so we can do redirection of output conveniently, for testing.
+        :param msg:
+        :return:
+        """
+        print(msg, **kwargs)
+
+    def do_input(self):
+        """
+        This function exists so we can do redirection of output conveniently, for testing.
+        :param msg:
+        :return:
+        """
+        response = input()
+        return response
 
     # Is this needed?
     # def _get_current_line_number(self):

@@ -43,22 +43,20 @@ def stmt_print(executor, stmt):
             assert_syntax(arg[0] =='"' and arg[-1] == '"', "String not properly quoted for 'PRINT'")
             output = arg[1:-1]
             output.replace(" ", "*") # TODO delete this line.
-            print(output, end='')
+            executor.do_print(output, end='')
         else: # Expression
             v = eval_expression(executor._symbols, arg)
             #v = executor.get_symbol(arg)
             if type(v) == float:
-                print(F" {v:g} ", end='') # I'm trying to figure out BASIC's rules for spacing.
+                executor.do_print(F" {v:g} ", end='') # I'm trying to figure out BASIC's rules for spacing.
                                           # NO spaces is wrong (see initial print out)
                                           # Spaces around everything is wrong.
                                           # Spaces around numbers but not strings seems to work, so far.
             else:
-                print(F"{v}", end='')
+                executor.do_print(F"{v}", end='')
 
-        # if i < len(args) - 1:
-        #     print(" ", end='')
     if not no_cr:
-        print()
+        executor.do_print("")
     return None
 
 
@@ -241,8 +239,8 @@ def stmt_input(executor, stmt):
     if prompt:
         # TODO If we add semicolon an an op that behaves like comma, multi-element prompts should work.
         prompt = eval_expression(executor._symbols, prompt)
-    print(prompt, end='')
-    result = input()
+    executor.do_print(prompt, end='')
+    result = executor.do_input()
     result = result.split(",")
     assert_syntax(len(result)== len(stmt._input_vars),
                   F"Mismatched number of inputs. Expected {len(stmt._input_vars)} got {len(result)}")
