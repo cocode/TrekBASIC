@@ -35,6 +35,8 @@ A LINE is made up of multiple STATEMENTS, each one beginning with a KEYWORD.
 
 ## TODO on interpreter
 
+1. remove REM from cde coverage, many of the are unreachable
+check k9 at end, to see if trek bot won
 1. Need to support "ELSE" for superstartrek3.bas
 1. It should be possible to save code coverage data across multiple runs,
    so I can get to 100% coverage.
