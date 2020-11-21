@@ -1,19 +1,25 @@
 # Documentation for superstartrek.bas
 
 ### VARIABLES
-A$ can be the enterprise "<*>", a kingon "+k+", >!<
-K3 number of klingons is a quadrant
-K9 Number of klingons in the galaxy
-B3 Number of bases
-S3 Number of stars
-Array G current sector? No, I think it is the 8x8 galaxy of 8x8 sectors.
-Array K is the positions of the 1-3 klingons in this secor
-S is the current shield level. Under 200 gives a warning.
-E is energy. Total energy is S+E, default energy level is E0
+G(8,8) is the Galaxy, and 8x8 array of quadrants, each made up of 8x8 sectors.
+* In each cell is a number from 0-1000:
+  * Hundreds place is klingons, 0-3
+  * Tens place starbases. 0-1
+  * Ones place is stars
+* K9 Number of klingons in the galaxy
+* B9 Number of bases in the galaxy
+* A$ can be the enterprise "<*>", a kingon "+k+", >!<
+* K3 number of klingons in a quadrant
+* B3 Number of bases in a quadrant
+* S3 Number of stars
+* K(3) is the positions of the 1-3 klingons in this sector
+* S is the current shield level. Under 200 gives a warning.
+* E is energy. Total energy is S+E, default energy level is E0
+* Q1, Q2 are the Quadrant co-ordinates (indices into G())
+* S1, S2 are the sector co-ordinates
 
 Q1=FNR(1):Q2=FNR(1):S1=FNR(1):S2=FNR(1)
 
-Q1, Q2 are the Quadrant, S1, S2 are the sector co-ordinates
 
 ## Line Numbers / Subroutines
 All numbers are for supersstartrek.bas.
@@ -39,29 +45,14 @@ not rasing an error
 
 1720 place klingons, if any Array K is the positions of the 1-3 klingons in this secor
 
-## Tentative
-G might be the current sector, with the different items in different decimal places
+## Variab
+Gmight be the current sector, with the different items in different decimal places
 1500 PRINT:K3=INT(G(Q1,Q2)*.01):B3=INT(G(Q1,Q2)*.1)-10*K3
 1540 S3=G(Q1,Q2)-100*K3-10*B3:IFK3=0THEN1590
 REM "B3" STARBASES, & "S3" STARS ELSEWHERE.
 
 1540 the if is "if there are no klingons"
-Hundreds place might be Klingons
-Tens place B3, bases?
-Ones place is stars S3
-
-A$ can be the enterprise "<*>", a kingon "+k+", >!<
-So K3 (hundreds place) might be nunber of klingons in the sector.
-[[1.0, 4.0, 4.0, 8.0, 101.0, 4.0, 1.0, 4.0],
- [2.0, 1.0, 106.0, 17.0, 6.0, 4.0, 103.0, 7.0],
- [1.0, 4.0, 6.0, 4.0, 5.0, 1.0, 8.0, 2.0],
- [17.0, 2.0, 5.0, 5.0, 207.0, 106.0, 105.0, 7.0],
- [5.0, 3.0, 5.0, 2.0, 7.0, 7.0, 6.0, 1.0],
- [1.0, 1.0, 2.0, 4.0, 1.0, 2.0, 5.0, 7.0],
- [2.0, 6.0, 2.0, 205.0, 4.0, 6.0, 8.0, 107.0],
- [6.0, 1.0, 107.0, 202.0, 116.0, 3.0, 4.0, 6.0]]
-<SymbolType.ARRAY: 3>
 
 
-Array G, maybe current sector?
+
 
