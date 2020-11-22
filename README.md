@@ -84,6 +84,7 @@ for the mapping.
 ## References
 1. https://madexp.com/wp-content/uploads/2018/02/Microsoft_Basic_8086Xenix_Reference.pdf
 2. http://www.classiccmp.org/cini/pdf/Apple/AppleSoft%20II%20Basic%20Programming%20Manual.PDF
+1. TrekBot may have found a bug: Syntax Error in line 8330: Division by zero: 8330 PRINT"DIRECTION =";C1+(ABS(A)/ABS(X)):GOTO8460
 
 ## Known Issues
 Syntax Error in line 2290: SyntaxError: Undefined variable: 'C': 2290 IF C$>="a" AND C$<="z" THEN X$=X$+CHR$(ASC(C$)-32) ELSE X$=X$+C$
