@@ -120,7 +120,7 @@ def is_valid_identifier(variable:str):
         return
     if len(variable) == 2 and variable[1] == '$':
         return
-    assert_syntax(variable[1] in NUMBERS, "Second char of {variable} must be a number or $.")
+    assert_syntax(variable[1] in NUMBERS, F"Second char of {variable} must be a number or $.")
     if len(variable) == 2:
         return
     assert_syntax(variable[2] == '$', F"Invalid variable name {variable}")
