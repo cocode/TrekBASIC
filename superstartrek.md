@@ -15,6 +15,7 @@ G(8,8) is the Galaxy, and 8x8 array of quadrants, each made up of 8x8 sectors.
 * K(3) is the positions of the 1-3 klingons in this sector
 * S is the current shield level. Under 200 gives a warning.
 * E is energy. Total energy is S+E, default energy level is E0
+  I think S is shields.
 * Q1, Q2 are the Quadrant co-ordinates (indices into G())
 * S1, S2 are the sector co-ordinates
 
