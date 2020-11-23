@@ -1,6 +1,7 @@
 """
 This file contains the classes used to represent parsed statements.
 """
+from basic_lexer import Lexer
 from basic_types import assert_syntax
 
 
@@ -40,8 +41,10 @@ class ParsedStatementIf(ParsedStatement):
         assert_syntax(then != -1, "No THEN found for IF")
         then_clause = args[then+len("THEN"):]
         self._additional = then_clause
-        super().__init__(keyword, args[:then])
-        # TODO I would like to lex to token steam, and maybe build expression tree here, but don't want circular dependencies
+        lexer = Lexer()
+        left_over = args[:then]
+        self._tokens = lexer.lex(left_over)
+        super().__init__(keyword, None)
 
     def get_additional(self):
         return self._additional

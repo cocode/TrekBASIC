@@ -223,10 +223,10 @@ def stmt_if(executor, stmt):
     :param stmt:
     :return: None
     """
-    lexer = Lexer()
-    tokens = lexer.lex(stmt.args)
+    # lexer = Lexer()
+    # tokens = lexer.lex(stmt.args)
     e = Expression()
-    result = e.eval(tokens, symbols=executor._symbols)
+    result = e.eval(stmt._tokens, symbols=executor._symbols)
     if not result:
         executor.goto_next_line()
 
