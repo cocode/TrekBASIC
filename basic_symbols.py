@@ -126,7 +126,7 @@ class SymbolTable:
         print('Symbol table(s):')
         for symbol_type in self._symbol_tables:
             print(F"{symbol_type}:")
-            pprint.pprint(self._symbol_tables[symbol_type], indent=indent)
+            pprint.pprint(self._symbol_tables[symbol_type], indent=indent+4)
         if self._enclosing_scope is not None:
             print("Enclosing Scope:")
-            self._enclosing_scope.dump(indent=indent+4)
+            self._enclosing_scope.dump(indent=indent+8)
