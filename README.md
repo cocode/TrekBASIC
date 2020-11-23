@@ -35,6 +35,14 @@ A LINE is made up of multiple STATEMENTS, each one beginning with a KEYWORD.
 
 ## TODO on interpreter
 
+1. In progress: Writing a smarter player strategy, so I can code 
+   cover the "win" part of the code. The random player always loses.
+2. Performance testing with cProfile and gprof2dot.py. I don't have":
+dot installed, I just found an online version, and used that. 
+
+    python -m cProfile  -s tottime trek_bot.py 
+    python venv/lib/python3.9/site-packages/gprof2dot.py -f pstats test.pstats
+3. Having trace_file as a parameter to the onstructor, but not using it until run_program makes no sense.
 1. remove REM from cde coverage, many of the are unreachable
 check k9 at end, to see if trek bot won
 1. Need to support "ELSE" for superstartrek3.bas
