@@ -39,7 +39,6 @@ A LINE is made up of multiple STATEMENTS, each one beginning with a KEYWORD.
    cover the "win" part of the code. The random player always loses.
 2. Performance testing with cProfile and gprof2dot.py. I don't have":
 dot installed, I just found an online version, and used that. 
-
     python -m cProfile  -s tottime trek_bot.py 
     python venv/lib/python3.9/site-packages/gprof2dot.py -f pstats test.pstats
 3. Having trace_file as a parameter to the onstructor, but not using it until run_program makes no sense.
@@ -55,6 +54,7 @@ stack information for the original exception?
     FIX lexer.
 1. Fully support N-dimensional arrays. Two-dimensional is are working, but might want cleanup.
 2. Support dialects. At least for the four star trek programs I have. (basic_dialects.py)
+    Cool thought: Auto-detect dialects?
 3. Starting to parse some statements (like FOR) at load time. Should lex any expressions at load time.
    Should we precompute expressions to ASTs on load? - Yes, but not done yet.
 3. Boolean expressions? Seem to be working.
@@ -94,10 +94,16 @@ for the mapping.
 2. http://www.classiccmp.org/cini/pdf/Apple/AppleSoft%20II%20Basic%20Programming%20Manual.PDF
 1. TrekBot may have found a bug: Syntax Error in line 8330: Division by zero: 8330 PRINT"DIRECTION =";C1+(ABS(A)/ABS(X)):GOTO8460
 
-## Known Issues
-Syntax Error in line 2290: SyntaxError: Undefined variable: 'C': 2290 IF C$>="a" AND C$<="z" THEN X$=X$+CHR$(ASC(C$)-32) ELSE X$=X$+C$
-Useful manual: https://files.eric.ed.gov/fulltext/ED083819.pdf
-According to that, and a vague memory, arrays can have the same name as normal variables.
-Syntax Error in line 4060: SyntaxError: Can't subscript non-array N of type SymbolType.VARIABLE: 4060 FORI=Q1-1TOQ1+1:N(1)=-1:N(2)=-2:N(3)=-3:FORJ=Q2-1TOQ2+1
 
-Need a separate "run" and "continue" command in shell 
+
+## Bugs in the BASIC program (superstartrek.bas):
+When trek_bot continuously gave a command of "SHE", when "SHIELD CONTROL INOPERABLE",
+I eventually hit
+Syntax Error in line 2080: SyntaxError: FORs nested too deeply: 2080 FORI=1TO9:IFLEFT$(A$,3)<>MID$(A1$,3*I-2,3)THEN2160
+
+Current state is:  CheatState.SHIELDS
+<< NAV
+>> COURSE (0-9)
+<< 0
+>>>    LT. SULU REPORTS, 'INCORRECT COURSE DATA, SIR!'
+>> COMMAND
