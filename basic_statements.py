@@ -42,7 +42,7 @@ def stmt_print(executor, stmt):
         if arg[0] == '"': # quoted string
             assert_syntax(arg[0] =='"' and arg[-1] == '"', "String not properly quoted for 'PRINT'")
             output = arg[1:-1]
-            output.replace(" ", "*") # TODO delete this line.
+            #output.replace(" ", "*") # TODO delete this line.
             executor.do_print(output, end='')
         else: # Expression
             v = eval_expression(executor._symbols, arg)
@@ -241,6 +241,8 @@ def stmt_input(executor, stmt):
         prompt = eval_expression(executor._symbols, prompt)
     executor.do_print(prompt, end='')
     result = executor.do_input()
+    if result is None:
+        print("Bad response from trekbot")
     result = result.split(",")
     assert_syntax(len(result)== len(stmt._input_vars),
                   F"Mismatched number of inputs. Expected {len(stmt._input_vars)} got {len(result)}")
