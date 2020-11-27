@@ -1,9 +1,9 @@
+from math import pi, atan2
 from unittest import TestCase
 
 from basic_interpreter import Executor
 from basic_loading import load_program, tokenize
-from trek_bot import CheatStrategy, Player
-
+from trek_bot import CheatStrategy, Player, compute_course
 
 
 class TestCheatStrategy(TestCase):
@@ -54,3 +54,16 @@ class TestCheatStrategy(TestCase):
 
     def test_get_command(self):
         pass
+
+
+    def test_angle(self):
+        for dy in range(1, -2, -1):
+            for dx in range(-1, 2):
+                course = compute_course(dx,dy)
+                print(F"{course:6.2f}   ", end="")
+            print()
+        self.assertEqual(4, compute_course(-1, -1))
+        self.assertEqual(2, compute_course(-3, 3))
+        self.assertEqual(6, compute_course(3, -3))
+        self.assertEqual(5, compute_course(0, -3))
+        self.assertEqual(5, compute_course(0, 2))

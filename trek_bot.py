@@ -4,11 +4,15 @@ This module acts as a player in the Star Trek game, for testing and code coverag
 Its actions are random, not strategic, to hit more of the code - but it turns out it never wins,
 so it never hits the 'win' code. It might need some changes.
 """
+import pprint
 import random
 import sys
 import re
 import time
+from enum import Enum, auto
+from math import atan2, pi, sqrt
 
+from basic_dialect import ARRAY_OFFSET
 from basic_types import SymbolType
 
 energy_pattern = re.compile("[0-9]+")
@@ -80,6 +84,9 @@ class Strategy:
         last_output = player._program_output[-1]
         if last_output == "COMMAND":
             return self._cmd_main(player)
+        elif last_output == "SHIELD CONTROL INOPERABLE":
+            # TODO Should check all the error messages to COMMAND, like "SHIELD CONTROL INOPERABLE", and handle them.
+            return self._cmd_main(player) # Pick a different command.
         elif last_output == "PHOTON TORPEDO COURSE (1-9)":
             return self._cmd_torpedos(player)
         elif last_output == "COMPUTER ACTIVE AND AWAITING COMMAND":
@@ -88,7 +95,7 @@ class Strategy:
             return self._cmd_course(player)
         elif last_output.endswith("NUMBER OF UNITS TO SHIELDS"):
             return self._cmd_shield_units(player)
-        elif last_output == "WARP FACTOR (0-8)":
+        elif last_output == "WARP FACTOR (0-8)" or last_output == 'WARP FACTOR (0-0.2)':
             return self._cmd_warp(player)
         elif last_output == '  INITIAL COORDINATES (X,Y)' or last_output == '  FINAL COORDINATES (X,Y)':
             return self._cmd_coords(player)
@@ -99,7 +106,7 @@ class Strategy:
         elif last_output == "WILL YOU AUTHORIZE THE REPAIR ORDER (Y/N)":
             return self._cmd_repair(player)
 
-
+        raise Exception(F"Unknown prompt in trek_bot: '{last_output}'")
 
 
 class RandomStrategy(Strategy):
@@ -125,7 +132,7 @@ class RandomStrategy(Strategy):
         return cmd
 
     def _cmd_main(self, player):
-        return self.random_command(self, )
+        return self.random_command()
 
     def _cmd_torpedos(self, player):
         return str(random.randrange(0,20)-5)
@@ -175,63 +182,183 @@ class RandomStrategy(Strategy):
         :return:
         """
         return super().get_command(player)
-        last_output = player._program_output[-1]
-        if last_output == "COMMAND":
-            return self.random_command()
 
+
+# Count of kingons in a sector.
+def klingon_count(x): return x//100
+
+def compute_course(dy, dx):
+    # The grid layout in this program has x for y, and positive is down, not up, so we have to adjust
+    #dx, dy = dy, dx
+    dy = -dy
+
+    at = atan2(dy, dx)
+    course = at * 4 / pi
+    if course < 0:
+        course = 8 + course
+    course = course + 1  # convert 0 <= course < 8 to 1 <= course < 9
+    return course
+
+
+class CheatStateMachine:
+    """
+    We may need to issue multiple commands to execute some goal. For example, to dock with a starbase,
+    we need to find a starbase in the galaxy, go to that sector, then navigate within the sector to
+    dock with the starbase.
+
+    """
+    def __init__(self):
+        pass
+
+
+class CheatState(Enum):
+    SHIELDS = auto()
+    BASE = auto()
+    HUNT = auto()
+    KILL = auto()
 
 class CheatStrategy(RandomStrategy):
     """
     This class plays startrek with some mild strategy. It is specific to superstartrek.bas. Other versions may have
     minor differences that would keep this from working.
 
-    This strategy cheats by looking at internal variables.
+    This strategy cheats by looking at internal variables. This is mostly for convenience, you can
+    parse most of this from the output, but that's more work.
 
     It's derived from randomstrategy, so it will work, as I implmeent the functions one by one.
 
     """
     def __init__(self):
         self._galaxy = None
+        self._state = CheatState.SHIELDS
 
     def _setup(self, player):
         self._galaxy = player.executor.get_symbol_value("G", SymbolType.ARRAY)
         self._energy = player.executor.get_symbol_value("E", SymbolType.VARIABLE)
         self._shields = player.executor.get_symbol_value("S", SymbolType.VARIABLE)
+        self._Q1 = int(player.executor.get_symbol_value("Q1", SymbolType.VARIABLE)) - ARRAY_OFFSET
+        self._Q2 = int(player.executor.get_symbol_value("Q2", SymbolType.VARIABLE)) - ARRAY_OFFSET
+        self._S1 = int(player.executor.get_symbol_value("S1", SymbolType.VARIABLE)) - ARRAY_OFFSET
+        self._S2 = int(player.executor.get_symbol_value("S2", SymbolType.VARIABLE)) - ARRAY_OFFSET
+        self._K3 = int(player.executor.get_symbol_value("K3", SymbolType.VARIABLE))
 
-    def _cmd_main(player):
-        pass
+    def random_command(self):
+        commands = ["NAV", "SRS","LRS","PHA","TOR","SHE","DAM","COM","HLP","XXX"]
+        weights  = [1000,    100,  200,  500,   50,   10,   10,   50,    1,    1]
+        cmd = random.choices(commands, weights=weights, k=1)
+        return cmd[0]
 
-    def _cmd_computer(player):
-        pass
+    def find_something(self, break_func):
+        """
+        Finds the nearest starbase, or klingon. Depends on break_func.
+        TODO: Find the nearest starbase that doesn't have stars in my way. IIRC the game only
+        checks to see if there are stars in your path in your current sector.
 
-    def _cmd_course(player):
-        pass
+        :return: tuple of course (1-8) and distance.
+        """
+        for i in range(0, 8):
+            for j in range(0, 8):
+                if break_func(self._galaxy[i][j]):
+                    return i, j
+        return None
 
-    def _cmd_shield_units(player):
-        pass
+    def _cmd_main(self, player):
+        last_output = player._program_output[-1]
+        Q1 = self._Q1
+        Q2 = self._Q2
+        if Q1 < 0 or Q1 > 7 or Q2 < 0 or Q2 > 7:
+            print("out of range")
+        galaxy = self._galaxy
+        sector_value = galaxy[Q1][Q2] # I think that's a quadrant, not sector.
+        print("Value for current quadrant: ", sector_value)
+        pprint.pprint(self._galaxy)
 
-    def _cmd_warp(player):
-        pass
+        if self._shields < 500:
+            self._state = CheatState.SHIELDS
+        elif klingon_count(sector_value) > 0:
+            print("Klingon count, this quadrant: ", klingon_count(sector_value))
+            # TODO Chose more carefully between fight or flight.
+            self._state = CheatState.KILL
+        elif self._energy <1000:
+            self._state = CheatState.BASE
+        else:
+            self._state = CheatState.HUNT
+        print("Current state is: ", self._state)
+        if self._state == CheatState.SHIELDS:
+            # 1. Priority should be 1) Move to star base, if available and energy low, 2) set sheilds.
+            if self._shields < 500:
+                if len(player._program_output) > 2 and player._program_output[-2] != "SHIELD CONTROL INOPERABLE":
+                    desired = min(500, self._energy/2)
+                    #print("Trek bot thinks shields are low.", self._shields, desired)
+                    if desired > self._shields:
+                        return "SHE"
 
-    def _cmd_coords(player):
-        pass
+        # TODO Hunt for starbase if energy is low.
+        if self._state == CheatState.BASE:
+            pass
 
-    def _cmd_pha_units(player):
-        pass
+        # If there are klingons in the section, kill.
+        if self._state == CheatState.KILL:
+            return "PHA"
 
-    def _cmd_aye(player):
-        pass
+        # If there are no klingons in the section
+        if self._state == CheatState.HUNT:
+            target = self.find_something(klingon_count)
+            if target is None:
+                print("ERROR: No more Klingons but game is not over.")
+                return super().get_command()
+            # Save course to set in next command
+            dx = (target[0])-Q1
+            dy = (target[1])-Q2
+            print(F"HUNT: From: {Q1}, {Q2} to {target[0]}, {target[1]}. Delta {dx}, {dy}")
+            self._course = compute_course(dx, dy)
+            self._distance = sqrt(dx*dx + dy*dy) # this is overshooting, somehow.
+            return "NAV"
 
-    def _cmd_repair(player):
-        pass
+
+        return self.random_command()
+
+    # def _cmd_computer(self, player):
+    #     pass
+    #
+    def _cmd_course(self, player):
+        course = self._course
+        if course is None:
+            return super()._cmd_course(player)
+        self._course = None
+        return str(course)
+
+    def _cmd_warp(self, player):
+        # TODO need to handle WARP ENGINES ARE DAMAGED.  MAXIUM SPEED = WARP 0.2
+        if player._program_output[-1] == "WARP FACTOR (0-0.2)":
+            return "0.2"
+        distance = self._distance
+        if distance is None:
+            return super()._cmd_warp(player)
+        self._distance = None
+        return str(distance)
+
+    def _cmd_shield_units(self, player):
+        desired = min(500, self._energy/2)
+        return F"{desired}"
+
+    #
+    # def _cmd_coords(self, player):
+    #     pass
+    #
+    def _cmd_pha_units(self, player):
+        # TODO Should check output [-1] for an error messge about exceeding ENERGY AVAILABLE
+        return str(int(min(200, self._energy * 0.5)))
+
+    #
+    # def _cmd_aye(self, player):
+    #     pass
+    #
+    # def _cmd_repair(player):
+    #     pass
 
     def get_command(self, player):
-        self._setup()
-        # 1. Priority should be 1) Move to star base, if available and energy low, 2) set sheilds.
-        if self._shield < 500:
-            desired = min(500, self._energy/2)
-            if desired > self._shield:
-                return F"SHE {desired}"
+        self._setup(player)
         return super().get_command(player)
 
 
@@ -254,20 +381,21 @@ class Player:
         rc = self.executor.run_program()
         return rc
 
+    def _flush_print_buffer(self):
+        if self._display:
+            print(">>", self._print_buffer)
+        self._program_output.append(self._print_buffer)
+        self._print_buffer = ""
+
     def game_print(self, msg, **kwargs):
         """
         This method receives anything printed by the game
         :param msg:
         :return:
         """
-        if "end" in kwargs:
-            self._print_buffer += msg
-        else:
-            self._print_buffer += msg
-            if self._display:
-                print(">>", self._print_buffer)
-            self._program_output.append(self._print_buffer)
-            self._print_buffer = ""
+        self._print_buffer += msg
+        if 'end' not in kwargs:
+            self._flush_print_buffer()
 
     def get_command(self):
         strategy = self._strategy
@@ -275,6 +403,8 @@ class Player:
         command = strategy.get_command(self)
         if self._display:
             print("<<", command)
+        if command is None:
+            print("Bad command (None)")
         return command
 
     def game_input(self):
@@ -282,12 +412,8 @@ class Player:
         This method answers request for input from the game.
         :return:
         """
-
-        last_output = self._print_buffer
-        # A request for input completes the last line of output.
-        self._program_output.append(self._print_buffer)
-        self._print_buffer = ""
-
+        self._flush_print_buffer()
+        last_output = player._program_output[-1]
         command = self.get_command()
         return command
 
@@ -296,12 +422,13 @@ if __name__ == "__main__":
     program = load_program("superstartrek.bas")
 
     player_strategy = RandomStrategy()
-    player = Player(program, player_strategy, display=False)
+    player_strategy = CheatStrategy()
+    player = Player(program, player_strategy, display=True)
     total_time = time.perf_counter()
     random.seed(127)
     random.seed(128)
-    count = 3
-    for round in range(1,count):
+    count = 1
+    for round in range(1,count+1):
         print(F"Game {round} begins.")
         game_time = time.perf_counter()
 
