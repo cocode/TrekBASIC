@@ -199,6 +199,48 @@ def compute_course(dy, dx):
     course = course + 1  # convert 0 <= course < 8 to 1 <= course < 9
     return course
 
+def get_in_sector(sector:str, x:int,y:int):
+    """
+
+    :param sector: A string representation of the current sector.
+    :param x: 0-based index into sector
+    :param y:
+    :return:
+    """
+    assert sector is not None
+    assert 0 <= x < 8
+    assert 0 <= y < 8
+    index = x * 24 + y * 3
+    assert 0 <= index < len(sector) - 3
+    return sector[index:index+3]
+
+
+def replace_from_sector(sector: str, x: int, y: int, value:str):
+    """
+
+    :param sector: A string representation of the current sector.
+    :param x: 0-based index into sector
+    :param y:
+    :return: A new str for the sector. NOT in place replacement
+    """
+    assert sector is not None
+    assert len(value) == 3
+    assert 0 <= x < 8
+    assert 0 <= y < 8
+    index = x * 24 + y * 3
+    assert 0 <= index < len(sector) - 3
+    return sector[0:index] + value + sector[index + 3:]
+
+
+def find_in_sector(sector, target):
+    assert len(target) == 3
+    index = sector.find(target)
+    assert index % 3 == 0
+    index = index / 3
+    x = index // 8
+    y = index % 8
+    return x,y
+
 
 class CheatStateMachine:
     """
@@ -248,14 +290,22 @@ class CheatStrategy(RandomStrategy):
         cmd = random.choices(commands, weights=weights, k=1)
         return cmd[0]
 
-    def find_something(self, break_func):
+    def find_something(self, break_func, Q1, Q2):
         """
-        Finds the nearest starbase, or klingon. Depends on break_func.
+        Finds the first starbase, or klingon. Depends on break_func.
+        Should find the NEAREST. Current we just start at quadrant 0,0 and scan.
+        Adding "Check the current sector first"
+        TODO: If looking for starbases, prefer ones that don't have klingons.
         TODO: Find the nearest starbase that doesn't have stars in my way. IIRC the game only
         checks to see if there are stars in your path in your current sector.
 
+        :param break_func: Function that tells us when we have found what we are looking for.
+        :param Q1: X quadrant of enterprise
+        :param Q2: Y quadrant of enterprise.
         :return: tuple of course (1-8) and distance.
         """
+        if break_func(self._galaxy[Q1][Q2]):
+            return Q1, Q2
         for i in range(0, 8):
             for j in range(0, 8):
                 if break_func(self._galaxy[i][j]):
@@ -267,20 +317,24 @@ class CheatStrategy(RandomStrategy):
         Q1 = self._Q1
         Q2 = self._Q2
         if Q1 < 0 or Q1 > 7 or Q2 < 0 or Q2 > 7:
-            print("out of range")
+            print("Quadrant out of range")
+        S1 = self._S1
+        S2 = self._S2
+        if S1 < 0 or S1 > 7 or S2 < 0 or S2 > 7:
+            print("Sector out of range")
         galaxy = self._galaxy
         sector_value = galaxy[Q1][Q2] # I think that's a quadrant, not sector.
         print("Value for current quadrant: ", sector_value)
         pprint.pprint(self._galaxy)
 
-        if self._shields < 500:
+        if self._shields < 500 and self._energy > 3 * self._shields:
             self._state = CheatState.SHIELDS
+        elif self._energy < 1000:
+            self._state = CheatState.BASE
         elif klingon_count(sector_value) > 0:
             print("Klingon count, this quadrant: ", klingon_count(sector_value))
             # TODO Chose more carefully between fight or flight.
             self._state = CheatState.KILL
-        elif self._energy <1000:
-            self._state = CheatState.BASE
         else:
             self._state = CheatState.HUNT
         print("Current state is: ", self._state)
@@ -293,17 +347,44 @@ class CheatStrategy(RandomStrategy):
                     if desired > self._shields:
                         return "SHE"
 
-        # TODO Hunt for starbase if energy is low.
-        if self._state == CheatState.BASE:
-            pass
-
         # If there are klingons in the section, kill.
         if self._state == CheatState.KILL:
             return "PHA"
 
+        # TODO Hunt for starbase if energy is low.
+        if self._state == CheatState.BASE:
+            def extract_bases(x):
+                return (x//10) % 10
+            target = self.find_something(extract_bases, Q1, Q2)
+            if target is None:
+                print("No starbases found!!")
+                return super().get_command(player)
+            if target == (Q1, Q2):
+                # We have a starbase in this quadrant, need to dock.
+                # Find base position
+                # Find delta x,y
+                # plot course (later watch for stars in the way
+                # Move to base
+                # Set shields before leaving!!! (can you?) Or right after. Right after should already work.
+                pass # TODO
+
+            # Save course to set in next command
+            dx = (target[0]) - Q1
+            dy = (target[1]) - Q2
+            if dx or dy:
+                print(F"BASE: From: Q {Q1}, {Q2} to {target[0]}, {target[1]}. Delta {dx}, {dy}")
+                self._course = compute_course(dx, dy)
+                self._distance = sqrt(dx * dx + dy * dy)  # this is overshooting, somehow.
+                return "NAV"
+
+            print(F"BASE: From: S {S1}, {S2} to {target[0]}, {target[1]}. Delta {dx}, {dy}")
+            self._course = compute_course(dx, dy)
+            self._distance = sqrt(dx * dx + dy * dy) /8
+            return "NAV"
+
         # If there are no klingons in the section
         if self._state == CheatState.HUNT:
-            target = self.find_something(klingon_count)
+            target = self.find_something(klingon_count, Q1, Q2)
             if target is None:
                 print("ERROR: No more Klingons but game is not over.")
                 return super().get_command()
@@ -336,6 +417,8 @@ class CheatStrategy(RandomStrategy):
         if distance is None:
             return super()._cmd_warp(player)
         self._distance = None
+        if distance == 0:
+            print("Zero distance.")
         return str(distance)
 
     def _cmd_shield_units(self, player):
