@@ -43,34 +43,34 @@ class TestExecutor(Executor):
 
 
 class Strategy:
-    def _cmd_main(player):
+    def _cmd_main(self, player):
         pass
 
-    def _cmd_torpedos(player):
+    def _cmd_torpedos(self, player):
         pass
 
-    def _cmd_computer(player):
+    def _cmd_computer(self, player):
         pass
 
-    def _cmd_course(player):
+    def _cmd_course(self, player):
         pass
 
-    def _cmd_shield_units(player):
+    def _cmd_shield_units(self, player):
         pass
 
-    def _cmd_warp(player):
+    def _cmd_warp(self, player):
         pass
 
-    def _cmd_coords(player):
+    def _cmd_coords(self, player):
         pass
 
-    def _cmd_pha_units(player):
+    def _cmd_pha_units(self, player):
         pass
 
-    def _cmd_aye(player):
+    def _cmd_aye(self, player):
         pass
 
-    def _cmd_repair(player):
+    def _cmd_repair(self, player):
         pass
 
     def get_command(self, player):
@@ -84,7 +84,7 @@ class Strategy:
         last_output = player._program_output[-1]
         if last_output == "COMMAND":
             return self._cmd_main(player)
-        elif last_output == "SHIELD CONTROL INOPERABLE":
+        elif last_output == "SHIELD CONTROL INOPERABLE": # I don;t think this can happen. It always prints "COMMAND" after an error
             # TODO Should check all the error messages to COMMAND, like "SHIELD CONTROL INOPERABLE", and handle them.
             return self._cmd_main(player) # Pick a different command.
         elif last_output == "PHOTON TORPEDO COURSE (1-9)":
@@ -135,10 +135,10 @@ class RandomStrategy(Strategy):
         return self.random_command()
 
     def _cmd_torpedos(self, player):
-        return str(random.randrange(0,20)-5)
+        return str(random.randrange(0,10)-2)
 
     def _cmd_computer(self, player):
-        return str(random.randrange(0, 10) - 5)
+        return str(random.randrange(0, 10) - 2)
 
     def _cmd_course(self, player):
         return str(random.randrange(0, 10) - 2)
@@ -235,6 +235,7 @@ def replace_from_sector(sector: str, x: int, y: int, value:str):
 def find_in_sector(sector, target):
     assert len(target) == 3
     index = sector.find(target)
+    assert index != -1
     assert index % 3 == 0
     index = index / 3
     x = index // 8
@@ -242,22 +243,12 @@ def find_in_sector(sector, target):
     return x,y
 
 
-class CheatStateMachine:
-    """
-    We may need to issue multiple commands to execute some goal. For example, to dock with a starbase,
-    we need to find a starbase in the galaxy, go to that sector, then navigate within the sector to
-    dock with the starbase.
-
-    """
-    def __init__(self):
-        pass
-
-
 class CheatState(Enum):
     SHIELDS = auto()
     BASE = auto()
     HUNT = auto()
     KILL = auto()
+
 
 class CheatStrategy(RandomStrategy):
     """
@@ -283,6 +274,7 @@ class CheatStrategy(RandomStrategy):
         self._S1 = int(player.executor.get_symbol_value("S1", SymbolType.VARIABLE)) - ARRAY_OFFSET
         self._S2 = int(player.executor.get_symbol_value("S2", SymbolType.VARIABLE)) - ARRAY_OFFSET
         self._K3 = int(player.executor.get_symbol_value("K3", SymbolType.VARIABLE))
+        self._sector = player.executor.get_symbol_value("Q$", SymbolType.VARIABLE)
 
     def random_command(self):
         commands = ["NAV", "SRS","LRS","PHA","TOR","SHE","DAM","COM","HLP","XXX"]
@@ -314,6 +306,7 @@ class CheatStrategy(RandomStrategy):
 
     def _cmd_main(self, player):
         last_output = player._program_output[-1]
+        before_last = player._program_output[-2]
         Q1 = self._Q1
         Q2 = self._Q2
         if Q1 < 0 or Q1 > 7 or Q2 < 0 or Q2 > 7:
@@ -327,7 +320,7 @@ class CheatStrategy(RandomStrategy):
         print("Value for current quadrant: ", sector_value)
         pprint.pprint(self._galaxy)
 
-        if self._shields < 500 and self._energy > 3 * self._shields:
+        if self._shields < 500 and self._energy > 3 * self._shields and before_last != "SHIELD CONTROL INOPERABLE":
             self._state = CheatState.SHIELDS
         elif self._energy < 1000:
             self._state = CheatState.BASE
@@ -361,12 +354,19 @@ class CheatStrategy(RandomStrategy):
                 return super().get_command(player)
             if target == (Q1, Q2):
                 # We have a starbase in this quadrant, need to dock.
+                print("Need to dock")
                 # Find base position
+                x, y = find_in_sector(self._sector, ">!<")
+                assert 0 <= x < 8
+                assert 0 <= y < 8
                 # Find delta x,y
-                # plot course (later watch for stars in the way
+                dx = x - S1
+                dy = y - S2
+                # plot course (later watch for stars in the way)
+                self._course = compute_course(dx, dy)
                 # Move to base
-                # Set shields before leaving!!! (can you?) Or right after. Right after should already work.
-                pass # TODO
+                self._distance = sqrt(dx * dx + dy * dy) /  8
+                return "NAV"
 
             # Save course to set in next command
             dx = (target[0]) - Q1
@@ -437,8 +437,12 @@ class CheatStrategy(RandomStrategy):
     # def _cmd_aye(self, player):
     #     pass
     #
-    # def _cmd_repair(player):
+    # def _cmd_repair(self, player):
     #     pass
+
+    def _cmd_torpedos(self, player):
+        x, y = find_in_sector(self._sector, "+K+")
+        print("Klingon at ", x, y)
 
     def get_command(self, player):
         self._setup(player)
