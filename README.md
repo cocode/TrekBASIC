@@ -37,6 +37,8 @@ A LINE is made up of multiple STATEMENTS, each one beginning with a KEYWORD.
 
 1. In progress: Writing a smarter player strategy, so I can code 
    cover the "win" part of the code. The random player always loses.
+1. What uses star dates? Am I wasting life by setting the shields all 
+   the time?
 2. Performance testing with cProfile and gprof2dot.py. I don't have":
 dot installed, I just found an online version, and used that. 
     python -m cProfile  -s tottime trek_bot.py 
@@ -88,6 +90,9 @@ for the mapping.
    from its name. FNx = function, $ == string, I guess you still have to know array vs. not.
 1. Desperately need step over vs step into for debugging.
 1. Need to clarify when BASIC would keep a number as an int vs. a float.
+1. Should add parsing of all line numbers used in a line, so I can renumber
+1. Should add parsing of all variables, so I can search references.
+   Could do this in parse tree.
 
 ## References
 1. https://madexp.com/wp-content/uploads/2018/02/Microsoft_Basic_8086Xenix_Reference.pdf
