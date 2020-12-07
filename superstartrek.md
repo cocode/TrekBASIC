@@ -1,26 +1,29 @@
 # Documentation for superstartrek.bas
 
 ### VARIABLES
+* A$ can be the enterprise "<*>", a Klingon "+k+", >!<
+  * Seems to be a holder of "the current object"
+* B3 Number of bases in a quadrant
+* B9 Number of bases in the galaxy
+* E is energy. Total energy is S+E, default energy level is E0
 * G(8,8) is the Galaxy, and 8x8 array of quadrants, each made up of 8x8 sectors.
   * In each cell is a number from 0-1000:
     * Hundreds place is klingons, 0-3
     * Tens place starbases. 0-1
     * Ones place is stars
-* K9 Number of klingons in the galaxy
-* B9 Number of bases in the galaxy
-* A$ can be the enterprise "<*>", a Klingon "+k+", >!<
-  * Seems to be a holder of "the current object"
 * K3 number of Klingons in a quadrant
-* B3 Number of bases in a quadrant
-* S3 Number of stars
+* K9 Number of klingons in the galaxy
 * K(3) is the positions of the 1-3 Klingons in this sector
-* S is the current shield level. Under 200 gives a warning.
-* E is energy. Total energy is S+E, default energy level is E0
-  I think S is shields.
 * Q1, Q2 are the Quadrant co-ordinates (indices into G())
-* S1, S2 are the sector co-ordinates (of the enterprise?)
 * Q$ Is is possible that the current sector is stored in a string?
     "8660 REM INSERT IN STRING ARRAY FOR QUADRANT", so probably yes.
+* S is the current shield level. Under 200 gives a warning.
+* S1, S2 are the sector co-ordinates (of the enterprise?)
+* S3 Number of stars
+* T might be current star date:
+* T0 Starting Star Date
+* T8 might be how long the current action takes. There is a random factor.
+* T9 How long you have for your mission
 * Z(8,8) is the part of the galaxy you have already seen.
 
 Q1=FNR(1):Q2=FNR(1):S1=FNR(1):S2=FNR(1)
