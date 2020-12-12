@@ -11,6 +11,7 @@ s - step
 import sys
 import pprint
 import argparse
+import time
 
 from basic_types import UndefinedSymbol, BasicSyntaxError, SymbolType
 
@@ -256,6 +257,16 @@ class BasicShell:
         self.load(coverage=coverage)
         self.cmd_continue(None)
 
+    def cmd_benchmark(self, args):
+        load_start = time.perf_counter()
+        self.load(coverage=False)
+        load_time = time.perf_counter() - load_start
+        run_start = time.perf_counter()
+        self.cmd_continue(None)
+        run_time = time.perf_counter() - run_start
+        # only noting "load time", as this had it: https://archive.org/details/byte-magazine-1981-09/page/n193/mode/2up
+        print(F"Load time {load_time:10.1f} sec. Run time: {run_time:10.1f} sec.")
+
     def cmd_break(self, args):
         """
         set a breakpoint. Breakpoints happen after the current LINE completes.
@@ -323,6 +334,7 @@ class BasicShell:
         "list": (cmd_list, "Usage: list start count"),
         "quit": (cmd_quit, "Usage: quit"),
         "run": (cmd_run, "Usage: run <coverage>\n\t\tRuns the program from the beginning."),
+        "benchmark": (cmd_benchmark, "Usage: becnhmark\n\t\tRuns the program from the beginning, and shows timing."),
         "next": (cmd_next, "Usage: next"),
         "sym": (cmd_symbols, "Usage: sym <symbol> <type>"+
                 "\n\t\tPrints the symbol table, or one entry."+
