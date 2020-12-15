@@ -113,8 +113,12 @@ def load_program(program_filename):
     :param program_filename:  The filename to read the program from.
     :return: A tokenized program.
     """
-    with open(program_filename) as f:
-        lines = f.readlines()
+    try:
+        with open(program_filename) as f:
+            lines = f.readlines()
+    except FileNotFoundError as f:
+        print(f)
+        return
     lines = [line.strip() for line in lines]
     program = tokenize(lines)
     return program
