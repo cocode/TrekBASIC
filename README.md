@@ -27,7 +27,7 @@ There are several versions of Star Trek available.
 A LINE is made up of multiple STATEMENTS, each one beginning with a KEYWORD.
 
 ### LINE
-    100 PRINT X:GOTO 100
+    100 PRINT X:GOTO 200
 ### STATEMENTS
     "PRINT X" and "GOTO 100"
 ### KEYWORDS
@@ -35,37 +35,47 @@ A LINE is made up of multiple STATEMENTS, each one beginning with a KEYWORD.
 
 ## TODO on interpreter
 
+1. It could be fun to write Wasm Basic. (See wasm.txt)
+    1. Write interpreter that generates "B-code."
+    1. Options to execute in browser
+        1. Generate wasm from b-code (this is best) 
+        1. Or could write  b-code interpreter.
+        1. Or could find someone else's basic written in a languages 
+    that compiles to wasm.
 1. In progress: Writing a smarter player strategy, so I can code 
    cover the "win" part of the code. The random player always loses.
 1. What uses star dates? Am I wasting life by setting the shields all 
    the time?
-2. Performance testing with cProfile and gprof2dot.py. I don't have":
+1. Performance testing with cProfile and gprof2dot.py. I don't have":
 dot installed, I just found an online version, and used that. 
     python -m cProfile  -s tottime trek_bot.py 
     python venv/lib/python3.9/site-packages/gprof2dot.py -f pstats test.pstats
-3. Having trace_file as a parameter to the onstructor, but not using it until run_program makes no sense.
-1. remove REM from cde coverage, many of the are unreachable
-check k9 at end, to see if trek bot won
+1. Having trace_file as a parameter to the constructor, but not using it until run_program makes no sense.
+1. remove REM from code coverage, many of the are unreachable
+1. check k9(count of klingons alive)  at end, to see if trek bot won
 1. Need to support "ELSE" for superstartrek3.bas
 1. It should be possible to save code coverage data across multiple runs,
    so I can get to 100% coverage.
-1.1. Should have better formatting to tell what lines I still need to execute.
+    1. Should have better formatting to tell what lines I still need to execute.
 1. Can I re-raise exceptions differently, so I don't lose
 stack information for the original exception?
 1. Add support for automatically understanding new two-character operators.
     FIX lexer.
 1. Fully support N-dimensional arrays. Two-dimensional is are working, but might want cleanup.
-2. Support dialects. At least for the four star trek programs I have. (basic_dialects.py)
+1. Support dialects. At least for the four star trek programs I have. (basic_dialects.py)
     Cool thought: Auto-detect dialects?
-3. Starting to parse some statements (like FOR) at load time. Should lex any expressions at load time.
-   Should we precompute expressions to ASTs on load? - Yes, but not done yet.
-3. Boolean expressions? Seem to be working.
-4. built in functions: EXP LOG LOG10. 
-7. Write smaller test programs.
-11. Split tests, tests of basic, vs. tests of internal functions.
-9. Write "renum" utility. Split all multiline statements, and renumber at increments of 10
-   Then reformat the startrek source.
-12. Rename OP classes in basic_operators.py to not be all upppercase.
+1. Starting to parse some statements (like FOR) at load time. Should lex any expressions at load time.
+1.  Should we precompute expressions to ASTs on load? - Yes, but not done yet.
+1. Boolean expressions? Seem to be working.
+1. built in functions: EXP LOG LOG10. 
+1. Write smaller test programs.
+1. Split tests
+    1. tests of basic (integration)
+    1. tests of internal functions.
+1. Write "renum" utility. Split all multiline statements, and renumber at increments of 10
+    1. Then reformat the startrek source.
+    1. Run a trace of star strek, befre and after for verificaion.
+1. (done?) Rename OP classes in basic_operators.py to not be all upppercase.
 1. Fix functions to store their extra into in the symbol table, not in the "op" parameter.
     1. store data in symbol table
     2. Use it
@@ -92,20 +102,24 @@ for the mapping.
 1. Need to clarify when BASIC would keep a number as an int vs. a float.
 1. Should add parsing of all line numbers used in a line, so I can renumber
 1. Should add parsing of all variables, so I can search references.
-   Could do this in parse tree.
+    1.  Could do this in parse tree.
+1. Some versions of basic allowed a single quote for REM
 
 ## References
 1. https://madexp.com/wp-content/uploads/2018/02/Microsoft_Basic_8086Xenix_Reference.pdf
 2. http://www.classiccmp.org/cini/pdf/Apple/AppleSoft%20II%20Basic%20Programming%20Manual.PDF
-1. TrekBot may have found a bug: Syntax Error in line 8330: Division by zero: 8330 PRINT"DIRECTION =";C1+(ABS(A)/ABS(X)):GOTO8460
-
+1. TrekBot may have found a bug in superstartrek.bas: Syntax Error in line 8330: Division by zero: 8330 PRINT"DIRECTION =";C1+(ABS(A)/ABS(X)):GOTO8460
+1. BNF 
+    1. https://henry416.wordpress.com/tag/bnf/
+    1. https://rosettacode.org/wiki/BNF_Grammar#BASIC
 
 
 ## Bugs in the BASIC program (superstartrek.bas):
 When trek_bot continuously gave a command of "SHE", when "SHIELD CONTROL INOPERABLE",
 I eventually hit
 Syntax Error in line 2080: SyntaxError: FORs nested too deeply: 2080 FORI=1TO9:IFLEFT$(A$,3)<>MID$(A1$,3*I-2,3)THEN2160
-
+This looks to be a bug in the original basic, taht would never matter, as
+a human wouldn't give an error response 2000 times.
 Current state is:  CheatState.SHIELDS
 << NAV
 >> COURSE (0-9)
