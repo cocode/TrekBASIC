@@ -1,26 +1,27 @@
 from unittest import TestCase
 from basic_types import BasicSyntaxError
+from basic_lexer2 import Lexer2
 from basic_lexer import Lexer
 
 
 class TestLexer(TestCase):
-    def test_lex(self):
-        lexer = Lexer()
+    def setUp(self):
+        self._lexer = Lexer2()
 
-        tokens = lexer.lex("X1")
+    def test_lex(self):
+        tokens = self._lexer.lex("X1")
         self.assertEqual(1, len(tokens))
         self.assertEqual("id", tokens[0].type)
         self.assertEqual("X1", tokens[0].token)
 
     def test_lex_builtin(self):
-        lexer = Lexer()
-
-        tokens = lexer.lex("RND")
+        tokens = self._lexer.lex("RND")
         self.assertEqual(1, len(tokens))
         self.assertEqual("id", tokens[0].type)
         self.assertEqual("RND", tokens[0].token)
 
-        tokens = lexer.lex("D(R1)=D(R1)-H/S-.5*RND(1)")
+    def test_lex_builtin2(self):
+        tokens = self._lexer.lex("D(R1)=D(R1)-H/S-.5*RND(1)")
         expected = [("D", 'id'), ("(", 'op'), ("R1", 'id'), (")", 'op'), ("=", 'op'),
                     ("D", 'id'), ("(", 'op'), ("R1", 'id'), (")", 'op'), ("-", 'op'),
                     ("H", 'id'), ("/", 'op'), ("S", 'id'), ("-", 'op'),
@@ -33,8 +34,7 @@ class TestLexer(TestCase):
         self.assertEqual(len(expected), len(tokens))
 
     def test_lex_literals(self):
-        lexer = Lexer()
-        tokens = lexer.lex('"ABC"+"DEF"')
+        tokens = self._lexer.lex('"ABC"+"DEF"')
         self.assertEqual(3, len(tokens))
         self.assertEqual("str", tokens[0].type)
         self.assertEqual("ABC", tokens[0].token)
@@ -44,19 +44,29 @@ class TestLexer(TestCase):
         self.assertEqual("DEF", tokens[2].token)
 
         with self.assertRaises(BasicSyntaxError):
-            lexer.lex('"ABC')
+            self._lexer.lex('"ABC')
 
     def test_lex_ne(self):
-        lexer = Lexer()
-        tokens = lexer.lex("X<>3")
+        tokens = self._lexer.lex("X1<>3")
         self.assertEqual(3, len(tokens))
         self.assertEqual("id", tokens[0].type)
-        self.assertEqual("X", tokens[0].token)
+        self.assertEqual("X1", tokens[0].token)
         self.assertEqual("op", tokens[1].type)
         self.assertEqual("<>", tokens[1].token)
         self.assertEqual("num", tokens[2].type)
         self.assertEqual(3, tokens[2].token)
 
+    # def test_lex_vars(self):
+    #     # Check that we can handle variable names that run into keywords. ("YandQ1then"
+    #     tokens = self._lexer.lex("IFX<>YANDQ1<7THEN79")
+    #     print(tokens)
+    #     self.assertEqual(10, len(tokens))
+    #     self.assertEqual("id", tokens[0].type)
+    #     self.assertEqual("X", tokens[0].token)
+    #     self.assertEqual("op", tokens[1].type)
+    #     self.assertEqual("<>", tokens[1].token)
+    #     self.assertEqual("num", tokens[2].type)
+    #     self.assertEqual(3, tokens[2].token)
 
 
 
