@@ -81,9 +81,11 @@ class Executor:
         self._internal_symbols.put_symbol("INT", "⌊", SymbolType.FUNCTION, arg=None) # TODO Should actual lambda be here?
         self._internal_symbols.put_symbol("LEFT$", "⌊", SymbolType.FUNCTION, arg=None)
         self._internal_symbols.put_symbol("LEN", "⌊", SymbolType.FUNCTION, arg=None)
+        self._internal_symbols.put_symbol("LOG", "⌊", SymbolType.FUNCTION, arg=None)
         self._internal_symbols.put_symbol("MID$", "⌊", SymbolType.FUNCTION, arg=None)
         self._internal_symbols.put_symbol("RIGHT$", "⌊", SymbolType.FUNCTION, arg=None)
         self._internal_symbols.put_symbol("RND", "⌊", SymbolType.FUNCTION, arg=None)
+        self._internal_symbols.put_symbol("SIN", "⌊", SymbolType.FUNCTION, arg=None)
         self._internal_symbols.put_symbol("SGN", "⌊", SymbolType.FUNCTION, arg=None)
         self._internal_symbols.put_symbol("SQR", "⌊", SymbolType.FUNCTION, arg=None)
         self._internal_symbols.put_symbol("SPACE$", "⌊", SymbolType.FUNCTION, arg=None)

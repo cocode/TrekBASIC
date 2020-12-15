@@ -17,7 +17,7 @@ OPERATORS = "()^*/+-=><,"
 BOOLEAN_OPERATORS=["AND", "OR"]
 
 # TODO get this from the function definitons
-BUILT_IN_FUNCTIONS=["INT", "RND", "SGN", "LEFT$", "RIGHT$", "MID$", "LEN", "TAB", "STR$", "SPACE$",
+BUILT_IN_FUNCTIONS=["INT", "RND", "SGN", "SIN", "LOG", "LEFT$", "RIGHT$", "MID$", "LEN", "TAB", "STR$", "SPACE$",
                     "CHR$", "ASC", "SQR", "ABS"]
 
 #KEYWORDS=["DEF", "DIM", "END", "FOR", "GOTO", "GOSUB", "IF", "INPUT", "LET", "NEXT", "ON", "PRINT", "REM", "RETURN"]

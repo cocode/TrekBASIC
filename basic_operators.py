@@ -8,7 +8,7 @@ Implementation for basic operators, such as add, subtract, etc.
 from collections import namedtuple
 from enum import Enum
 import random
-from math import sqrt
+from math import sqrt, sin, log
 
 from basic_dialect import ARRAY_OFFSET
 from basic_types import lexer_token, assert_syntax, SymbolType, BasicSyntaxError
@@ -268,8 +268,12 @@ def get_op(token):
             return MonoOp(lambda x: abs(x)) # Handles the built-in INT function # TODO we also define the functions in Excutor.
         if token.token == "RND":
             return MonoOp(lambda x: random.random()) # Handles the built-in RND function
+        if token.token == "SIN":
+            return MonoOp(lambda x: sin(x))
+        if token.token == "LOG":
+            return MonoOp(lambda x: log(x))
         if token.token == "SQR":
-            return MonoOp(lambda x: sqrt(x)) # Handles the built-in RND function
+            return MonoOp(lambda x: sqrt(x)) # Handles the built-in SQRT function
         if token.token == "LEFT$":
             return StrOp(lambda x: x[0][:int(x[1])], token.token, 2)
         if token.token == "RIGHT$":
