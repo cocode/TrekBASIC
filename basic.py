@@ -1,5 +1,5 @@
 """
-Main program for running a basic program.
+Main program for running a basic program from the command line.
 """
 import sys
 import argparse
