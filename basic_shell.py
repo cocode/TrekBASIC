@@ -265,7 +265,7 @@ class BasicShell:
         self.cmd_continue(None)
         run_time = time.perf_counter() - run_start
         # only noting "load time", as this had it: https://archive.org/details/byte-magazine-1981-09/page/n193/mode/2up
-        print(F"Load time {load_time:10.1f} sec. Run time: {run_time:10.1f} sec.")
+        print(F"Load time {load_time:10.3f} sec. Run time: {run_time:10.3f} sec.")
 
     def cmd_break(self, args):
         """
