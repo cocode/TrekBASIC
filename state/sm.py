@@ -4,26 +4,27 @@ Experiments with state machines. Not doing anything meaningful yet.
 from itertools import count
 from collections import defaultdict
 
+from basic_utils import smart_split
+
 grammar = ["abc", "abd", "def"]
+#
+# sb = {
+#     "a": {
+#         "b": {
+#             "c": {
+#
+#             },
+#             "d": {
+#
+#             }
+#
+#         }
+#     },
+#     "b": {
+#
+#     },
+# }
 
-sb = {
-    "a": {
-        "b": {
-            "c": {
-
-            },
-            "d": {
-                
-            }
-
-        }
-    },
-    "b": {
-
-    },
-}
-
-state_list = []
 
 
 class State:
@@ -32,6 +33,10 @@ class State:
     def __init__(self):
         self.id = next(State._next_id)
         self._transitions = {}
+
+    def extend(self, strings):
+        for s in strings:
+            self.add(s)
 
     def add(self, input):
         assert len(input) > 0 # Not sure what to do if ""
@@ -71,6 +76,30 @@ class State:
         return self.__str__()
 
 
+def parse_ebnf(ebnf:str) -> State:
+    """
+    Convet an EBNF description string to a Python data structure.
+
+    Using this EBNF (there are many variants) https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form
+
+    :param ebnf:
+    :return:
+    """
+    rules = smart_split(ebnf, split_char=";")
+    r = {}
+    for rule in rules:
+        rule = rule.strip()
+        if not rule:
+            continue
+        lhs, rhs = rule.split('=', 1)
+        rhs = smart_split(rhs, split_char="|")
+        rhs = [r.strip() for r in rhs]
+        state = State()
+        state.extend(rhs)
+        r[lhs.strip()] = state
+    return r
+
+
 def print_state(state, indent=""):
     # print(F"{indent}{state.id}: {{")
     print(F"{{")
@@ -102,6 +131,20 @@ if __name__ == "__main__":
     assert not start_state.match("def")
 
     print_state(start_state)
+    grammar = """
+    first = abc | abd | bcd;
+    """
+    print("=====================================")
+    rules = parse_ebnf(grammar)
+    for r in rules:
+        print("rule: ", r, " ::= ")
+        print_state(rules[r])
 
+    sm = rules['first']
 
+    assert start_state.match("abc")
+    assert start_state.match("abd")
+    assert start_state.match("bcd")
+    assert not start_state.match("bcde")
+    assert not start_state.match("def")
 
