@@ -71,42 +71,13 @@ class State:
         return self.__str__()
 
 
-def build_tree(state, grammar):
-    """
-    Given a grammar, build a state machine that recognizes it.
-
-    Given a set of strings, find unique first characters.
-
-    :param state:
-    :param gc:
-    :return:
-    """
-    tree = {}
-    # Generate a list of inputs, and the "grammar" for the next state
-    for i in range(0, len(grammar)):
-        print(i)
-        cur = grammar[i]
-        # Current input
-        char = cur[0]
-        # Remaining part of input.
-        gr1 = cur[1:]
-        # Accumulate list of all strings that started with char.
-        if char in tree:
-            gr = tree.get(char)
-            gr.append(gr1)
-        else:
-            tree[char] = [gr1]
-
-    # for input in tree:
-    #     state
-    #     state.
-
-
 def print_state(state, indent=""):
-    print(F"{indent}State: {state.id} indent ='{indent}'")
+    # print(F"{indent}{state.id}: {{")
+    print(F"{{")
     for key in state._transitions:
-        print(F"{indent}\t{key}")
+        print(F"{indent}\t{key} => ", end='')
         print_state(state._transitions[key], indent = indent+"    ")
+    print(F"{indent}}}")
 
 if __name__ == "__main__":
     start_state = State()
