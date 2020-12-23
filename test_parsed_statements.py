@@ -1,8 +1,9 @@
 from unittest import TestCase
-from parsed_statements import ParsedStatementFor, ParsedStatementOnGoto, ParsedStatementInput
+from parsed_statements import ParsedStatementFor, ParsedStatementOnGoto, ParsedStatementInput, ParsedStatementNext
 
 
-class TestParsedStatementFor(TestCase):
+class Test(TestCase):
+
     def test_parsing_for(self):
         p = ParsedStatementFor("FOR", " I = 1 TO 10 STEP 2")
         self.assertEqual("I", p._index_clause)
@@ -16,18 +17,22 @@ class TestParsedStatementFor(TestCase):
         self.assertEqual("X(3)", p._to_clause)
         self.assertEqual("-Y", p._step_clause)
 
+    def test_parsing_next(self):
+        p = ParsedStatementNext("NEXT", " J")
+        self.assertEqual("J", p.loop_var)
+
     def test_parsing_on_goto(self):
         p = ParsedStatementOnGoto("ON", "IGOTO100,200,300")
         self.assertEqual("ON", p.keyword)
         self.assertEqual("I", p._expression)
         self.assertEqual("GOTO", p._op)
-        self.assertEqual([100,200,300], p._target_lines)
+        self.assertEqual([100, 200, 300], p._target_lines)
 
         p = ParsedStatementOnGoto("ON", " I5*10+1GOTO 100, 200, 300 ")
         self.assertEqual("ON", p.keyword)
         self.assertEqual("I5*10+1", p._expression)
         self.assertEqual("GOTO", p._op)
-        self.assertEqual([100,200,300], p._target_lines)
+        self.assertEqual([100, 200, 300], p._target_lines)
 
     def test_parsing_input(self):
         p = ParsedStatementInput("INPUT", '"PROMPT IS HERE";A')
@@ -39,10 +44,9 @@ class TestParsedStatementFor(TestCase):
         p = ParsedStatementInput("INPUT", '"PROMPT IS HERE";A,B')
         self.assertEqual("INPUT", p.keyword)
         self.assertEqual('"PROMPT IS HERE"', p._prompt)
-        self.assertEqual(["A","B"], p._input_vars)
+        self.assertEqual(["A", "B"], p._input_vars)
 
         p = ParsedStatementInput("INPUT", 'A$;A,B')
         self.assertEqual("INPUT", p.keyword)
         self.assertEqual('A$', p._prompt)
-        self.assertEqual(["A","B"], p._input_vars)
-
+        self.assertEqual(["A", "B"], p._input_vars)

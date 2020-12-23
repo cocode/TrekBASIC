@@ -28,7 +28,7 @@ class ParsedStatement:
 
 class ParsedStatementIf(ParsedStatement):
     """
-    Base class for a statement that has been processed.
+    Class for a IF statement that has been processed.
     """
     # TODO superstartrek3.bas uses an ELSE
     # Notes for ELSE. IF...THEN current works be branching to the next line, if the condition is False.
@@ -52,7 +52,7 @@ class ParsedStatementIf(ParsedStatement):
 
 class ParsedStatementFor(ParsedStatement):
     """
-    Base class for a statement that has been processed.
+    Class for a FOR statement that has been processed.
     """
     def __init__(self, keyword, args):
         super().__init__(keyword, "")
@@ -71,9 +71,18 @@ class ParsedStatementFor(ParsedStatement):
             self._step_clause = args[step+4:].strip()
 
 
+class ParsedStatementNext(ParsedStatement):
+    """
+    Class for a NEXT statement that has been processed.
+    """
+    def __init__(self, keyword, args):
+        super().__init__(keyword, "")
+        self.loop_var = args.strip()
+
+
 class ParsedStatementInput(ParsedStatement):
     """
-    Base class for a statement that has been processed.
+    Class for an INPUT statement that has been processed.
     TODO In superstartrek3.bas, input takes multiple prompt expressions, separated by semicolons
     """
     def __init__(self, keyword, args):

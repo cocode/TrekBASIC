@@ -9,7 +9,7 @@ from basic_types import BasicSyntaxError, assert_syntax
 from basic_types import SymbolType, RunStatus
 
 from parsed_statements import ParsedStatement, ParsedStatementIf, ParsedStatementFor, ParsedStatementOnGoto
-from parsed_statements import ParsedStatementInput
+from parsed_statements import ParsedStatementInput, ParsedStatementNext
 from basic_lexer import Lexer, NUMBERS, LETTERS
 from basic_expressions import Expression
 from basic_utils import smart_split
@@ -87,8 +87,8 @@ def stmt_for(executor, stmt: ParsedStatementFor):
     executor.do_for(var, start, stmt._to_clause, stmt._step_clause, executor.get_next_stmt())
 
 
-def stmt_next(executor, stmt):
-    index = stmt.args.strip()
+def stmt_next(executor, stmt:ParsedStatementNext):
+    index = stmt.loop_var
     var, to_clause, step_clause, loop_top = executor.do_next_peek(index)
     value = executor.get_symbol(var)
     to_value = eval_expression(executor._symbols, to_clause)
@@ -343,7 +343,7 @@ class Keywords(Enum):
     IF = KB(stmt_if, ParsedStatementIf)
     INPUT = KB(stmt_input, ParsedStatementInput)
     LET = KB(stmt_let)
-    NEXT = KB(stmt_next)
+    NEXT = KB(stmt_next, ParsedStatementNext)
     ON = KB(stmt_on, ParsedStatementOnGoto) # Computed gotos, gosubs
     PRINT = KB(stmt_print)
     REM = KB(stmt_rem)
