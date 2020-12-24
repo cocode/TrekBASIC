@@ -98,6 +98,16 @@ class ParsedStatementInput(ParsedStatement):
         self._input_vars = input_vars
 
 
+class ParsedStatementGo(ParsedStatement):
+    """
+    Class for a GOTO, GOSUB statement that has been processed.
+    """
+    def __init__(self, keyword, args):
+        super().__init__(keyword, "")
+        self.destination = args.strip()
+        assert_syntax(str.isdigit(self.destination), F"GOTO/GOSUB target is not an int ")
+
+
 class ParsedStatementOnGoto(ParsedStatement):
     """
     Handles ON X GOTO 100,200 as well as ON X GOSUB 100,200,300

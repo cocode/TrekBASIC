@@ -9,6 +9,7 @@ from basic_types import BasicSyntaxError, assert_syntax
 from basic_types import SymbolType, RunStatus
 
 from parsed_statements import ParsedStatement, ParsedStatementIf, ParsedStatementFor, ParsedStatementOnGoto
+from parsed_statements import ParsedStatementGo
 from parsed_statements import ParsedStatementInput, ParsedStatementNext
 from basic_lexer import Lexer, NUMBERS, LETTERS
 from basic_expressions import Expression
@@ -60,15 +61,14 @@ def stmt_print(executor, stmt):
     return None
 
 
-def stmt_goto(executor, stmt):
-    destination = stmt.args.strip()
-    assert_syntax(str.isdigit(destination), F"Goto target is not an int ")
+def stmt_goto(executor, stmt: ParsedStatementGo):
+    destination = stmt.destination
     executor.goto_line(int(destination))
     return None
 
 
-def stmt_gosub(executor, stmt):
-    destination = stmt.args.strip()
+def stmt_gosub(executor, stmt: ParsedStatementGo):
+    destination = stmt.destination
     assert_syntax(str.isdigit(destination), F"Gosub target is not an int ")
     executor.gosub(int(destination))
     return None
@@ -338,8 +338,8 @@ class Keywords(Enum):
     END = KB(stmt_end)
     ERROR = KB(stmt_error)
     FOR = KB(stmt_for, ParsedStatementFor)
-    GOTO = KB(stmt_goto)
-    GOSUB = KB(stmt_gosub)
+    GOTO = KB(stmt_goto, ParsedStatementGo)
+    GOSUB = KB(stmt_gosub, ParsedStatementGo)
     IF = KB(stmt_if, ParsedStatementIf)
     INPUT = KB(stmt_input, ParsedStatementInput)
     LET = KB(stmt_let)

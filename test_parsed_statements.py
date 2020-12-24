@@ -1,5 +1,8 @@
 from unittest import TestCase
-from parsed_statements import ParsedStatementFor, ParsedStatementOnGoto, ParsedStatementInput, ParsedStatementNext
+
+from basic_types import BasicSyntaxError
+from parsed_statements import ParsedStatementFor, ParsedStatementOnGoto, ParsedStatementInput, ParsedStatementNext, \
+    ParsedStatementGo
 
 
 class Test(TestCase):
@@ -20,6 +23,14 @@ class Test(TestCase):
     def test_parsing_next(self):
         p = ParsedStatementNext("NEXT", " J")
         self.assertEqual("J", p.loop_var)
+
+    def test_parsing_go(self):
+        p = ParsedStatementGo("GOTO", " 100")
+        self.assertEqual("100", p.destination)
+        p = ParsedStatementGo("GOSUB", " 2137")
+        self.assertEqual("2137", p.destination)
+        with self.assertRaises(BasicSyntaxError):
+            p = ParsedStatementGo("GOTO", " 100A")
 
     def test_parsing_on_goto(self):
         p = ParsedStatementOnGoto("ON", "IGOTO100,200,300")
