@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from basic_types import BasicSyntaxError
 from parsed_statements import ParsedStatementFor, ParsedStatementOnGoto, ParsedStatementInput, ParsedStatementNext, \
-    ParsedStatementGo
+    ParsedStatementGo, ParsedStatementNoArgs
 
 
 class Test(TestCase):
@@ -63,3 +63,10 @@ class Test(TestCase):
         self.assertEqual(["A", "B"], p._input_vars)
 
 
+    def test_parsing_end(self):
+        p = ParsedStatementNoArgs("END", "")
+        self.assertEqual("END", p.keyword)
+        self.assertEqual("", p.args)
+
+        with self.assertRaises(BasicSyntaxError):
+            p = ParsedStatementNoArgs("END", "SHOULD NOT BE HERE")

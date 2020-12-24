@@ -27,6 +27,15 @@ class ParsedStatement:
         return [] # Only used by if statement
 
 
+class ParsedStatementNoArgs:
+    """
+    Base class for a statement that takes no arguments. END, RETURN, STOP
+    """
+    def __init__(self, keyword, args):
+        self.keyword = keyword
+        assert_syntax(len(args.strip())==0, "Command does not take any arguments.")
+        self.args = ""
+
 class ParsedStatementIf(ParsedStatement):
     """
     Class for a IF statement that has been processed.

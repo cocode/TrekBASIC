@@ -9,7 +9,7 @@ from basic_types import BasicSyntaxError, assert_syntax
 from basic_types import SymbolType, RunStatus
 
 from parsed_statements import ParsedStatement, ParsedStatementIf, ParsedStatementFor, ParsedStatementOnGoto, \
-    ParsedStatementLet
+    ParsedStatementLet, ParsedStatementNoArgs
 from parsed_statements import ParsedStatementGo
 from parsed_statements import ParsedStatementInput, ParsedStatementNext
 from basic_lexer import Lexer, NUMBERS, LETTERS
@@ -327,11 +327,11 @@ class KB:
 
 
 class Keywords(Enum):
-    CLEAR = KB(stmt_clear)
+    CLEAR = KB(stmt_clear, ParsedStatement) # Some uses of clear take arguments, which we ignore.
     DEF = KB(stmt_def) # User defined functions
     DIM = KB(stmt_dim)
-    END = KB(stmt_end)
-    ERROR = KB(stmt_error)
+    END = KB(stmt_end, ParsedStatementNoArgs)
+    ERROR = KB(stmt_error, ParsedStatementNoArgs)
     FOR = KB(stmt_for, ParsedStatementFor)
     GOTO = KB(stmt_goto, ParsedStatementGo)
     GOSUB = KB(stmt_gosub, ParsedStatementGo)
@@ -341,8 +341,8 @@ class Keywords(Enum):
     NEXT = KB(stmt_next, ParsedStatementNext)
     ON = KB(stmt_on, ParsedStatementOnGoto) # Computed gotos, gosubs
     PRINT = KB(stmt_print)
-    REM = KB(stmt_rem)
-    RETURN = KB(stmt_return)
-    STOP = KB(stmt_end) # Variant of END
-    WIDTH = KB(stmt_width) # To support another version of superstartrek I found. Ignored
+    REM = KB(stmt_rem, ParsedStatement)
+    RETURN = KB(stmt_return, ParsedStatementNoArgs)
+    STOP = KB(stmt_end, ParsedStatementNoArgs) # Variant of END
+    WIDTH = KB(stmt_width, ParsedStatement) # To support another version of superstartrek I found. Ignored
 
