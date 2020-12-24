@@ -9,7 +9,7 @@ from basic_types import BasicSyntaxError, assert_syntax
 from basic_types import SymbolType, RunStatus
 
 from parsed_statements import ParsedStatement, ParsedStatementIf, ParsedStatementFor, ParsedStatementOnGoto, \
-    ParsedStatementLet, ParsedStatementNoArgs
+    ParsedStatementLet, ParsedStatementNoArgs, ParsedStatementDef
 from parsed_statements import ParsedStatementGo
 from parsed_statements import ParsedStatementInput, ParsedStatementNext
 from basic_lexer import Lexer, NUMBERS, LETTERS
@@ -271,7 +271,7 @@ def stmt_end(executor, stmt):
     executor._run = RunStatus.END_CMD
 
 
-def stmt_def(executor, stmt):
+def stmt_def(executor, stmt:ParsedStatementDef):
     """
     Define a user-defined function.
 
@@ -281,21 +281,7 @@ def stmt_def(executor, stmt):
     :param stmt:
     :return:
     """
-    try:
-        variable, value = stmt.args.split("=", 1)
-    except Exception as e:
-        print(e)
-        raise e
-    variable = variable.strip()
-    assert_syntax(len(variable) == 6 and
-                  variable.startswith("FN") and
-                  variable[3]=='(' and
-                  variable[5]==')',
-                  "Function definition error")
-    arg = variable[4]
-    variable = variable[:3]
-    value = value.strip()
-    executor.put_symbol(variable, value, SymbolType.FUNCTION, arg)
+    executor.put_symbol(stmt._variable, stmt._value, SymbolType.FUNCTION, stmt._function_arg)
 
 
 def stmt_return(executor, stmt):
@@ -328,7 +314,7 @@ class KB:
 
 class Keywords(Enum):
     CLEAR = KB(stmt_clear, ParsedStatement) # Some uses of clear take arguments, which we ignore.
-    DEF = KB(stmt_def) # User defined functions
+    DEF = KB(stmt_def, ParsedStatementDef) # User defined functions
     DIM = KB(stmt_dim)
     END = KB(stmt_end, ParsedStatementNoArgs)
     ERROR = KB(stmt_error, ParsedStatementNoArgs)

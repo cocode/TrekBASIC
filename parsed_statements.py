@@ -27,7 +27,7 @@ class ParsedStatement:
         return [] # Only used by if statement
 
 
-class ParsedStatementNoArgs:
+class ParsedStatementNoArgs(ParsedStatement):
     """
     Base class for a statement that takes no arguments. END, RETURN, STOP
     """
@@ -160,6 +160,31 @@ class ParsedStatementLet(ParsedStatement):
         self._tokens = lexer.lex(value)
         self._expression = Expression()
         self._variable = variable.strip()
+
+
+class ParsedStatementDef(ParsedStatement):
+    """
+    Handles DEF statements
+    """
+    def __init__(self, keyword, args):
+        super().__init__(keyword, "")
+
+        try:
+            variable, value = args.split("=", 1)
+        except Exception as e:
+            raise BasicSyntaxError(F"Error in expression. No '='.")
+
+        variable = variable.strip()
+        assert_syntax(len(variable) == 6 and
+                      variable.startswith("FN") and
+                      variable[3] == '(' and
+                      variable[5] == ')',
+                      "Function definition error")
+        self._function_arg = variable[4]
+        self._variable = variable[:3]
+        self._value = value.strip()
+        # TODO Should we parse the expression here? Currently, it's parsed when the function is USED.
+
 
 
 
