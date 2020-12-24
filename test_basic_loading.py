@@ -49,18 +49,6 @@ class Test(TestCase):
             self.assertEqual(Keywords.LET, results.stmts[i].keyword)
             self.assertEqual(expect[i], results.stmts[i].args)
 
-    def test_token_exp2(self):
-        multi_exp = "T=INT(RND(1)*20+20)*100:T0=T:T9=25+INT(RND(1)*10):D0=0:E=3000:E0=E"
-        line = f"370 {multi_exp}"
-        results = tokenize_line(line)
-        self.assertTrue(isinstance(results, ProgramLine))
-        self.assertEqual(370, results.line)
-        self.assertEqual(6, len(results.stmts))
-        expect = multi_exp.split(":")
-        self.assertEqual(6, len(expect))
-        for i in range(len(expect)):
-            self.assertEqual(Keywords.LET, results.stmts[i].keyword)
-            self.assertEqual(expect[i], results.stmts[i].args)
 
     def test_tokenize_if(self):
         clause = "IF3<>2THENX=3"
@@ -99,7 +87,7 @@ class Test(TestCase):
 
         result = results.stmts[0]
         self.assertEqual(Keywords.NEXT, result.keyword)
-        self.assertEqual('I', result.args)
+        self.assertEqual('I', result.loop_var)
 
         line = "530 FORI=1TO9:C(I,1)=0:C(I,2)=0:NEXTI"
         results = tokenize_line(line)
@@ -117,7 +105,7 @@ class Test(TestCase):
 
         result = results.stmts[3]
         self.assertEqual(Keywords.NEXT, result.keyword)
-        self.assertEqual('I', result.args)
+        self.assertEqual('I', result.loop_var)
 
     def test_load_program(self):
         program = load_program("simple_test.bas")
