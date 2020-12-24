@@ -8,7 +8,8 @@ from basic_dialect import UPPERCASE_INPUT
 from basic_types import BasicSyntaxError, assert_syntax
 from basic_types import SymbolType, RunStatus
 
-from parsed_statements import ParsedStatement, ParsedStatementIf, ParsedStatementFor, ParsedStatementOnGoto
+from parsed_statements import ParsedStatement, ParsedStatementIf, ParsedStatementFor, ParsedStatementOnGoto, \
+    ParsedStatementLet
 from parsed_statements import ParsedStatementGo
 from parsed_statements import ParsedStatementInput, ParsedStatementNext
 from basic_lexer import Lexer, NUMBERS, LETTERS
@@ -162,15 +163,9 @@ def eval_expression(symbols, value):
     return result
 
 
-def stmt_let(executor, stmt):
-    try:
-        variable, value = stmt.args.split("=", 1)
-    except Exception as e:
-        raise BasicSyntaxError(F"Error in expression. No '='.")
-
-    variable = variable.strip()
-    result = eval_expression(executor._symbols, value)
-    assign_variable(executor, variable, result)
+def stmt_let(executor, stmt:ParsedStatementLet):
+    result = stmt._expression.eval(stmt._tokens, symbols=executor._symbols)
+    assign_variable(executor, stmt._variable, result)
 
 
 def stmt_clear(executor, stmt):
@@ -342,11 +337,12 @@ class Keywords(Enum):
     GOSUB = KB(stmt_gosub, ParsedStatementGo)
     IF = KB(stmt_if, ParsedStatementIf)
     INPUT = KB(stmt_input, ParsedStatementInput)
-    LET = KB(stmt_let)
+    LET = KB(stmt_let, ParsedStatementLet)
     NEXT = KB(stmt_next, ParsedStatementNext)
     ON = KB(stmt_on, ParsedStatementOnGoto) # Computed gotos, gosubs
     PRINT = KB(stmt_print)
     REM = KB(stmt_rem)
     RETURN = KB(stmt_return)
+    STOP = KB(stmt_end) # Variant of END
     WIDTH = KB(stmt_width) # To support another version of superstartrek I found. Ignored
 

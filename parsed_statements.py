@@ -2,7 +2,8 @@
 This file contains the classes used to represent parsed statements.
 """
 from basic_lexer import Lexer
-from basic_types import assert_syntax
+from basic_types import assert_syntax, BasicSyntaxError
+from basic_expressions import Expression
 
 
 class ParsedStatement:
@@ -132,5 +133,25 @@ class ParsedStatementOnGoto(ParsedStatement):
             line = int(line)
             lines2.append(line)
         self._target_lines = lines2
+
+
+class ParsedStatementLet(ParsedStatement):
+    """
+    Handles LET statements, whether or not they have an explicit LET
+    """
+    def __init__(self, keyword, args):
+        super().__init__(keyword, "")
+
+        try:
+            variable, value = args.split("=", 1)
+        except Exception as e:
+            raise BasicSyntaxError(F"Error in expression. No '='.")
+
+        lexer = Lexer()
+        self._tokens = lexer.lex(value)
+        self._expression = Expression()
+        self._variable = variable.strip()
+
+
 
 

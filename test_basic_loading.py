@@ -3,9 +3,10 @@ from unittest import TestCase
 import sys
 
 from basic_statements import Keywords
-from basic_types import ProgramLine
-from basic_loading import tokenize_line, load_program
+from basic_types import ProgramLine, lexer_token
+from basic_loading import tokenize_line, load_program, tokenize
 from basic_utils import format_program
+from parsed_statements import ParsedStatementIf
 
 
 class Test(TestCase):
@@ -47,7 +48,9 @@ class Test(TestCase):
         self.assertEqual(6, len(expect))
         for i in range(len(expect)):
             self.assertEqual(Keywords.LET, results.stmts[i].keyword)
-            self.assertEqual(expect[i], results.stmts[i].args)
+            #self.assertEqual(expect[i], results.stmts[i].args)
+
+        self.assertEqual([lexer_token(3000, "num")], results.stmts[4]._tokens)
 
 
     def test_tokenize_if(self):
@@ -89,7 +92,7 @@ class Test(TestCase):
         self.assertEqual(Keywords.NEXT, result.keyword)
         self.assertEqual('I', result.loop_var)
 
-        line = "530 FORI=1TO9:C(I,1)=0:C(I,2)=0:NEXTI"
+        line = "530 FORI=1TO9:C(I,1)=0:C(I,2)=37:NEXTI"
         results = tokenize_line(line)
         self.assertTrue(isinstance(results, ProgramLine))
         self.assertEqual(530, results.line)
@@ -97,11 +100,13 @@ class Test(TestCase):
 
         result = results.stmts[1]
         self.assertEqual(Keywords.LET, result.keyword)
-        self.assertEqual('C(I,1)=0', result.args)
+        self.assertEqual([lexer_token(0, "num")], result._tokens)
+        self.assertEqual("C(I,1)", result._variable)
 
         result = results.stmts[2]
         self.assertEqual(Keywords.LET, result.keyword)
-        self.assertEqual('C(I,2)=0', result.args)
+        self.assertEqual([lexer_token(37, "num")], result._tokens)
+        self.assertEqual("C(I,2)", result._variable)
 
         result = results.stmts[3]
         self.assertEqual(Keywords.NEXT, result.keyword)
@@ -114,3 +119,9 @@ class Test(TestCase):
             for line in format_program(program):
                 print(line, file=f)
             # TODO Compare output to source
+
+    def test_ne(self):
+        line = '8675 IF LEN(A$)<>3THEN PRINT"ERROR":STOP'
+        statements = tokenize_line(line)
+        self.assertEqual(3, len(statements.stmts))
+        self.assertEqual(ParsedStatementIf, type(statements.stmts[0]))

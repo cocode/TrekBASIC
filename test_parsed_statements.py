@@ -61,3 +61,5 @@ class Test(TestCase):
         self.assertEqual("INPUT", p.keyword)
         self.assertEqual('A$', p._prompt)
         self.assertEqual(["A", "B"], p._input_vars)
+
+
