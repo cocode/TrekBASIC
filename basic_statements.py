@@ -9,7 +9,7 @@ from basic_types import BasicSyntaxError, assert_syntax
 from basic_types import SymbolType, RunStatus
 
 from parsed_statements import ParsedStatement, ParsedStatementIf, ParsedStatementFor, ParsedStatementOnGoto, \
-    ParsedStatementLet, ParsedStatementNoArgs, ParsedStatementDef
+    ParsedStatementLet, ParsedStatementNoArgs, ParsedStatementDef, ParsedStatementPrint
 from parsed_statements import ParsedStatementGo
 from parsed_statements import ParsedStatementInput, ParsedStatementNext
 from basic_lexer import Lexer, NUMBERS, LETTERS
@@ -24,25 +24,15 @@ def stmt_rem(executor, stmt):
     return None
 
 
-def stmt_print(executor, stmt):
+def stmt_print(executor, stmt:ParsedStatementPrint):
     """
     Prints output.
     :param executor: The program execution environment. Contains variables in its SymbolTable
     :param stmt: This print statement, contains parameters to the PRINT command.
     :return: None
     """
-    arg = stmt.args.strip()
-    if arg.endswith(";"):
-        no_cr = True
-    else:
-        no_cr = False
-    args = smart_split(arg, split_char=";")
-    for i, arg in enumerate(args):
-        arg = arg.strip()
-        if len(arg) == 0:
-            continue
+    for i, arg in enumerate(stmt._outputs):
         if arg[0] == '"': # quoted string
-            assert_syntax(arg[0] =='"' and arg[-1] == '"', "String not properly quoted for 'PRINT'")
             output = arg[1:-1]
             #output.replace(" ", "*") # TODO delete this line.
             executor.do_print(output, end='')
@@ -57,7 +47,7 @@ def stmt_print(executor, stmt):
             else:
                 executor.do_print(F"{v}", end='')
 
-    if not no_cr:
+    if not stmt._no_cr:
         executor.do_print("")
     return None
 
@@ -326,7 +316,7 @@ class Keywords(Enum):
     LET = KB(stmt_let, ParsedStatementLet)
     NEXT = KB(stmt_next, ParsedStatementNext)
     ON = KB(stmt_on, ParsedStatementOnGoto) # Computed gotos, gosubs
-    PRINT = KB(stmt_print)
+    PRINT = KB(stmt_print, ParsedStatementPrint)
     REM = KB(stmt_rem, ParsedStatement)
     RETURN = KB(stmt_return, ParsedStatementNoArgs)
     STOP = KB(stmt_end, ParsedStatementNoArgs) # Variant of END

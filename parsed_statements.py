@@ -4,6 +4,7 @@ This file contains the classes used to represent parsed statements.
 from basic_lexer import Lexer
 from basic_types import assert_syntax, BasicSyntaxError
 from basic_expressions import Expression
+from basic_utils import smart_split
 
 
 class ParsedStatement:
@@ -185,7 +186,31 @@ class ParsedStatementDef(ParsedStatement):
         self._value = value.strip()
         # TODO Should we parse the expression here? Currently, it's parsed when the function is USED.
 
+class ParsedStatementPrint(ParsedStatement):
+    """
+    Handles PRINT statements
+    """
+    def __init__(self, keyword, args):
+        super().__init__(keyword, "")
 
-
+        args = args.strip()
+        if args.endswith(";"):
+            self._no_cr = True
+        else:
+            self._no_cr = False
+        self._outputs = []
+        args = smart_split(args, split_char=";")
+        # TODO have a print_arg type, that tells stmt_print whether it is a quoted string or an expression
+        # Of course, a quited string should be an expression, so maybe I don't need both branches.
+        for i, arg in enumerate(args):
+            arg = arg.strip()
+            if len(arg) == 0:
+                continue
+            if arg[0] == '"': # quoted string
+                assert_syntax(arg[0] =='"' and arg[-1] == '"', "String not properly quoted for 'PRINT'")
+                self._outputs.append(arg)
+            else: # Expression
+                self._outputs.append(arg) # TODO Parse it here, evaluate in stmt_print
+        return None
 
 

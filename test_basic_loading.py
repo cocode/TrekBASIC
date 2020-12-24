@@ -75,11 +75,11 @@ class Test(TestCase):
 
         result = results.stmts[0]
         self.assertEqual(Keywords.PRINT, result.keyword)
-        self.assertEqual('"YOUR MISSION: BEGINS"', result.args)
+        self.assertEqual('"YOUR MISSION: BEGINS"', result._outputs[0])
 
         result = results.stmts[1]
         self.assertEqual(Keywords.PRINT, result.keyword)
-        self.assertEqual('"AND ENDS"', result.args)
+        self.assertEqual('"AND ENDS"', result._outputs[0])
 
     def test_multiple_for(self):
         line = "530 NEXTI"
