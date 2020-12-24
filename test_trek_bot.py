@@ -12,7 +12,7 @@ class TestCheatStrategy(TestCase):
         # Just use the lexer for convenience. We culd just create the tokens used for operands manually
         self._strategy = CheatStrategy()
         listing = [
-            '100 DIMG(8,8):S=1000:E=3000:Q1=1:Q2=2:S1=3:S2=4:K3=3',
+            '100 DIMG(8,8):S=1000:E=3000:Q1=1:Q2=2:S1=3:S2=4:K3=3:Q$="ABC"',
         ]
         self._program = tokenize(listing)
         self._executor = Executor(self._program)
@@ -57,17 +57,20 @@ class TestCheatStrategy(TestCase):
         pass
 
 
-    # def test_angle(self):
-    #     for dy in range(1, -2, -1):
-    #         for dx in range(-1, 2):
-    #             course = compute_course(dx,dy)
-    #             print(F"{course:6.2f}   ", end="")
-    #         print()
-    #     self.assertEqual(4, compute_course(-1, -1))
-    #     self.assertEqual(2, compute_course(-3, 3))
-    #     self.assertEqual(6, compute_course(3, -3))
-    #     self.assertEqual(5, compute_course(0, -3))
-    #     self.assertEqual(5, compute_course(0, 2))
+    def test_angle(self):
+        for dy in range(1, -2, -1):
+            for dx in range(-1, 2):
+                course = compute_course(dx,dy)
+                print(F"{course:6.2f}   ", end="")
+            print()
+        self.assertEqual(1, compute_course(0, 1))
+        self.assertEqual(2, compute_course(-1, 1))
+        self.assertEqual(3, compute_course(-1, 0))
+        self.assertEqual(4, compute_course(-1, -1))
+        self.assertEqual(5, compute_course(0, -1))
+        self.assertEqual(6, compute_course(1, -1))
+        self.assertEqual(7, compute_course(1, 0))
+        self.assertEqual(8, compute_course(1, 1))
 
     def test_replace_from_sector(self):
         sector = "abcdefghijklmnopqrstuvwxyz0123456789"
