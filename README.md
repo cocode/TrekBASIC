@@ -41,7 +41,8 @@ A LINE is made up of multiple STATEMENTS, each one beginning with a KEYWORD.
         1. Generate wasm from b-code (this is best) 
         1. Or could write  b-code interpreter.
         1. Or could find someone else's basic written in a languages 
-    that compiles to wasm.
+    that compiles to wasm
+    1. there's a gw-basic clone. maybe generate code from its parse tree.
 1. In progress: Writing a smarter player strategy, so I can code 
    cover the "win" part of the code. The random player always loses.
 1. What uses star dates? Am I wasting life by setting the shields all 
@@ -52,7 +53,7 @@ dot installed, I just found an online version, and used that.
     python venv/lib/python3.9/site-packages/gprof2dot.py -f pstats test.pstats
 1. Having trace_file as a parameter to the constructor, but not using it until run_program makes no sense.
 1. remove REM from code coverage, many of the are unreachable
-1. check k9(count of klingons alive)  at end, to see if trek bot won
+1. check k9(count of Klingons alive)  at end, to see if trek bot won
 1. Need to support "ELSE" for superstartrek3.bas
 1. It should be possible to save code coverage data across multiple runs,
    so I can get to 100% coverage.
@@ -112,15 +113,18 @@ for the mapping.
 1. BNF 
     1. https://henry416.wordpress.com/tag/bnf/
     1. https://rosettacode.org/wiki/BNF_Grammar#BASIC
-
+1. https://robhagemans.github.io/pcbasic/
+    1. https://robhagemans.github.io/pcbasic/doc/2.0/PC-BASIC_documentation.pdf
 
 ## Bugs in the BASIC program (superstartrek.bas):
 When trek_bot continuously gave a command of "SHE", when "SHIELD CONTROL INOPERABLE",
 I eventually hit
 Syntax Error in line 2080: SyntaxError: FORs nested too deeply: 2080 FORI=1TO9:IFLEFT$(A$,3)<>MID$(A1$,3*I-2,3)THEN2160
-This looks to be a bug in the original basic, taht would never matter, as
+This looks to be a bug in the original basic, that would never matter, as
 a human wouldn't give an error response 2000 times.
 Current state is:  CheatState.SHIELDS
+
+maybe course is 1 <= course <= 9 or <10
 << NAV
 >> COURSE (0-9)
 << 0
