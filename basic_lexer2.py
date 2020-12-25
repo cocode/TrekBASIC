@@ -11,11 +11,9 @@ just grab sequences of letters, like you can in most programming languages. And 
 you can know that "IFX" is a keyword and a token, in the lexer, you need the parser.
 """
 
-from basic_types import lexer_token, BasicSyntaxError
+from basic_types import lexer_token, BasicSyntaxError, NUMBERS, LETTERS
 
 # It's either a number, an operator, a variable, or other (keyword, function, etc)
-NUMBERS = "0123456789"
-LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 OPERATORS = ["(",")","^","*","/","+","-","=",">","<","<>", ">=", "<="]
 OP_FIRST = {op[0] for op in OPERATORS}
 OP_TWO = [op for op in OPERATORS if len(op) > 1]

@@ -1,7 +1,10 @@
 """
 This file contains the classes used to represent parsed statements.
 """
-from basic_lexer import Lexer
+from basic_lexer import Lexer, NUMBERS
+from basic_types import tokens_to_str
+
+from basic_types import is_valid_identifier
 from basic_types import assert_syntax, BasicSyntaxError
 from basic_expressions import Expression
 from basic_utils import smart_split
@@ -19,23 +22,33 @@ class ParsedStatement:
         For example, we should tokenize expressions here, so we don't have to do it every
         time we execute the line.
         :param keyword: The keyword for the line, for example: IF
-        :param args: Any unparsed arguments. ParsedSatement subclasses may consume this.
+        :param args: Any unparsed arguments. ParsedSatement subclasses may consume this. May be "", may not be None
         """
+        assert args is not None
         self.keyword = keyword
+        args = args.strip()
         self.args = args
 
     def get_additional(self):
         return [] # Only used by if statement
 
+    def __str__(self):
+        """
+        This generates syntaxtically valid, nicely formatted versions of the statement.
+        :return:
+        """
+        return F"{self.keyword.name} {self.args}"
 
 class ParsedStatementNoArgs(ParsedStatement):
     """
     Base class for a statement that takes no arguments. END, RETURN, STOP
     """
     def __init__(self, keyword, args):
+        super().__init__(keyword, "")
         self.keyword = keyword
         assert_syntax(len(args.strip())==0, "Command does not take any arguments.")
         self.args = ""
+
 
 class ParsedStatementIf(ParsedStatement):
     """
@@ -48,18 +61,22 @@ class ParsedStatementIf(ParsedStatement):
     # We need to parse the clauses after then ELSE, and add them to the line, like we now do with _additional
     # and we need to know the offset of the statements after the else.
     def __init__(self, keyword, args):
+        super().__init__(keyword, "")
         then = args.find("THEN")
         assert_syntax(then != -1, "No THEN found for IF")
         then_clause = args[then+len("THEN"):]
-        self._additional = then_clause
+        self._additional = then_clause.strip()
         lexer = Lexer()
         left_over = args[:then]
         self._tokens = lexer.lex(left_over)
-        super().__init__(keyword, None)
+        super().__init__(keyword, "")
 
     def get_additional(self):
         return self._additional
 
+    def __str__(self):
+        clause = tokens_to_str(self._tokens)
+        return F"{self.keyword.name} {clause} THEN {self._additional}"
 
 class ParsedStatementFor(ParsedStatement):
     """
@@ -72,7 +89,7 @@ class ParsedStatementFor(ParsedStatement):
         step = args.find("STEP")
         assert_syntax(eq != -1, "No = found for FOR")
         assert_syntax(to != -1, "No TO found for FOR")
-        self._index_clause = args[:eq].strip()
+        self._index_clause = args[:eq].strip() # TODO convert to int here.
         self._start_clause = args[eq+1:to].strip()
         end_to = step if step != -1 else None
         self._to_clause = args[to+2:end_to].strip()
@@ -80,6 +97,12 @@ class ParsedStatementFor(ParsedStatement):
             self._step_clause = '1'
         else:
             self._step_clause = args[step+4:].strip()
+
+    def __str__(self):
+        s = F"{self.keyword.name} {self._index_clause} = {self._start_clause} TO {self._to_clause}"
+        if self._step_clause != '1':
+            s += F" step {self._step_clause}"
+        return s
 
 
 class ParsedStatementNext(ParsedStatement):
@@ -90,6 +113,9 @@ class ParsedStatementNext(ParsedStatement):
         super().__init__(keyword, "")
         self.loop_var = args.strip()
 
+    def __str__(self):
+        return F"{self.keyword.name} {self.loop_var}"
+
 
 class ParsedStatementInput(ParsedStatement):
     """
@@ -98,15 +124,22 @@ class ParsedStatementInput(ParsedStatement):
     """
     def __init__(self, keyword, args):
         super().__init__(keyword, "")
-        delim = args.find(";")
-        if delim == -1:
+        split_args = smart_split(args, split_char=";")
+        if len(split_args) == 1:
+            # No prompt
             self._prompt = ""
+            input_vars = split_args[0]
         else:
-            self._prompt = args[:delim].strip()
-        input_vars = args[delim+1:].strip()
+            assert_syntax(len(split_args) == 2, "INPUT statment should only have one ;")
+            self._prompt = split_args[0].strip()
+            input_vars = split_args[1]
         input_vars = input_vars.split(",")
         input_vars = [v.strip() for v in input_vars]
+        [is_valid_identifier(v) for v in input_vars]
         self._input_vars = input_vars
+
+    def __str__(self):
+        return F'{self.keyword.name} {self._prompt};{",".join(self._input_vars)}'
 
 
 class ParsedStatementGo(ParsedStatement):
@@ -117,6 +150,9 @@ class ParsedStatementGo(ParsedStatement):
         super().__init__(keyword, "")
         self.destination = args.strip()
         assert_syntax(str.isdigit(self.destination), F"GOTO/GOSUB target is not an int ")
+
+    def __str__(self):
+        return F"{self.keyword.name} {self.destination}"
 
 
 class ParsedStatementOnGoto(ParsedStatement):
@@ -141,8 +177,12 @@ class ParsedStatementOnGoto(ParsedStatement):
             line = line.strip()
             assert_syntax(str.isdigit(line), F"Invalid line {line} for target of ON GOTO/GOSUB")
             line = int(line)
-            lines2.append(line)
+            lines2.append(line) # Why are these ints?
         self._target_lines = lines2
+
+    def __str__(self):
+        l2 = [str(l) for l in self._target_lines]
+        return F"{self.keyword.name} {self._expression} {self._op} {','.join(l2)}"
 
 
 class ParsedStatementLet(ParsedStatement):
@@ -161,6 +201,9 @@ class ParsedStatementLet(ParsedStatement):
         self._tokens = lexer.lex(value)
         self._expression = Expression()
         self._variable = variable.strip()
+
+    def __str__(self):
+        return F"{self.keyword.name} {self._variable}={tokens_to_str(self._tokens)}"
 
 
 class ParsedStatementDef(ParsedStatement):
@@ -185,6 +228,10 @@ class ParsedStatementDef(ParsedStatement):
         self._variable = variable[:3]
         self._value = value.strip()
         # TODO Should we parse the expression here? Currently, it's parsed when the function is USED.
+
+    def __str__(self):
+        return F"{self.keyword.name} {self._variable}({self._function_arg})={self._value}"
+
 
 class ParsedStatementPrint(ParsedStatement):
     """
@@ -211,6 +258,45 @@ class ParsedStatementPrint(ParsedStatement):
                 self._outputs.append(arg)
             else: # Expression
                 self._outputs.append(arg) # TODO Parse it here, evaluate in stmt_print
-        return None
+        return
+
+    def __str__(self):
+        c = ";" if self._no_cr else ""
+        return F'{self.keyword.name} {";".join(self._outputs)}{c}'
 
 
+class ParsedStatementDim(ParsedStatement):
+    """
+    Handles DIM statements
+    """
+    def __init__(self, keyword, args):
+        super().__init__(keyword, "")
+        self._dimensions = {}
+
+        stmts = smart_split(args.strip(), enquote="(", dequote=")", split_char=",")
+        for s in stmts:
+            s = s.strip()
+            # TODO a 'get_identifier' function
+            name = s[0]
+            assert_syntax(len(s) > 1, "Missing dimensions")
+            if s[1] in NUMBERS:
+                name += s[1]
+            if s[len(name)] == "$":
+                name += "$"
+            dimensions = s[len(name):]
+            assert_syntax(dimensions[0] == '(', "Missing (")
+            assert_syntax(dimensions[-1] == ')', "Missing (")
+            dimensions = dimensions[1:-1]  # Remove parens
+            dimensions = dimensions.split(",")
+            assert len(dimensions) <= 2 and len(dimensions) > 0
+            if len(dimensions) == 1:
+                size = int(dimensions[0])
+                value = [0] * size
+            elif len(dimensions) == 2:
+                size_x = int(dimensions[0].replace("(", ''))
+                size_y = int(dimensions[1].replace(")", ''))
+                value = [[0] * size_y for _ in range(size_x)]  # wrong: [[0] * size_y] * size_x
+            else:
+                assert_syntax(False, F"Too many dimensions {len(dimensions)}")
+            assert_syntax(name not in self._dimensions, "duplicated variable in DIM")
+            self._dimensions[name] = value

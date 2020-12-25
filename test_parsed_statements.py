@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from basic_types import BasicSyntaxError
 from parsed_statements import ParsedStatementFor, ParsedStatementOnGoto, ParsedStatementInput, ParsedStatementNext, \
-    ParsedStatementGo, ParsedStatementNoArgs, ParsedStatementDef
+    ParsedStatementGo, ParsedStatementNoArgs, ParsedStatementDef, ParsedStatementDim
 
 
 class Test(TestCase):
@@ -78,6 +78,19 @@ class Test(TestCase):
         self.assertEqual("FNA", p._variable)
         self.assertEqual("X", p._function_arg)
         self.assertEqual("X*X", p._value)
+
+        with self.assertRaises(BasicSyntaxError):
+            p = ParsedStatementNoArgs("END", "SHOULD NOT BE HERE")
+
+    def test_parsing_dim(self):
+        p = ParsedStatementDim("DIM", "A(2),B(3,2)")
+        self.assertEqual("DIM", p.keyword)
+        self.assertEqual("", p.args)
+        expected = {
+            "A":[0, 0],
+            "B":[[20,20],[20,20],[20,20],]
+        }
+        self.assertEqual(expected, p._dimensions)
 
         with self.assertRaises(BasicSyntaxError):
             p = ParsedStatementNoArgs("END", "SHOULD NOT BE HERE")

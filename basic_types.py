@@ -74,3 +74,37 @@ class RunStatus(Enum):
     BREAK_DATA=auto()
     BREAK_STEP=auto()
 
+
+NUMBERS = "0123456789]"
+LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+
+def is_valid_identifier(variable:str):
+    """
+    Checks if the identifier is a valid variable name to assign to.
+    Assumes that spaces have already been removed.
+    Does not recognize internal functions, or user defined functions.
+    :param variable: The variable name to check.
+    :return: None. Raises an exception if the name is not valid.
+    """
+    assert_syntax(len(variable) >= 1, F"Zero length variable name.")
+    assert_syntax(len(variable) <= 3, F"Variable {variable} too long.")
+    assert_syntax(variable[0] in LETTERS, F"Variable {variable} must start with a letters.")
+    if len(variable) == 1:
+        return
+    if len(variable) == 2 and variable[1] == '$':
+        return
+    assert_syntax(variable[1] in NUMBERS, F"Second char of '{variable}' must be a number or $.")
+    if len(variable) == 2:
+        return
+    assert_syntax(variable[2] == '$', F"Invalid variable name {variable}")
+
+def tokens_to_str(tokens:list[lexer_token]):
+    s = ""
+    for token in tokens:
+        if token.type == "num" and int(token.token) == token.token:
+            s += str(int(token.token))
+        else:
+            s += str(token.token)
+    return s
+

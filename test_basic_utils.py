@@ -21,7 +21,7 @@ class Test(TestCase):
         self.assertEqual('PRINT"AND ENDS"', results[1])
 
         line = "G(8,8),C(9,2),K(3,3),N(3),Z(8,8),D(8)"
-        results = smart_split(line, "(", ")", ",")
+        results = smart_split(line,enquote="(", dequote=")", split_char=",")
         self.assertEqual(6, len(results))
         self.assertEqual('G(8,8)', results[0])
         self.assertEqual('C(9,2)', results[1])

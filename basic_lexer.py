@@ -9,10 +9,8 @@ I think you have to know that Y is a variable, and can't be longer than one lett
 just grab sequences of letters.
 """
 
-from basic_types import lexer_token, BasicSyntaxError
+from basic_types import lexer_token, BasicSyntaxError, NUMBERS, LETTERS
 
-NUMBERS = "0123456789]"
-LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 OPERATORS = "()^*/+-=><,"
 BOOLEAN_OPERATORS=["AND", "OR"]
 
@@ -144,6 +142,7 @@ class Lexer:
                     raise BasicSyntaxError(F"Unexpected char '{c}'")
 
         return
+
 
 if __name__ == '__main__':
     p = Lexer()

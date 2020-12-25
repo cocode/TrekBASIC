@@ -8,10 +8,12 @@ n - next
 s - step
 
 """
+import os
 import sys
 import pprint
 import argparse
 import time
+import traceback
 
 from basic_types import UndefinedSymbol, BasicSyntaxError, SymbolType
 
@@ -63,11 +65,18 @@ class BasicShell:
         self._coverage = None
 
     def load(self, coverage=False):
+        if not os.path.exists(self._program_file):
+            if os.path.exists(self._program_file+".bas"):
+                self._program_file += ".bas"
         print("Loading ", self._program_file)
         try:
             program = load_program(self._program_file)
+        except FileNotFoundError as e:
+            print(F"File {self._program_file} not found.")
+            return
         except Exception as e:
             print(e)
+            traceback.print_exc()
             return
         executor = Executor(program, coverage=coverage)
         self.executor = executor
@@ -289,6 +298,13 @@ class BasicShell:
 
         print(F"Renumber from {start_line} increment {increment}")
         program = self.executor._program
+        line_map = {}
+        cur_line = start_line
+        for line in program:
+            line_number = line.line
+            for statement in line.stmts:
+                print(cur_line, statement)
+                cur_line += increment
 
 
     def cmd_break(self, args):
