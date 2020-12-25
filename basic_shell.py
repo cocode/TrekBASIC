@@ -64,7 +64,11 @@ class BasicShell:
 
     def load(self, coverage=False):
         print("Loading ", self._program_file)
-        program = load_program(self._program_file)
+        try:
+            program = load_program(self._program_file)
+        except Exception as e:
+            print(e)
+            return
         executor = Executor(program, coverage=coverage)
         self.executor = executor
 
@@ -267,6 +271,26 @@ class BasicShell:
         # only noting "load time", as this had it: https://archive.org/details/byte-magazine-1981-09/page/n193/mode/2up
         print(F"Load time {load_time:10.3f} sec. Run time: {run_time:10.3f} sec.")
 
+    def cmd_renum(self, args):
+        # renum start_line, increment.
+        # TODO maybe add a "split lines with multiple statements", or just always do it.
+        if args == None:
+            args = []
+        else:
+            args = args.split()
+        if len(args) == 0:
+            start_line = 100
+        else:
+            start_line = int(args[0])
+        if len(args) > 1:
+            increment = int(args[1])
+        else:
+            increment = 10
+
+        print(F"Renumber from {start_line} increment {increment}")
+        program = self.executor._program
+
+
     def cmd_break(self, args):
         """
         set a breakpoint. Breakpoints happen after the current LINE completes.
@@ -329,10 +353,11 @@ class BasicShell:
         "gosubs": (cmd_gosub_stack, "Usage: gosubs\n\t\tPrints the FOR stack."),
         "help": (cmd_help, "Usage: help"),
         "load": (cmd_load, "Usage: load <program>\n\t\tRunning load clears coverage data."),
-        "koverage": (cmd_koverage, "Usage: koverage\n\t\tPrint code coverage report."+
+        "coverage": (cmd_koverage, "Usage: coverage\n\t\tPrint code coverage report."+
                      "\n\t\tkoverage on\n\t\tkoverage off\n\t\tkoverage clear\n\t\tkoverage report <save|load|list>"),
         "list": (cmd_list, "Usage: list start count"),
         "quit": (cmd_quit, "Usage: quit"),
+        "renum": (cmd_renum, "Usage: renum <start <increment>>\n\t\tRenumbers the program."),
         "run": (cmd_run, "Usage: run <coverage>\n\t\tRuns the program from the beginning."),
         "benchmark": (cmd_benchmark, "Usage: becnhmark\n\t\tRuns the program from the beginning, and shows timing."),
         "next": (cmd_next, "Usage: next"),
@@ -344,6 +369,12 @@ class BasicShell:
     }
 
     def find_command(self, prefix):
+        # Abbreviations for commands that get typed a lot.
+        if prefix == "r":
+            prefix = "run"
+        elif prefix == "c":
+            prefix = "continue"
+
         matches = [cmd for cmd in self.commands if cmd.startswith(prefix)]
         if len(matches) == 1:
             return matches[0]
