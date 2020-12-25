@@ -5,11 +5,11 @@ that runs the program (Executor)
 from enum import Enum
 
 from basic_dialect import UPPERCASE_INPUT
-from basic_types import BasicSyntaxError, assert_syntax
+from basic_types import BasicSyntaxError, assert_syntax, is_valid_identifier
 from basic_types import SymbolType, RunStatus
 
 from parsed_statements import ParsedStatement, ParsedStatementIf, ParsedStatementFor, ParsedStatementOnGoto, \
-    ParsedStatementLet, ParsedStatementNoArgs, ParsedStatementDef, ParsedStatementPrint
+    ParsedStatementLet, ParsedStatementNoArgs, ParsedStatementDef, ParsedStatementPrint, ParsedStatementDim
 from parsed_statements import ParsedStatementGo
 from parsed_statements import ParsedStatementInput, ParsedStatementNext
 from basic_lexer import Lexer, NUMBERS, LETTERS
@@ -96,26 +96,6 @@ def is_string_variable(variable:str):
     return variable.endswith("$")
 
 
-def is_valid_identifier(variable:str):
-    """
-    Checks if the identifier is a valid variable name to assign to.
-    Assumes that spaces have already been removed.
-    Does not recognize internal functions, or user defined functions.
-    :param variable: The variable name to check.
-    :return: None. Raises an exception if the name is not valid.
-    """
-    assert_syntax(len(variable) >= 1, F"Zero length variable name.")
-    assert_syntax(len(variable) <= 3, F"Variable {variable} too long.")
-    assert_syntax(variable[0] in LETTERS, F"Variable {variable} must start with a letters.")
-    if len(variable) == 1:
-        return
-    if len(variable) == 2 and variable[1] == '$':
-        return
-    assert_syntax(variable[1] in NUMBERS, F"Second char of {variable} must be a number or $.")
-    if len(variable) == 2:
-        return
-    assert_syntax(variable[2] == '$', F"Invalid variable name {variable}")
-
 
 def assign_variable(executor, variable, value):
     """
@@ -163,7 +143,7 @@ def stmt_clear(executor, stmt):
     executor.init_symbols()
 
 
-def stmt_dim(executor, stmt):
+def stmt_dim(executor, stmt:ParsedStatementDim):
     """
     Declares an array. Initializes it to zeros.
 
@@ -172,31 +152,7 @@ def stmt_dim(executor, stmt):
     :param stmt:
     :return:
     """
-    stmts = smart_split(stmt.args.strip(), "(", ")", ",")
-    for s in stmts:
-        s = s.strip()
-        # TODO a 'get_identifier' function
-        name = s[0]
-        assert_syntax(len(s) > 1, "Missing dimensions")
-        if s[1] in NUMBERS:
-            name += s[1]
-        if s[len(name)] == "$":
-            name += "$"
-        dimensions = s[len(name):]
-        assert_syntax(dimensions[0] == '(',  "Missing (")
-        assert_syntax(dimensions[-1] == ')', "Missing (")
-        dimensions = dimensions[1:-1] # Remove parens
-        dimensions = dimensions.split(",")
-        assert len(dimensions) <= 2 and len(dimensions) > 0
-        if len(dimensions) == 1:
-            size = int(dimensions[0])
-            value = [0] * size
-        elif len(dimensions) == 2:
-            size_x = int(dimensions[0].replace("(",''))
-            size_y = int(dimensions[1].replace(")",''))
-            value = [ [0] * size_y for _ in range(size_x)] # wrong: [[0] * size_y] * size_x
-        else:
-            assert_syntax(False, F"Too many dimensions {len(dimensions)}")
+    for name, value in stmt._dimensions.items():
         executor.put_symbol(name, value, SymbolType.ARRAY, arg=None) # Not right, but for now.
 
 
@@ -224,21 +180,32 @@ def stmt_input(executor, stmt):
     if prompt:
         # TODO If we add semicolon an an op that behaves like comma, multi-element prompts should work.
         prompt = eval_expression(executor._symbols, prompt)
-    executor.do_print(prompt, end='')
-    result = executor.do_input()
-    if result is None:
-        print("Bad response from trekbot")
-    result = result.split(",")
-    assert_syntax(len(result)== len(stmt._input_vars),
-                  F"Mismatched number of inputs. Expected {len(stmt._input_vars)} got {len(result)}")
-    for value, var in zip(result, stmt._input_vars):
-        if not is_string_variable(var):
-            value = float(value)
-        else:
-            if UPPERCASE_INPUT:
-                value = value.upper()
+    while True:
+        executor.do_print(prompt, end='')
+        result = executor.do_input()
+        if result is None:
+            print("Bad response from trekbot")
+        result = result.split(",")
+        if len(result) != len(stmt._input_vars):
+            print(F"Mismatched number of inputs. Expected {len(stmt._input_vars)} got {len(result)}. Try Again.")
+            continue
 
-        executor.put_symbol(var, value, SymbolType.VARIABLE, None)
+        for value, var in zip(result, stmt._input_vars):
+            ok = False
+            if not is_string_variable(var):
+                try:
+                    value = float(value)
+                except Exception as e:
+                    print("Invalid number. Try again.")
+                    break
+            else:
+                if UPPERCASE_INPUT:
+                    value = value.upper()
+
+            executor.put_symbol(var, value, SymbolType.VARIABLE, None)
+        else:
+            break # Break the while, if we did NOT get an invalid number (break from for)
+
 
 
 def stmt_on(executor, stmt):
@@ -247,7 +214,13 @@ def stmt_on(executor, stmt):
     result = eval_expression(executor._symbols, var)
     assert_syntax(type(result) == int or type(result) == float, "Expression not numeric in ON GOTO/GOSUB")
     result = int(result) - 1 # Basic is 1-based.
-    assert_syntax(result < len(stmt._target_lines), "No target for value of {result} in ON GOTO/GOSUB")
+    # According to this: https://hwiegman.home.xs4all.nl/gw-man/ONGOSUB.html
+    # on gosub does NOT generate an error in the value is out of range,
+    # It just goes on to the next line.
+    #assert_syntax(result < len(stmt._target_lines), "No target for value of {result} in ON GOTO/GOSUB")
+    if result >= len(stmt._target_lines):
+        # No line matching the index, just go on.
+        return
     if op == "GOTO":
         executor.goto_line(stmt._target_lines[result])
     elif op == "GOSUB":
@@ -305,7 +278,7 @@ class KB:
 class Keywords(Enum):
     CLEAR = KB(stmt_clear, ParsedStatement) # Some uses of clear take arguments, which we ignore.
     DEF = KB(stmt_def, ParsedStatementDef) # User defined functions
-    DIM = KB(stmt_dim)
+    DIM = KB(stmt_dim, ParsedStatementDim)
     END = KB(stmt_end, ParsedStatementNoArgs)
     ERROR = KB(stmt_error, ParsedStatementNoArgs)
     FOR = KB(stmt_for, ParsedStatementFor)
