@@ -21,8 +21,7 @@ class Test(TestCase):
         self.assertEqual(10, results.line)
         self.assertEqual(1, len(results.stmts))
         self.assertEqual(Keywords.REM, results.stmts[0].keyword)
-        # Note leading space.
-        self.assertEqual(" SUPER STARTREK - MAY 16,1978 - REQUIRES 24K MEMORY", results.stmts[0].args)
+        self.assertEqual("SUPER STARTREK - MAY 16,1978 - REQUIRES 24K MEMORY", results.stmts[0].args)
 
     def test_token_for(self):
         line = "820 FORI=1TO8"
