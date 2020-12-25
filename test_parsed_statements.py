@@ -88,7 +88,7 @@ class Test(TestCase):
         self.assertEqual("", p.args)
         expected = {
             "A":[0, 0],
-            "B":[[20,20],[20,20],[20,20],]
+            "B":[[0,0],[0,0],[0,0],]
         }
         self.assertEqual(expected, p._dimensions)
 
