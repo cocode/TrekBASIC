@@ -516,7 +516,7 @@ class Player:
 
 
 if __name__ == "__main__":
-    program = load_program("superstartrek.bas")
+    program = load_program("programs/superstartrek.bas")
 
     player_strategy = RandomStrategy()
     player_strategy = CheatStrategy()
