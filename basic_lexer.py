@@ -14,7 +14,7 @@ from basic_types import lexer_token, BasicSyntaxError, NUMBERS, LETTERS
 OPERATORS = "()^*/+-=><,"
 BOOLEAN_OPERATORS=["AND", "OR"]
 
-# TODO get this from the function definitons
+# TODO get this from the function definitions
 BUILT_IN_FUNCTIONS=["INT", "RND", "SGN", "SIN", "LOG", "LEFT$", "RIGHT$", "MID$", "LEN", "TAB", "STR$", "SPACE$",
                     "CHR$", "ASC", "SQR", "ABS"]
 
