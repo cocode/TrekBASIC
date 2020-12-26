@@ -14,7 +14,6 @@ from basic_dialect import ARRAY_OFFSET
 from basic_types import lexer_token, assert_syntax, SymbolType, BasicSyntaxError
 
 import basic_expressions
-from basic_lexer import Lexer
 
 
 class OP:
@@ -112,8 +111,7 @@ class FuncMonoOp(MonoOp):
         e = basic_expressions.Expression()
         symbols = op.symbols.get_nested_scope()
         symbols.put_symbol(op.arg, first, SymbolType.VARIABLE, arg=None)
-        lexer = Lexer()
-        tokens = lexer.lex(op.value)
+        tokens = op.value
         result = e.eval(tokens, symbols=symbols)
         trace = False
         if trace:
@@ -231,7 +229,7 @@ class Operators(Enum):
     DIV=           OpDef('/',   5, BinOpNumDiv(lambda x, y: x / y))
     MUL=           OpDef('*',   5, BinOpNum(lambda x, y: x * y))
     EXP=           OpDef('^',   6, BinOpNum(lambda x, y: x ** y))
-    OPEN=          OpDef('(',   9,  OP())
+    OPEN=          OpDef('(',   9, OP())
     FUNC=          OpDef('∫',   8, FuncMonoOp())
     UNARY_MINUS=   OpDef('—',   7, MinusMonoOp()) # M-dash
     ARRAY_ACCESS=  OpDef('@',   8, ArrayAccessMonoOp())

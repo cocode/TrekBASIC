@@ -244,7 +244,7 @@ def stmt_def(executor, stmt:ParsedStatementDef):
     :param stmt:
     :return:
     """
-    executor.put_symbol(stmt._variable, stmt._value, SymbolType.FUNCTION, stmt._function_arg)
+    executor.put_symbol(stmt._variable, stmt._tokens, SymbolType.FUNCTION, stmt._function_arg)
 
 
 def stmt_return(executor, stmt):

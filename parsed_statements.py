@@ -209,6 +209,7 @@ class ParsedStatementLet(ParsedStatement):
 class ParsedStatementDef(ParsedStatement):
     """
     Handles DEF statements
+    TODO Could compute constant expressions here, if any. 2*3+X is 6*x
     """
     def __init__(self, keyword, args):
         super().__init__(keyword, "")
@@ -226,8 +227,9 @@ class ParsedStatementDef(ParsedStatement):
                       "Function definition error")
         self._function_arg = variable[4]
         self._variable = variable[:3]
+        lexer = Lexer()
+        self._tokens = lexer.lex(value)
         self._value = value.strip()
-        # TODO Should we parse the expression here? Currently, it's parsed when the function is USED.
 
     def __str__(self):
         return F"{self.keyword.name} {self._variable}({self._function_arg})={self._value}"

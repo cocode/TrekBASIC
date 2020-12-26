@@ -5,7 +5,7 @@ import sys
 from basic_dialect import ARRAY_OFFSET
 from basic_interpreter import Executor, BasicSyntaxError
 from basic_statements import is_valid_identifier
-from basic_types import SymbolType, RunStatus
+from basic_types import SymbolType, RunStatus, lexer_token
 from basic_loading import tokenize
 
 
@@ -103,7 +103,9 @@ class Test(TestCase):
         self.assertEqual(1, executor.get_symbol_count())
         # self.assert_value(executor, "FNA", "X^2+1")
         value = executor.get_symbol("FNA", symbol_type=SymbolType.FUNCTION)
-        self.assertEqual("X^2+1", value)
+        expected = [lexer_token(token='X', type='id'), lexer_token(token='^', type='op'), lexer_token(token=2.0, type='num'),
+         lexer_token(token='+', type='op'), lexer_token(token=1.0, type='num')]
+        self.assertEqual(expected, value)
 
         AT = executor.get_symbol_type("FNA", SymbolType.FUNCTION)
         self.assertEqual(SymbolType.FUNCTION, AT)
