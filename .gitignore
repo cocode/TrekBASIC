@@ -5,5 +5,4 @@ __pycache__
 enum_test.py
 tracefile.txt
 *.pdf
-parser_generator.py
 
