@@ -1,7 +1,7 @@
 Notes and thoughts writing wasm basic
 
 1. Maybe this should be a LLVM frontend for basic, then you get basic everywhere.
-    1. https://www.youtube.com/watch?v=hTWmU9IJBSI basic compiler
+        1. https://www.youtube.com/watch?v=hTWmU9IJBSI basic compiler
     1. https://np.reddit.com/r/LLVM/comments/j0lvuj/how_the_ever_loving_hell_does_a_beginner_start/
     1. https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/index.html
     1. https://www.ibm.com/developerworks/library/os-createcompilerllvm1/index.html (2012)
