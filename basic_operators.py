@@ -247,7 +247,6 @@ def get_op_def(operator:str):
     assert_syntax(operator in OP_MAP, F"Invalid operator {operator}")
     return OP_MAP[operator].value
 
-
 def get_op(token):
     """
     This gets the class that handles the operation. # TODO should change to "get_op_class"
@@ -290,9 +289,10 @@ def get_op(token):
             return StrOp(lambda x: len(x), token.token, 1, "num") # This needs to return an int, unlike the other str functions.
         if token.token == "SGN":
             return MonoOp(lambda x: (x > 0) - (x < 0))
-        op_def = get_op_def("∫") # Handles user defined functions.
-        return op_def.cls
-
+        if token.token.startswith("FN"):
+            op_def = get_op_def("∫") # Handles user defined functions.
+            return op_def.cls
+        raise BasicSyntaxError("Unknown Function '" + token.token + "'")
     operator = token.token
     op_def = get_op_def(operator)
     return op_def.cls
