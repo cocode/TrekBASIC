@@ -35,7 +35,7 @@ A LINE is made up of multiple STATEMENTS, each one beginning with a KEYWORD.
 
 ## TODO on interpreter
 
-1. It could be fun to write Wasm Basic. (See wasm.txt)
+1. It could be fun to write Wasm Basic. (See "wasm.txt"). Options
     1. Write interpreter that generates "B-code."
     1. Options to execute in browser
         1. Generate wasm from b-code (this is best) 
@@ -65,18 +65,18 @@ stack information for the original exception?
 1. Fully support N-dimensional arrays. Two-dimensional is are working, but might want cleanup.
 1. Support dialects. At least for the four star trek programs I have. (basic_dialects.py)
     Cool thought: Auto-detect dialects?
-1. Starting to parse some statements (like FOR) at load time. Should lex any expressions at load time.
+1. Now have a parsed statement for all statement types.
+    1. All expressions should be lexed at parse time, but are not yet.
+    1. Let statements do this, but I think ON...GOSUB and others don't, yet.
 1.  Should we precompute expressions to ASTs on load? - Yes, but not done yet.
-1. Boolean expressions? Seem to be working.
-1. built in functions: EXP LOG LOG10. 
+1. More built in functions: EXP, LOG10. (have LOG) 
 1. Write smaller test programs.
 1. Split tests
-    1. tests of basic (integration)
-    1. tests of internal functions.
+    1. tests of basic (integration). These should be implementation independent.
+    1. tests of internal functions. Unit tests.
 1. Write "renum" utility. Split all multiline statements, and renumber at increments of 10
     1. Then reformat the startrek source.
     1. Run a trace of star strek, befre and after for verificaion.
-1. (done?) Rename OP classes in basic_operators.py to not be all upppercase.
 1. Fix functions to store their extra into in the symbol table, not in the "op" parameter.
     1. store data in symbol table
     2. Use it
@@ -93,7 +93,6 @@ for the mapping.
 1. Maybe write trace to a file. With the variables on that line. Or build a debugger. Debugger built.
     X=3, Y=4
     100 IFX+Y>3THENPRINT"FOO"
-
 1. Add "trace on" and "trace off" statements to the language, to control writing of the trace file.
 1. Need to flush the trace file periodically. maybe every line.
 1. Maybe add "run" vs. "continue" for the debugging. Have single step now.
@@ -105,7 +104,7 @@ for the mapping.
 1. Should add parsing of all variables, so I can search references.
     1.  Could do this in parse tree.
 1. Some versions of basic allowed a single quote for REM
-
+1. load in basic shell doesn't reload a changed program (Can't reproduce. Maybe forgot to save?)
 ## References
 1. https://madexp.com/wp-content/uploads/2018/02/Microsoft_Basic_8086Xenix_Reference.pdf
 2. http://www.classiccmp.org/cini/pdf/Apple/AppleSoft%20II%20Basic%20Programming%20Manual.PDF
