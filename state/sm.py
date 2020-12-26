@@ -2,7 +2,6 @@
 Experiments with state machines. Not doing anything meaningful yet.
 """
 from itertools import count
-from collections import defaultdict
 
 from basic_utils import smart_split
 
@@ -26,8 +25,16 @@ grammar = ["abc", "abd", "def"]
 # }
 
 
+class Rule:
+    """
+    I think a rule with be a sequence of states and rules.
+    """
+
 
 class State:
+    """
+    This (currently) is a class that recognizing one of a set of strings.
+    """
     _next_id = count(0)
 
     def __init__(self):
@@ -39,7 +46,8 @@ class State:
             self.add(s)
 
     def add(self, input):
-        assert len(input) > 0 # Not sure what to do if ""
+        # Not sure what to do if input is empty string
+        assert len(input) > 0
         first = input[0]
         remainder = input[1:]
 
@@ -65,7 +73,6 @@ class State:
             return next_state.match(remainder)
         return False
 
-
     def next(self, input):
         return self._transitions[input]
 
@@ -76,9 +83,9 @@ class State:
         return self.__str__()
 
 
-def parse_ebnf(ebnf:str) -> State:
+def parse_ebnf(ebnf: str):
     """
-    Convet an EBNF description string to a Python data structure.
+    Convert an EBNF description string to a Python data structure.
 
     Using this EBNF (there are many variants) https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form
 
@@ -86,18 +93,24 @@ def parse_ebnf(ebnf:str) -> State:
     :return:
     """
     rules = smart_split(ebnf, split_char=";")
-    r = {}
+    grammar = {}
     for rule in rules:
         rule = rule.strip()
         if not rule:
             continue
         lhs, rhs = rule.split('=', 1)
-        rhs = smart_split(rhs, split_char="|")
-        rhs = [r.strip() for r in rhs]
-        state = State()
-        state.extend(rhs)
-        r[lhs.strip()] = state
-    return r
+        rule_name = lhs.strip()
+        # alternation
+        sequence = smart_split(rhs, split_char=",")
+        rule_def = []
+        for element in sequence:
+            alternates = smart_split(element, split_char="|")
+            alternates = [r.strip() for r in alternates]
+            state = State()
+            state.extend(alternates)
+            rule_def.append(state)
+        grammar[rule_name] = rule_def
+    return grammar
 
 
 def print_state(state, indent=""):
@@ -105,8 +118,13 @@ def print_state(state, indent=""):
     print(F"{{")
     for key in state._transitions:
         print(F"{indent}\t{key} => ", end='')
-        print_state(state._transitions[key], indent = indent+"    ")
+        rule_or_rules = state._transitions[key]
+        if not isinstance(rule_or_rules, list):
+            rules = [rule_or_rules]
+        for rule in rules:
+            print_state(rule, indent = indent+"    ")
     print(F"{indent}}}")
+
 
 if __name__ == "__main__":
     start_state = State()
@@ -132,7 +150,7 @@ if __name__ == "__main__":
 
     print_state(start_state)
     grammar = """
-    first = abc | abd | bcd;
+    first = abc | abd | bcd, zzz;
     """
     print("=====================================")
     rules = parse_ebnf(grammar)
