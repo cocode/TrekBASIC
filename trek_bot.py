@@ -4,9 +4,7 @@ This module acts as a player in the Star Trek game, for testing and code coverag
 Its actions are random, not strategic, to hit more of the code - but it turns out it never wins,
 so it never hits the 'win' code. It might need some changes.
 """
-import pprint
 import random
-import sys
 import re
 import time
 from enum import Enum, auto
@@ -187,7 +185,7 @@ class RandomStrategy(Strategy):
 # Count of kingons in a sector.
 def klingon_count(x): return x//100
 
-def compute_course(dy, dx):
+def compute_course(dy:int, dx:int):
     # The grid layout in this program has x for y, and positive is down, not up, so we have to adjust
     #dx, dy = dy, dx
     dy = -dy
@@ -242,6 +240,12 @@ def find_in_sector(sector, target):
     y = index % 8
     return x,y
 
+def print_galaxy(g, enterprise_x, enterprise_y):
+    for i in range(0,8):
+        for j in range(0,8):
+            spot = "*" if i==enterprise_x and j==enterprise_y else " "
+            print(F"{int(g[i][j]):5}{spot}", end="")
+        print()
 
 class CheatState(Enum):
     SHIELDS = auto()
@@ -318,7 +322,7 @@ class CheatStrategy(RandomStrategy):
         galaxy = self._galaxy
         sector_value = galaxy[Q1][Q2] # I think that's a quadrant, not sector.
         print("Value for current quadrant: ", sector_value)
-        pprint.pprint(self._galaxy)
+        print_galaxy(self._galaxy, Q1, Q2)
 
         if self._shields < 500 and self._energy > 3 * self._shields and before_last != "SHIELD CONTROL INOPERABLE":
             self._state = CheatState.SHIELDS
@@ -342,6 +346,8 @@ class CheatStrategy(RandomStrategy):
 
         # If there are klingons in the section, kill.
         if self._state == CheatState.KILL:
+            if random.random() < 0.5:
+                return "TOR"
             return "PHA"
 
         # TODO Hunt for starbase if energy is low.
@@ -404,9 +410,9 @@ class CheatStrategy(RandomStrategy):
     #
     def _cmd_course(self, player):
         course = self._course
-        if course is None:
-            return super()._cmd_course(player)
         self._course = None
+        if course is None or random.random() < 0.5:
+            return super()._cmd_course(player)
         return str(course)
 
     def _cmd_warp(self, player):
@@ -442,7 +448,11 @@ class CheatStrategy(RandomStrategy):
 
     def _cmd_torpedos(self, player):
         x, y = find_in_sector(self._sector, "+K+")
-        print("Klingon at ", x, y)
+        dx = x - self._S1
+        dy = y - self._S2
+        course = compute_course(dx , dy)
+        print(F"Enterprise at ({self._S1}, {self._S2}) Klingon at: ({x}, {y}), Delta: ({dx}, {dy}) course: {course}")
+        return str(course)
 
     def get_command(self, player):
         self._setup(player)
@@ -514,7 +524,7 @@ if __name__ == "__main__":
     total_time = time.perf_counter()
     random.seed(127)
     random.seed(128)
-    count = 1
+    count = 10
     for round in range(1,count+1):
         print(F"Game {round} begins.")
         game_time = time.perf_counter()
