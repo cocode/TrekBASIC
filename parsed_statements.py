@@ -1,8 +1,8 @@
 """
 This file contains the classes used to represent parsed statements.
 """
-from basic_lexer import Lexer, NUMBERS
-from basic_types import tokens_to_str
+from basic_lexer import get_lexer
+from basic_types import tokens_to_str, NUMBERS
 
 from basic_types import is_valid_identifier
 from basic_types import assert_syntax, BasicSyntaxError
@@ -66,7 +66,7 @@ class ParsedStatementIf(ParsedStatement):
         assert_syntax(then != -1, "No THEN found for IF")
         then_clause = args[then+len("THEN"):]
         self._additional = then_clause.strip()
-        lexer = Lexer()
+        lexer = get_lexer()
         left_over = args[:then]
         self._tokens = lexer.lex(left_over)
         super().__init__(keyword, "")
@@ -197,7 +197,7 @@ class ParsedStatementLet(ParsedStatement):
         except Exception as e:
             raise BasicSyntaxError(F"Error in expression. No '='.")
 
-        lexer = Lexer()
+        lexer = get_lexer()
         self._tokens = lexer.lex(value)
         self._expression = Expression()
         self._variable = variable.strip()
@@ -227,7 +227,7 @@ class ParsedStatementDef(ParsedStatement):
                       "Function definition error")
         self._function_arg = variable[4]
         self._variable = variable[:3]
-        lexer = Lexer()
+        lexer = get_lexer()
         self._tokens = lexer.lex(value)
         self._value = value.strip()
 

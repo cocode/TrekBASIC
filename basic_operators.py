@@ -14,6 +14,8 @@ from basic_dialect import ARRAY_OFFSET
 from basic_types import lexer_token, assert_syntax, SymbolType, BasicSyntaxError
 
 import basic_expressions
+import basic_functions
+
 
 
 class OP:
@@ -247,6 +249,9 @@ def get_op_def(operator:str):
     assert_syntax(operator in OP_MAP, F"Invalid operator {operator}")
     return OP_MAP[operator].value
 
+functions = basic_functions.PredefinedFunctions()
+
+
 def get_op(token):
     """
     This gets the class that handles the operation. # TODO should change to "get_op_class"
@@ -255,40 +260,13 @@ def get_op(token):
     :return: An instance of a class that handles that operation.
     """
     if token.type == SymbolType.FUNCTION:# and token.token.startswith("FN"):
+        if token.token in functions.functions:
+            return functions.functions[token.token]
+
         # To add another internal function.
-        # 1. Add it here.
+        # 1. Add it to functions.functions.
         # 2. Add it to basic_lexer.BUILT_IN_FUNCTIONS
         # 3. Add it to the list of internal functions in basic_interpreter.Executor.run_program
-        if token.token == "INT":
-            return MonoOp(lambda x: int(x)) # Handles the built-in INT function # TODO we also define the functions in Excutor.
-        if token.token == "ABS":
-            return MonoOp(lambda x: abs(x)) # Handles the built-in INT function # TODO we also define the functions in Excutor.
-        if token.token == "RND":
-            return MonoOp(lambda x: random.random()) # Handles the built-in RND function
-        if token.token == "SIN":
-            return MonoOp(lambda x: sin(x))
-        if token.token == "LOG":
-            return MonoOp(lambda x: log(x))
-        if token.token == "SQR":
-            return MonoOp(lambda x: sqrt(x)) # Handles the built-in SQRT function
-        if token.token == "LEFT$":
-            return StrOp(lambda x: x[0][:int(x[1])], token.token, 2)
-        if token.token == "RIGHT$":
-            return StrOp(lambda x: x[0][-int(x[1]):], token.token, 2)
-        if token.token == "MID$":
-            return StrOp(lambda x: x[0][int(x[1]) - 1:int(x[1]) - 1 + int(x[2])], token.token, 3)
-        if token.token == "STR$":
-            return StrDollarMonoOp(lambda x: str(x), return_type="str")
-        if token.token == "CHR$":
-            return StrMonoOp(lambda x: chr(int(x)), return_type="str")
-        if token.token == "ASC":
-            return StrMonoOp(lambda x: ord(x), return_type="num")
-        if token.token == "SPACE$" or token.token == "TAB":
-            return StrMonoOp(lambda x: " " * int(x), return_type="str")
-        if token.token == "LEN":
-            return StrOp(lambda x: len(x), token.token, 1, "num") # This needs to return an int, unlike the other str functions.
-        if token.token == "SGN":
-            return MonoOp(lambda x: (x > 0) - (x < 0))
         if token.token.startswith("FN"):
             op_def = get_op_def("∫") # Handles user defined functions.
             return op_def.cls

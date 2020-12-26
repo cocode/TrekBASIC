@@ -1,12 +1,11 @@
 from unittest import TestCase
-from basic_types import BasicSyntaxError
-from basic_lexer2 import Lexer2
-from basic_lexer import Lexer
+from basic_types import BasicSyntaxError, lexer_token
+from basic_lexer import get_lexer
 
 
 class TestLexer(TestCase):
     def setUp(self):
-        self._lexer = Lexer2()
+        self._lexer = get_lexer()
 
     def test_lex(self):
         tokens = self._lexer.lex("X1")
@@ -21,6 +20,7 @@ class TestLexer(TestCase):
         self.assertEqual("RND", tokens[0].token)
 
     def test_lex_builtin2(self):
+        # this is wrong, the lexer handles expressions, not statements. Should not have "D(R1)="
         tokens = self._lexer.lex("D(R1)=D(R1)-H/S-.5*RND(1)")
         expected = [("D", 'id'), ("(", 'op'), ("R1", 'id'), (")", 'op'), ("=", 'op'),
                     ("D", 'id'), ("(", 'op'), ("R1", 'id'), (")", 'op'), ("-", 'op'),
@@ -56,17 +56,21 @@ class TestLexer(TestCase):
         self.assertEqual("num", tokens[2].type)
         self.assertEqual(3, tokens[2].token)
 
-    # def test_lex_vars(self):
-    #     # Check that we can handle variable names that run into keywords. ("YandQ1then"
-    #     tokens = self._lexer.lex("IFX<>YANDQ1<7THEN79")
-    #     print(tokens)
-    #     self.assertEqual(10, len(tokens))
-    #     self.assertEqual("id", tokens[0].type)
-    #     self.assertEqual("X", tokens[0].token)
-    #     self.assertEqual("op", tokens[1].type)
-    #     self.assertEqual("<>", tokens[1].token)
-    #     self.assertEqual("num", tokens[2].type)
-    #     self.assertEqual(3, tokens[2].token)
+    def test_lex_vars(self):
+        # Check that we can handle variable names that run into keywords. ("YandQ1then"
+        tokens = self._lexer.lex("X<>YANDQ1<7")
+        print(tokens)
+        expected = [
+            lexer_token(token='X', type='id'),
+            lexer_token(token='<>', type='op'),
+            lexer_token(token='Y', type='id'),
+            lexer_token(token='AND', type='op'),
+            lexer_token(token='Q1', type='id'),
+            lexer_token(token='<', type='op'),
+            lexer_token(token=7.0, type='num')
+        ]
+        self.assertEqual(expected, tokens)
+
 
 
 

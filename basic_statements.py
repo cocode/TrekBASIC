@@ -12,7 +12,8 @@ from parsed_statements import ParsedStatement, ParsedStatementIf, ParsedStatemen
     ParsedStatementLet, ParsedStatementNoArgs, ParsedStatementDef, ParsedStatementPrint, ParsedStatementDim
 from parsed_statements import ParsedStatementGo
 from parsed_statements import ParsedStatementInput, ParsedStatementNext
-from basic_lexer import Lexer, NUMBERS, LETTERS
+from basic_lexer import get_lexer
+from basic_types import NUMBERS, LETTERS
 from basic_expressions import Expression
 from basic_utils import smart_split
 
@@ -126,7 +127,7 @@ def assign_variable(executor, variable, value):
 
 
 def eval_expression(symbols, value):
-    lexer = Lexer()
+    lexer = get_lexer()
     tokens = lexer.lex(value)
     e = Expression()
     result = e.eval(tokens, symbols=symbols)
@@ -164,8 +165,6 @@ def stmt_if(executor, stmt):
     :param stmt:
     :return: None
     """
-    # lexer = Lexer()
-    # tokens = lexer.lex(stmt.args)
     e = Expression()
     result = e.eval(stmt._tokens, symbols=executor._symbols)
     if not result:

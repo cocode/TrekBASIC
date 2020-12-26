@@ -1,5 +1,5 @@
 from unittest import TestCase
-from basic_lexer import Lexer
+from basic_lexer import get_lexer
 from basic_operators import get_op, MinusMonoOp, BinOpComma
 from basic_types import lexer_token
 
@@ -7,7 +7,7 @@ from basic_types import lexer_token
 class Test(TestCase):
     def setUp(self):
         # Just use the lexer for convenience. We culd just create the tokens used for operands manually
-        self._lexer = Lexer()
+        self._lexer = get_lexer()
 
     def test_minus(self):
         stack = []

@@ -1,13 +1,13 @@
 from unittest import TestCase
 from basic_expressions import Expression
-from basic_lexer import Lexer
+from basic_lexer import get_lexer
 from basic_types import ste, BasicSyntaxError, SymbolType
 from basic_symbols import SymbolTable
 
 
-class TestExpression(TestCase):
+class Test(TestCase):
     def setUp(self):
-        self._lexer = Lexer()
+        self._lexer = get_lexer()
 
     def test_eval1(self):
         tokens = self._lexer.lex("1")
@@ -201,7 +201,7 @@ class TestExpression(TestCase):
         self.assertEqual(11, len(tokens))
         expression = Expression()
         value = expression.eval(tokens)
-        self.assertEqual([1,2,3,4], value)
+        self.assertEqual([1, 2, 3, 4], value)
 
     def test_types_x(self):
         tokens = self._lexer.lex('"a" + "b" + "c"')
@@ -216,7 +216,16 @@ class TestExpression(TestCase):
         s = SymbolTable()
         s.put_symbol("E", 3000, SymbolType.VARIABLE, None)
         s.put_symbol("D", [0,0,0,0, 0,0,0,0], SymbolType.ARRAY, None)
-        s.dump()
+        expression = Expression()
+        value = expression.eval(tokens, symbols=s)
+        self.assertEqual(True, value)
+
+    def test_example_x2(self):
+        tokens = self._lexer.lex('E>10ORD(7)=0')
+        self.assertEqual(10, len(tokens))
+        s = SymbolTable()
+        s.put_symbol("E", 3000, SymbolType.VARIABLE, None)
+        s.put_symbol("D", [0,0,0,0, 0,0,0,0], SymbolType.ARRAY, None)
         expression = Expression()
         value = expression.eval(tokens, symbols=s)
         self.assertEqual(True, value)

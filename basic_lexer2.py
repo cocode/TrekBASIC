@@ -5,6 +5,7 @@ Lexical analysis for the basic interpreter. Lexer is currently ONLY used for exp
 My current thought is that you can't write a context-independent lexer for basic.
 
 IFX>YANDX<ZTHEN100
+the lexer only handles the expression "X>YANDX<Z"
 
 I think you have to know that Y is a variable, and can't be longer than one letter, you can't
 just grab sequences of letters, like you can in most programming languages. And I don't think
@@ -12,15 +13,17 @@ you can know that "IFX" is a keyword and a token, in the lexer, you need the par
 """
 
 from basic_types import lexer_token, BasicSyntaxError, NUMBERS, LETTERS
+import basic_operators
 
 # It's either a number, an operator, a variable, or other (keyword, function, etc)
-OPERATORS = ["(",")","^","*","/","+","-","=",">","<","<>", ">=", "<="]
+OPERATORS = ["(",")","^","*","/","+","-","=",">","<","<>", ">=", "<=", ","]
 OP_FIRST = {op[0] for op in OPERATORS}
 OP_TWO = [op for op in OPERATORS if len(op) > 1]
 OP_TWO_FIRST = {op[0] for op in OP_TWO}
+BOOLEAN_OPERATORS=["AND", "OR"] # Strings that have a type of "op"
 
 
-class Lexer2:
+class Lexer:
     def __init__(self):
         pass
 
@@ -83,7 +86,9 @@ class Lexer2:
             print(state, c)
             assert state
             if state == ST_ANY:
-                if c in LETTERS:
+                if c == ' ':
+                    consume()
+                elif c in LETTERS:
                     token = consume()
                     state = ST_REF
                 elif c in NUMBERS:
@@ -106,12 +111,16 @@ class Lexer2:
                         state = ST_ANY
                         token = ""
                     else:
-                        raise BasicSyntaxError(F"BAD operator sequence "+c+p)
-
+                        consume()
+                        yield lexer_token(c, "op")
+                        state = ST_ANY
+                        token = ""
                 elif c =='"':
                     consume()
                     state = ST_STRING
                     token = ""
+                else:
+                    raise BasicSyntaxError(F"Unexpected char {c} in state {state}")
             elif state == ST_REF:
                 if c in NUMBERS: # Need to check for A1$
                     token += consume()
@@ -121,7 +130,10 @@ class Lexer2:
                 elif c in LETTERS:
                     token += consume()
                 else:
-                    yield lexer_token(token, "id")
+                    if token in BOOLEAN_OPERATORS:
+                        yield lexer_token(token, "op")
+                    else:
+                        yield lexer_token(token, "id")
                     token = ""
                     state = ST_ANY
             elif state == ST_INT:
