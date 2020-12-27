@@ -1,6 +1,7 @@
 from io import StringIO
 from unittest import TestCase
 import sys
+from math import e
 
 from basic_dialect import ARRAY_OFFSET
 from basic_interpreter import Executor, BasicSyntaxError
@@ -195,6 +196,14 @@ class Test(TestCase):
         self.assert_value(executor, "A", 1)
         self.assert_value(executor, "B", -1)
         self.assert_value(executor, "C", 0)
+
+    def test_builtin_exp(self):
+        listing = [
+            '10000 A=EXP(1)',
+        ]
+        executor= self.runit(listing)
+        self.assertEqual(1, executor.get_symbol_count())
+        self.assert_value(executor, "A", e)
 
     def test_expressions(self):
         listing = [

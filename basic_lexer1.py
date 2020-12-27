@@ -1,5 +1,5 @@
 """
-Lexical analysis for the basic intepreter. Lexer is ONLY used for expressions.
+Lexical analysis for the basic intepreter. *** Lexer is ONLY used for expressions. ***
 
 My current thought is that you can't write a context-independent lexer for basic.
 
@@ -8,17 +8,15 @@ IF X>YANDX<ZTHEN100
 I think you have to know that Y is a variable, and can't be longer than one letter, you can't
 just grab sequences of letters.
 """
-
 from basic_types import lexer_token, BasicSyntaxError, NUMBERS, LETTERS
+import basic_functions
 
 OPERATORS = "()^*/+-=><,"
 BOOLEAN_OPERATORS=["AND", "OR"]
 
-# TODO get this from the function definitions
-BUILT_IN_FUNCTIONS=["INT", "RND", "SGN", "SIN", "LOG", "LEFT$", "RIGHT$", "MID$", "LEN", "TAB", "STR$", "SPACE$",
-                    "CHR$", "ASC", "SQR", "ABS"]
 
-#KEYWORDS=["DEF", "DIM", "END", "FOR", "GOTO", "GOSUB", "IF", "INPUT", "LET", "NEXT", "ON", "PRINT", "REM", "RETURN"]
+functions = basic_functions.PredefinedFunctions()
+BUILT_IN_FUNCTIONS=sorted([ key for key in functions.functions])
 FN_OPERATORS=["FN"+chr(c) for c in range(ord("A"), ord("Z"))]
 # Operators made from letters, not symbols.
 TEXT_OPERATORS=BOOLEAN_OPERATORS + BUILT_IN_FUNCTIONS + FN_OPERATORS

@@ -7,9 +7,10 @@ My current thought is that you can't write a context-independent lexer for basic
 IFX>YANDX<ZTHEN100
 the lexer only handles the expression "X>YANDX<Z"
 
-I think you have to know that Y is a variable, and can't be longer than one letter, you can't
+I think you have to know that Y is a variable, and can't be longer than one letter. You can't
 just grab sequences of letters, like you can in most programming languages. And I don't think
-you can know that "IFX" is a keyword and a token, in the lexer, you need the parser.
+you can know that "IFX" is a keyword and a token with a the lexer, you need to understand the
+language.
 """
 
 from basic_types import lexer_token, BasicSyntaxError, NUMBERS, LETTERS
@@ -182,7 +183,7 @@ class Lexer:
 
 
 if __name__ == '__main__':
-    p = Lexer2()
+    p = Lexer()
     tokens = p.lex("XRND")
     # tokens = p.lex("IFX>YANDQ1<7THEN100")
     for t in tokens:

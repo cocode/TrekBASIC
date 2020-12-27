@@ -247,7 +247,6 @@ def get_op_def(operator:str):
     assert_syntax(operator in OP_MAP, F"Invalid operator {operator}")
     return OP_MAP[operator].value
 
-functions = basic_functions.PredefinedFunctions()
 
 
 def get_op(token):
@@ -257,14 +256,12 @@ def get_op(token):
     :param token: May be an OP_TOKEN, or a lexer_token # TODO Should subclass, maybe.
     :return: An instance of a class that handles that operation.
     """
+    functions = basic_functions.PredefinedFunctions()
+
     if token.type == SymbolType.FUNCTION:# and token.token.startswith("FN"):
         if token.token in functions.functions:
             return functions.functions[token.token]
 
-        # To add another internal function.
-        # 1. Add it to functions.functions.
-        # 2. Add it to basic_lexer.BUILT_IN_FUNCTIONS
-        # 3. Add it to the list of internal functions in basic_interpreter.Executor.run_program
         if token.token.startswith("FN"):
             op_def = get_op_def("∫") # Handles user defined functions.
             return op_def.cls

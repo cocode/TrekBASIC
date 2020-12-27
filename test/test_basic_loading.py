@@ -7,6 +7,7 @@ from basic_types import ProgramLine, lexer_token
 from basic_loading import tokenize_line, load_program, tokenize
 from basic_utils import format_program
 from parsed_statements import ParsedStatementIf
+from basic_interpreter import Executor
 
 
 class Test(TestCase):
@@ -114,17 +115,20 @@ class Test(TestCase):
     def test_load_program(self):
         # TODO This no longer works. format_program assumes everything is in stmt.args,
         # which is no longer true after implementing PreparedStatements for all keywords.
-        input_file = "programs/simple_test.bas"
+        input_file = "../programs/simple_test.bas"
         with open(input_file) as f:
             source = f.read()
         program = load_program(input_file)
         self.assertEqual(5, len(program))
-        output = "\n".join(format_program(program))
+        executor = Executor(program)
+        lines = executor.get_program_lines()
+        output = "\n".join(lines)+"\n"
         self.assertEqual(source, output)
-        with open("sample_output.txt", 'w') as f:
-            for line in format_program(program):
-                print(line, file=f)
-            # TODO Compare output to source
+        # with open("sample_output.txt", 'w') as f:
+        #     with open(filename, "w") as f:
+        #         for line in lines:
+        #             print(line, file=f)                print(line, file=f)
+        #     # TODO Compare output to source
 
     def test_ne(self):
         line = '8675 IF LEN(A$)<>3THEN PRINT"ERROR":STOP'

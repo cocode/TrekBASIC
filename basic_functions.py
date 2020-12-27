@@ -1,9 +1,8 @@
 """
-Trying to get all the information about functions in one place, to make it easier to add new ones.
-Not working yet.
+Definitions for built-in functions.
 """
 import random
-from math import sin, cos, sqrt, log
+from math import sin, cos, sqrt, log, exp
 
 import basic_operators as bo
 
@@ -11,15 +10,12 @@ import basic_operators as bo
 class PredefinedFunctions:
     def __init__(self):
         spaces = bo.StrMonoOp(lambda x: " " * int(x), return_type="str")
-                # To add another internal function.
-                # 1. Add it here.
-                # 2. Add it to basic_lexer.BUILT_IN_FUNCTIONS
-                # 3. Add it to the list of internal functions in basic_interpreter.Executor.run_program
         self.functions = {
             "ABS":    bo.MonoOp(lambda x: abs(x)),
             "ASC":    bo.StrMonoOp(lambda x: ord(x), return_type="num"),
             "CHR$":   bo.StrMonoOp(lambda x: chr(int(x), return_type="str")),
             "COS":    bo.MonoOp(lambda x: cos(x)),
+            "EXP":    bo.MonoOp(lambda x: exp(x)),
             "INT":    bo.MonoOp(lambda x: int(x)),
             "LEFT$":  bo.StrOp(lambda x: x[0][:int(x[1])], "LEFT$", 2),
             "LEN":    bo.StrOp(lambda x: len(x), "LEN", 1, "num"),  # This needs to return an int, unlike the other str functions.
