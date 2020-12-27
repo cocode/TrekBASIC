@@ -1,3 +1,0 @@
-1. Is exponentiation right associative?
-    No, it's left associative, like older dialects of basic.
-
