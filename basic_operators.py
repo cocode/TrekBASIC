@@ -7,8 +7,6 @@ Implementation for basic operators, such as add, subtract, etc.
 
 from collections import namedtuple
 from enum import Enum
-import random
-from math import sqrt, sin, log
 
 from basic_dialect import ARRAY_OFFSET
 from basic_types import lexer_token, assert_syntax, SymbolType, BasicSyntaxError
@@ -24,7 +22,7 @@ class OP:
         Called to evaluate an operation in an expression.
 
         :param stack: The data stack, containing operand for the operation
-        :param op: This is only used to provide context for user defined functions. TOOD: This should go into the symbol table
+        :param op: This is only used to provide context for user defined functions. TODO: This should go into the symbol table
         :return:
         """
         return None
@@ -89,10 +87,10 @@ class StrOp(MonoOp):
         assert_syntax(isinstance(args[0], str), F"First operand of {self._name} must be a string.")
         if self._arg_count >= 2:
             is_number = isinstance(args[1], int) or isinstance(args[1], float)
-            assert_syntax(is_number, "Second operand of {self._name} must be a number.")
+            assert_syntax(is_number, F"Second operand of {self._name} must be a number.")
         if self._arg_count == 3:
             is_number = isinstance(args[2], int) or isinstance(args[2], float)
-            assert_syntax(is_number, "Third operand of {self._name} must be a number.")
+            assert_syntax(is_number, F"Third operand of {self._name} must be a number.")
 
     def eval1(self, first, op):
         if self._lambda:
@@ -130,7 +128,7 @@ class ArrayAccessMonoOp(MonoOp):
         array_name = op.arg
         variable = op.symbols.get_symbol_value(array_name, SymbolType.ARRAY)
         variable_type = op.symbols.get_symbol_type(array_name, SymbolType.ARRAY)
-        assert_syntax(variable_type == SymbolType.ARRAY, "Array access to non-array variable '{variable}'")
+        assert_syntax(variable_type == SymbolType.ARRAY, F"Array access to non-array variable '{variable}'")
 
         if type(first) == list:
             # Multidimensional array access
@@ -138,13 +136,13 @@ class ArrayAccessMonoOp(MonoOp):
 
             v = variable
             for arg in args:
-                assert_syntax(type(v) is list, "Too many array dimensions for {array_name} subscript.")
-                assert_syntax(arg < len(v), "Array subscript out of bounds for {array_name}")
+                assert_syntax(type(v) is list, F"Too many array dimensions for {array_name} subscript.")
+                assert_syntax(arg < len(v), F"Array subscript out of bounds for {array_name}")
                 v = v[arg]
             return v
         else:
             # TODO should only need the above.
-            assert_syntax(int(first) == first, "Non-integral array subscript {first}'")
+            assert_syntax(int(first) == first, F"Non-integral array subscript {first}'")
             subscript = int(first) - ARRAY_OFFSET
             return variable[subscript] # TODO This will only work for one dimensional arrays, that don't have expressions as subscripts.
 

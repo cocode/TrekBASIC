@@ -193,16 +193,19 @@ class Executor:
         """
         return self._location.index
 
-    def get_program_lines(self, start, count)->list[str]:
+    def get_program_lines(self, start=0, count=None)->list[str]:
         """
         Returns a range of source lines. Used to implement the LIST command
         :return: list[str]
         """
         length = len(self._program)
+        if count is None:
+            count = length
+
         assert_syntax(0 <= start < length, "Line number out of range.")
         stop = start + count
         if stop >= length:
-            stop = length - 1
+            stop = length
         lines = [line.source for line in self._program[start:stop]]
         return lines
 

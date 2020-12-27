@@ -8,11 +8,16 @@ from basic_types import is_valid_identifier
 from basic_types import assert_syntax, BasicSyntaxError
 from basic_expressions import Expression
 from basic_utils import smart_split
+import copy
 
 
 class ParsedStatement:
     """
     Base class for a statement that requires no extra processing.
+
+    ParsedStatements are used in renumber, so they have to store enough information to
+    completely rebuild themselves. You can't discard information just because it's not
+    needed for execution.
     """
     def __init__(self, keyword, args):
         """
@@ -32,12 +37,19 @@ class ParsedStatement:
     def get_additional(self):
         return [] # Only used by if statement
 
+    def renumber(self, line_map):
+        return copy.copy(self)
+
     def __str__(self):
         """
         This generates syntaxtically valid, nicely formatted versions of the statement.
         :return:
         """
-        return F"{self.keyword.name} {self.args}"
+        if self.args:
+            return F"{self.keyword.name} {self.args}"
+        else:
+            return F"{self.keyword.name}"
+
 
 class ParsedStatementNoArgs(ParsedStatement):
     """
@@ -153,6 +165,10 @@ class ParsedStatementGo(ParsedStatement):
 
     def __str__(self):
         return F"{self.keyword.name} {self.destination}"
+
+    def renumber(self, line_map):
+        new_dest = line_map[int(self.destination)]
+        return ParsedStatementGo(self.keyword, str(new_dest))
 
 
 class ParsedStatementOnGoto(ParsedStatement):
@@ -273,7 +289,7 @@ class ParsedStatementDim(ParsedStatement):
     """
     def __init__(self, keyword, args):
         super().__init__(keyword, "")
-        self._dimensions = {}
+        self._dimensions = []
 
         stmts = smart_split(args.strip(), enquote="(", dequote=")", split_char=",")
         for s in stmts:
@@ -287,18 +303,12 @@ class ParsedStatementDim(ParsedStatement):
                 name += "$"
             dimensions = s[len(name):]
             assert_syntax(dimensions[0] == '(', "Missing (")
-            assert_syntax(dimensions[-1] == ')', "Missing (")
+            assert_syntax(dimensions[-1] == ')', "Missing )")
             dimensions = dimensions[1:-1]  # Remove parens
             dimensions = dimensions.split(",")
-            assert len(dimensions) <= 2 and len(dimensions) > 0
-            if len(dimensions) == 1:
-                size = int(dimensions[0])
-                value = [0] * size
-            elif len(dimensions) == 2:
-                size_x = int(dimensions[0].replace("(", ''))
-                size_y = int(dimensions[1].replace(")", ''))
-                value = [[0] * size_y for _ in range(size_x)]  # wrong: [[0] * size_y] * size_x
-            else:
-                assert_syntax(False, F"Too many dimensions {len(dimensions)}")
-            assert_syntax(name not in self._dimensions, "duplicated variable in DIM")
-            self._dimensions[name] = value
+            dimensions = [int(dimension) for dimension in dimensions]
+            self._dimensions.append((name, dimensions))
+
+    def __str__(self):
+        all = [name+"("+",".join([str(dim) for dim in dims])+")" for name, dims in self._dimensions]
+        return F"{self.keyword.name} {','.join(all)}"

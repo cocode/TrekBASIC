@@ -112,8 +112,15 @@ class Test(TestCase):
         self.assertEqual('I', result.loop_var)
 
     def test_load_program(self):
-        program = load_program("simple_test.bas")
+        # TODO This no longer works. format_program assumes everything is in stmt.args,
+        # which is no longer true after implementing PreparedStatements for all keywords.
+        input_file = "programs/simple_test.bas"
+        with open(input_file) as f:
+            source = f.read()
+        program = load_program(input_file)
         self.assertEqual(5, len(program))
+        output = "\n".join(format_program(program))
+        self.assertEqual(source, output)
         with open("sample_output.txt", 'w') as f:
             for line in format_program(program):
                 print(line, file=f)

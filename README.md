@@ -35,6 +35,9 @@ A LINE is made up of multiple STATEMENTS, each one beginning with a KEYWORD.
 
 ## TODO on interpreter
 
+1. Should have a simple "save" that checks saving from the parsed version
+   with no renumber.
+   1. Now have "format" command in basic_shell.py
 1. It could be fun to write Wasm Basic. (See "wasm.txt"). Options
     1. Write interpreter that generates "B-code."
     1. Options to execute in browser

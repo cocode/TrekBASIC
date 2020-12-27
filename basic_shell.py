@@ -15,10 +15,10 @@ import argparse
 import time
 import traceback
 
-from basic_types import UndefinedSymbol, BasicSyntaxError, SymbolType
+from basic_types import UndefinedSymbol, BasicSyntaxError, SymbolType, ProgramLine
 
 from basic_interpreter import Executor, ControlLocation
-from basic_loading import load_program
+from basic_loading import load_program, tokenize
 from basic_statements import eval_expression
 from basic_types import RunStatus
 
@@ -56,15 +56,34 @@ def print_coverage_report(coverage, program, lines):
 
 
 class BasicShell:
-    def __init__(self, program_file):
+    def __init__(self, program_file=None):
         self._program_file = program_file
         self.executor = None
-        self.load()
+        if self._program_file:
+            self.load_from_file()
         self._breakpoints = []
         self._data_breakpoints = []
         self._coverage = None
 
-    def load(self, coverage=False):
+    def load_from_string(self, listing):
+        """
+        Used by test code
+        :return:
+        """
+        program = tokenize(listing)
+        executor = Executor(program)
+        self.executor = executor
+
+    def load_program(self, program):
+        """
+        Used by renum code to replace source program with renumbered one
+        :return:
+        """
+        executor = Executor(program)
+        self.executor = executor
+
+
+    def load_from_file(self, coverage=False):
         if not os.path.exists(self._program_file):
             if os.path.exists(self._program_file+".bas"):
                 self._program_file += ".bas"
@@ -94,7 +113,7 @@ class BasicShell:
     def cmd_load(self, args):
         if args is not None:
             self._program_file = args
-        self.load()
+        self.load_from_file()
 
     def cmd_koverage(self, args):
         """
@@ -188,7 +207,27 @@ class BasicShell:
     def cmd_quit(self, args):
         sys.exit(0)
 
+    def cmd_save(self, args):
+        if args is None:
+            print("Save needs a file name.")
+            return
+        filename = args.strip()
+        if not filename.endswith(".bas"):
+            filename += ".bas"
+
+        if os.path.exists(filename):
+            print("No overwriting of files supported now. Still debugging. Save it to new name.")
+            return
+        lines = self.executor.get_program_lines()
+        with open(filename, "w") as f:
+            for line in lines:
+                print(line, file=f)
+        print(F"Program saved as {filename}")
+
+
+
     def cmd_symbols(self, args):
+
         if args is None:
             pprint.pprint(self.executor._symbols.dump())
             return
@@ -267,12 +306,12 @@ class BasicShell:
         coverage = False
         if args is not None and args=="coverage":
             coverage = True
-        self.load(coverage=coverage)
+        self.load_from_file(coverage=coverage)
         self.cmd_continue(None)
 
     def cmd_benchmark(self, args):
         load_start = time.perf_counter()
-        self.load(coverage=False)
+        self.load_from_file(coverage=False)
         load_time = time.perf_counter() - load_start
         run_start = time.perf_counter()
         self.cmd_continue(None)
@@ -280,7 +319,78 @@ class BasicShell:
         # only noting "load time", as this had it: https://archive.org/details/byte-magazine-1981-09/page/n193/mode/2up
         print(F"Load time {load_time:10.3f} sec. Run time: {run_time:10.3f} sec.")
 
+    def build_line_map(self, old_program, start_line, increment):
+        st_count = 0
+        line_map = {}
+        cur_line = start_line
+        for line in old_program:
+            line_number = line.line
+            line_map[line_number] = cur_line
+            for statement in line.stmts:
+                cur_line += increment
+                st_count += 1
+        return line_map, st_count
+
+    def renumber(self, old_program, line_map, start_line, increment):
+        new_program:ProgramLine = []
+        cur_line = start_line
+        for line in old_program:
+            for statement in line.stmts:
+                ps = statement.renumber(line_map)
+                ps = ProgramLine(cur_line, [ps], len(new_program), str(cur_line)+" " + str(ps))
+                new_program.append(ps)
+                cur_line += increment
+        return new_program
+
+    def format(self, old_program):
+        """
+        Parses the program, and returns the new program. this should standardize formatting, spacing.
+        :param old_program:
+        :return:
+        """
+        new_program:ProgramLine = []
+        # Make a dummy, identity map. We are renumbering to the same numbers.
+        line_map = {line.line:line.line for line in old_program}
+        for line in old_program:
+            new_statements = []
+            for statement in line.stmts:
+                ps = statement.renumber(line_map)
+                new_statements.append(ps)
+            # TODO. The "next" from the last line should be -1
+            string_statements = ":".join([str(stmt) for stmt in new_statements])
+            program_line = ProgramLine(line.line, new_statements, len(new_program), str(line.line)+" " +
+                                       str(string_statements))
+            new_program.append(program_line)
+        return new_program
+
+    def cmd_format(self, args):
+        """
+        Canonically formats the program.
+        Does a "renumber" to the same lines, cleaning up in the process.
+
+        :param args: Nothing.
+        :return:
+        """
+
+        old_program = self.executor._program
+        new_program = self.format(old_program)
+        self.load_program(new_program)
+        print(F"Formatted {len(old_program)} lines to {len(new_program)} lines")
+
+
+
     def cmd_renum(self, args):
+        """
+        Renumber the program.
+        Basic algorithm:
+            1. Split lines to single statement lines
+            2. Walk through once to build a map of old line numbers to new
+            3. Create a new program from the old statements
+            4. Renumber the statements, in place.
+
+        :param args:
+        :return:
+        """
         # renum start_line, increment.
         # TODO maybe add a "split lines with multiple statements", or just always do it.
         if args == None:
@@ -296,15 +406,15 @@ class BasicShell:
         else:
             increment = 10
 
-        print(F"Renumber from {start_line} increment {increment}")
-        program = self.executor._program
-        line_map = {}
-        cur_line = start_line
-        for line in program:
-            line_number = line.line
-            for statement in line.stmts:
-                print(cur_line, statement)
-                cur_line += increment
+        print(F"Renumber starting with line {start_line}, with increment {increment}")
+        old_program = self.executor._program
+
+        new_program = []
+        line_map, st_count = self.build_line_map(old_program, start_line, increment)
+        new_program = self.renumber(old_program, line_map, start_line, increment)
+        self.load_program(new_program)
+        print(F"Renumbered {len(old_program)} lines, and {st_count} statements to {len(new_program)} lines")
+
 
 
     def cmd_break(self, args):
@@ -359,6 +469,11 @@ class BasicShell:
             tup = self.commands[key]
             print(F"\t{key}: {tup[1]}")
 
+    cmd_abrev = {
+        # Abbreviations for commands that get typed a lot.
+        "r": "run",
+        "c": "continue",
+    }
     commands = {
         "break": (cmd_break, "Usage: break LINE or break SYMBOL or break list break clear"+
                   "\n\t\tSets a breakpoint on a line, or on writes to a variable"+
@@ -366,6 +481,7 @@ class BasicShell:
                   "\n\t\tname, it will break on writes to either one."),
         "continue": (cmd_continue, "Usage: continue\n\t\tContinues, after a breakpoint."),
         "forstack": (cmd_for_stack, "Usage: fors\n\t\tPrints the FOR stack."),
+        "format": (cmd_format, "Usage: format\n\t\tFormats the program. Does not save it."),
         "gosubs": (cmd_gosub_stack, "Usage: gosubs\n\t\tPrints the FOR stack."),
         "help": (cmd_help, "Usage: help"),
         "load": (cmd_load, "Usage: load <program>\n\t\tRunning load clears coverage data."),
@@ -373,23 +489,22 @@ class BasicShell:
                      "\n\t\tkoverage on\n\t\tkoverage off\n\t\tkoverage clear\n\t\tkoverage report <save|load|list>"),
         "list": (cmd_list, "Usage: list start count"),
         "quit": (cmd_quit, "Usage: quit"),
-        "renum": (cmd_renum, "Usage: renum <start <increment>>\n\t\tRenumbers the program."),
+        "renumber": (cmd_renum, "Usage: renum <start <increment>>\n\t\tRenumbers the program."),
         "run": (cmd_run, "Usage: run <coverage>\n\t\tRuns the program from the beginning."),
         "benchmark": (cmd_benchmark, "Usage: becnhmark\n\t\tRuns the program from the beginning, and shows timing."),
         "next": (cmd_next, "Usage: next"),
         "sym": (cmd_symbols, "Usage: sym <symbol> <type>"+
                 "\n\t\tPrints the symbol table, or one entry."+
                 "\n\t\tType is 'variable', 'array' or 'function'. Defaults to 'variable'."),
+        "save": (cmd_save, "Usage: save FILE"+
+                "\n\t\tSaves the current program to a new file."),
         "?": (cmd_print, "Usage: ? expression\n\t\tEvaluates and prints an expression."
               "\n\t\tNote: You can't print single array variables. Use 'sym'"),
     }
 
     def find_command(self, prefix):
-        # Abbreviations for commands that get typed a lot.
-        if prefix == "r":
-            prefix = "run"
-        elif prefix == "c":
-            prefix = "continue"
+        if prefix in self.cmd_abrev:
+            prefix = self.cmd_abrev[prefix]
 
         matches = [cmd for cmd in self.commands if cmd.startswith(prefix)]
         if len(matches) == 1:

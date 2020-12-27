@@ -1,5 +1,6 @@
 from unittest import TestCase
 
+from basic_statements import Keywords
 from basic_types import BasicSyntaxError
 from parsed_statements import ParsedStatementFor, ParsedStatementOnGoto, ParsedStatementInput, ParsedStatementNext, \
     ParsedStatementGo, ParsedStatementNoArgs, ParsedStatementDef, ParsedStatementDim
@@ -83,14 +84,14 @@ class Test(TestCase):
             p = ParsedStatementNoArgs("END", "SHOULD NOT BE HERE")
 
     def test_parsing_dim(self):
-        p = ParsedStatementDim("DIM", "A(2),B(3,2)")
-        self.assertEqual("DIM", p.keyword)
+        p = ParsedStatementDim(Keywords.DIM, "A(2),B(3,2),C( 4 , 3,2 )")
+        self.assertEqual(Keywords.DIM, p.keyword)
         self.assertEqual("", p.args)
-        expected = {
-            "A":[0, 0],
-            "B":[[0,0],[0,0],[0,0],]
-        }
+        expected = [
+            ("A", [2]),
+            ("B", [3, 2]),
+            ("C", [4, 3, 2]),
+        ]
         self.assertEqual(expected, p._dimensions)
-
-        with self.assertRaises(BasicSyntaxError):
-            p = ParsedStatementNoArgs("END", "SHOULD NOT BE HERE")
+        s = str(p)
+        self.assertEqual("DIM A(2),B(3,2),C(4,3,2)", s)

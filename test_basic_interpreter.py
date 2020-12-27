@@ -90,13 +90,13 @@ class Test(TestCase):
         self.runit_se(program)
 
     def test_dim(self):
-        executor = self.runit(['100 DIM A(8), C(1,8)'])
+        executor = self.runit(['100 DIM A(8), C(3, 2)'])
         self.assertEqual(2, executor.get_symbol_count())
         A = executor.get_symbol("A", SymbolType.ARRAY)
         C = executor.get_symbol("C", SymbolType.ARRAY)
         self.assertEqual(8, len(A))
-        self.assertEqual(1, len(C))
-        self.assertEqual(8, len(C[0]))
+        self.assertEqual(3, len(C))
+        self.assertEqual(2, len(C[0]))
 
     def test_def(self):
         executor = self.runit(['100 DEF FNA(X)=X^2+1'])
@@ -359,28 +359,26 @@ class Test(TestCase):
         self.assertEqual(7, A[6-ARRAY_OFFSET])   # Verify assignment
 
     # TODO Need multi-dimensional array support in expression evaluation
-    # def test_array_assignment3(self):
-    #     listing = [
-    #         '100 DIMA(10)',
-    #         '110 A(3)=27',
-    #         '120 Y=A(3)',
-    #         '200 DIM B( 10, 5)',
-    #         '110 B(1, 4)=17',
-    #         '120 Z=B(1,5)'
-    #     ]
-    #     executor= self.runit(listing)
-    #     A = executor.get_symbol("A")
-    #     B = executor.get_symbol("B")
-    #     Y = executor.get_symbol("Y")
-    #     Z = executor.get_symbol("Z")
-    #     # TODO Figure out if the language expects zero-based arrays, or one based.
-    #     # It looks like "startrek.bas" expects zero based, and superstartrek.bas expects 1
-    #     # TODO Add an option. Add a getter to Executor, so the test can be independent.
-    #     # TODO Need to handle array access in expressions. Including D$(1,2)
-    #     self.assertEqual(A[0], 0) # Check for initialization
-    #     self.assertEqual(A[3], 27) # Verify assignment
-    #     self.assertEqual(Z, 3) # Verify element access
-    #     # TODO two dimensional arrays.
+    def test_array_assignment3(self):
+        listing = [
+            '100 DIMA(10)',
+            '110 A(3)=7',
+            '120 Y=A(3)+1',
+            '200 DIM B( 10, 5)',
+            '210 B(1, 4)=Y*2',
+            '220 Z=B(1,4)+3'
+        ]
+        executor= self.runit(listing)
+        A = executor.get_symbol_value("A", SymbolType.ARRAY)
+        B = executor.get_symbol_value("B", SymbolType.ARRAY)
+        Y = executor.get_symbol_value("Y", SymbolType.VARIABLE)
+        Z = executor.get_symbol_value("Z", SymbolType.VARIABLE)
+
+        self.assertEqual(A[0], 0) # Check for initialization
+        self.assertEqual(A[2], 7) # Verify assignment - note [2], since python is zero based.
+        self.assertEqual(Y, 8) # Verify element access
+        self.assertEqual(B[0][3], 16) # Verify element access
+        self.assertEqual(Z, 19) # Verify element access
 
     def test_array_assignment4(self):
         listing = [

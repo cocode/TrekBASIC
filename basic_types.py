@@ -12,12 +12,12 @@ lexer_token = namedtuple("Token", "token type")
 #statement = namedtuple("Subs", "keyword args")
 
 # Represents one line in a basic program, which may be composed of multiple statements
-# line: The line of the statement, 100 in 100 PRINT:PRINT:END
+# line: The line of the statement, "100" in "100 PRINT:PRINT:END"
 # stmts: A list of statements
 # next: This is an int that DOES NOT represent the line, it represents an index into the list of lines, or -1
 #       for the last line.
-# TODO Rename to 'ProgramLine'
-ProgramLine = namedtuple("ProgramLines", "line stmts next source") # TODO Change "next" to "next_offset" for clarity.
+# source: The original line as a str
+ProgramLine = namedtuple("ProgramLine", "line stmts next source") # TODO Change "next" to "next_offset" for clarity.
 
 # Symbol table entry
 # Value - Value of the variable
@@ -104,6 +104,8 @@ def tokens_to_str(tokens:list[lexer_token]):
     for token in tokens:
         if token.type == "num" and int(token.token) == token.token:
             s += str(int(token.token))
+        elif token.type == "str":
+            s += '"' + token.token + '"'
         else:
             s += str(token.token)
     return s

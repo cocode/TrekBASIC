@@ -144,6 +144,15 @@ def stmt_clear(executor, stmt):
     executor.init_symbols()
 
 
+def init_array(dimensions:list):
+    if len(dimensions) == 1:
+        return [0] * dimensions[0]
+    one = []
+    for x in range(dimensions[0]):
+        one.append(init_array(dimensions[1:]))
+    return one
+
+
 def stmt_dim(executor, stmt:ParsedStatementDim):
     """
     Declares an array. Initializes it to zeros.
@@ -153,8 +162,9 @@ def stmt_dim(executor, stmt:ParsedStatementDim):
     :param stmt:
     :return:
     """
-    for name, value in stmt._dimensions.items():
-        executor.put_symbol(name, value, SymbolType.ARRAY, arg=None) # Not right, but for now.
+    for name, value in stmt._dimensions:
+        initializer = init_array(value)
+        executor.put_symbol(name, initializer, SymbolType.ARRAY, arg=None) # Not right, but for now.
 
 
 def stmt_if(executor, stmt):

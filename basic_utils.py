@@ -36,6 +36,7 @@ def smart_split(line:str, *, enquote:str = '"', dequote:str = '"', split_char:st
 
 def format_line(line):
     """
+    TODO: Compare this to the newer "format" in basic_shell.py. Maybe this is now redundant.
     Format a single line of the program.
     :param line:
     :return:
