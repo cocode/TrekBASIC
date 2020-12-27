@@ -106,7 +106,8 @@ def assign_variable(executor, variable, value):
     :return:
     """
     variable = variable.replace(" ", "")
-    # Need to handle two dimensional array element assignment.
+    # TODO Should move parsing of this to ParsedStatementLet.
+    # TODO Need to handle N-dimensional array element assignment.
     i = variable.find("(")
     if i != -1:
         # Array reference

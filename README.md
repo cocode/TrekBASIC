@@ -65,7 +65,6 @@ dot installed, I just found an online version, and used that.
 stack information for the original exception?
 1. Add support for automatically understanding new two-character operators.
     FIX lexer.
-1. Fully support N-dimensional arrays. Two-dimensional is are working, but might want cleanup.
 1. Support dialects. At least for the four star trek programs I have. (basic_dialects.py)
     Cool thought: Auto-detect dialects?
 1. Now have a parsed statement for all statement types.

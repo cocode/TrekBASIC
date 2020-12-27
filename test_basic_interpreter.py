@@ -340,10 +340,7 @@ class Test(TestCase):
         ]
         executor= self.runit(listing)
         A = executor.get_symbol("A", SymbolType.ARRAY)
-        # TODO Figure out if the language expects zero-based arrays, or one based.
-        # It looks like "startrek.bas" expects zero based, and superstartrek.bas expects 1
-        # TODO Add an option. Add a getter to Executor, so the test can be independent.
-        # TODO Need to handle array access in expressions. Including D$(1,2)
+        # It looks like "startrek.bas" expects zero based arrays, and superstartrek.bas expects 1
         self.assertEqual(0, A[0], 0) # Check for initialization
         self.assertEqual(17, A[3-ARRAY_OFFSET])   # Verify assignment.
 
@@ -358,7 +355,6 @@ class Test(TestCase):
         self.assertEqual(0, A[0], 0) # Check for initialization
         self.assertEqual(7, A[6-ARRAY_OFFSET])   # Verify assignment
 
-    # TODO Need multi-dimensional array support in expression evaluation
     def test_array_assignment3(self):
         listing = [
             '100 DIMA(10)',
@@ -375,28 +371,28 @@ class Test(TestCase):
         Z = executor.get_symbol_value("Z", SymbolType.VARIABLE)
 
         self.assertEqual(A[0], 0) # Check for initialization
-        self.assertEqual(A[2], 7) # Verify assignment - note [2], since python is zero based.
+        self.assertEqual(A[3-ARRAY_OFFSET], 7) # Verify assignment
         self.assertEqual(Y, 8) # Verify element access
         self.assertEqual(B[0][3], 16) # Verify element access
         self.assertEqual(Z, 19) # Verify element access
 
     def test_array_assignment4(self):
         listing = [
-            '100 DIMA(10)',
-            '110 A(3)=27',
-            '120 Y=A(3)',
+            '100 DIMA(2,3,4)',
+            '110 A(1,2,3)=27',
+            '120 A(1,2,1)=6',
+            '130 Y=A(1,2,3)+1',
+            '140 Z=A(1,2,1)-1',
         ]
         executor= self.runit(listing)
         A = executor.get_symbol("A", SymbolType.ARRAY)
         Y = executor.get_symbol("Y", SymbolType.VARIABLE)
-        # TODO Figure out if the language expects zero-based arrays, or one based.
-        # It looks like "startrek.bas" expects zero based, and superstartrek.bas expects 1
-        # TODO Add an option. Add a getter to Executor, so the test can be independent.
-        # TODO Need to handle array access in expressions. Including D$(1,2)
-        self.assertEqual(0, A[0]) # Check for initialization
-        self.assertEqual(27, A[3-ARRAY_OFFSET]) # Verify assignment
-        self.assertEqual(27, Y) # Verify element access
-        # TODO two dimensional arrays.
+        Z = executor.get_symbol("Z", SymbolType.VARIABLE)
+        self.assertEqual(0, A[0][0][0]) # Check for initialization
+        self.assertEqual(27, A[1-ARRAY_OFFSET][2-ARRAY_OFFSET][3-ARRAY_OFFSET]) # Verify assignment
+        self.assertEqual(6, A[1-ARRAY_OFFSET][2-ARRAY_OFFSET][1-ARRAY_OFFSET])  # Verify array rows aren't all the same.
+        self.assertEqual(28, Y) # Verify element access
+        self.assertEqual(5, Z) # Verify element access
 
     def test_is_valid_variable(self):
         is_valid_identifier("A")
