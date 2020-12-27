@@ -7,10 +7,8 @@ that goal.
 
 One future challenge is that virtually every version of BASIC is different, 
 sometimes substantially, and the available versions of start trek do not
-specify which version of basic they were written for. 
-
-This document describes the compatibility issues between various versions of BASIC: 
-https://files.eric.ed.gov/fulltext/ED083819.pdf
+specify which version of basic they were written for. See documentation/faq.md 
+for more details.
 
 I considered simply porting Star Trek to Python, but 
 writing an interpreter sounded like more fun.
@@ -40,20 +38,22 @@ I don't have":dot installed, I just found an online version, and used that.
     python venv/lib/python3.9/site-packages/gprof2dot.py -f pstats test.pstats
 
 ## Getting Started
+See the documentation directory for more information.
+
 TrekBasic requires python 3
 
-    python3 basic.py programs/superstartrek.bas
+    python basic.py programs/superstartrek.bas
 
 *HINT* If you don't put your shields up, the first hit will kill you! :-)
 
 If you want the development environment, similar to what you would have had with a command line BASIC
 
-    python3 basic.py
+    python basic_shell.py
 
 Use "help" to get available commands, like "load programs/superstartrek.abs" and "run". 
 
 I have not implemented an editor in basic_shell. While the old-style line-by-line editing might be nostalgic,
-modern editors are so much better. 
+modern editors are *so* much better. 
 
 
 ## Terminology

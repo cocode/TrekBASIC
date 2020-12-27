@@ -1,79 +1,80 @@
-# Known Issues, Future Directions and Notes
+# Known Issues
+See also future.md
 
-See also wasm.txt
+1. Support different BASIC dialects. 
+   
+   Currently, TrekBasic only supports one dialect, the one that runs 
+   programs/superstartrek.bas. 
+   
+   This document describes the compatibility issues between various versions of BASIC: 
+    https://files.eric.ed.gov/fulltext/ED083819.pdf
+   
+   basic_dialect.py has some configuration options,
+   but that approach limits you to supporting only one dialect without
+   making code changes. basic_dialects should probably be replaced with 
+   a config file (json? YAML?) that could be read at run time, so you could 
+   have a config file for each dialect.
+   
+   Auto-detecting versions of basic would be great, but might not be feasible.
+   1. Support more built-in functions: LOG10. Can now add more functions easily in basic_functions.py 
+   1. Need to support "ELSE" for superstartrek3.bas
+   1. Some versions of basic allowed a single quote for REM. Should add this.
 
-## TODOs
-1. It could be fun to write Wasm Basic. (See "wasm.txt"). Options
-    1. Write interpreter that generates "B-code."
-    1. Options to execute in browser
-        1. Generate wasm from b-code (this is best) 
-        1. Or could write  b-code interpreter.
-        1. Or could find someone else's basic written in a languages 
-    that compiles to wasm
-1. In progress: Writing a smarter player strategy, so I can code 
-   cover the "win" part of the code. The random player always loses.
-1. What uses star dates? Am I wasting life by setting the shields all 
+1. TrekBot Improvements
+   
+   TrekBot is an automated program to play Star Trek, that was build to help with code coverage testing. It's not very
+   skilled at this point. It usually dies, and doesn't get very high coverage, yet.
+   There are two versions, one random one, that always dies soon, and a CheatBot that does a bit better,
+   by cheating.
+   1. What uses star dates? Am I wasting star dates in TrekBot by setting the shields all 
    the time?
-1. Performance testing with cProfile and gprof2dot.py. I don't have":
-dot installed, I just found an online version, and used that. 
+   1. check k9(count of Klingons alive)  at end, to see if trek bot won
+
+1. Performance Testing
+   
+   You can do performance testing with cProfile and gprof2dot.py. 
+   I don't have dot installed, I just found an online version, and used that. 
     python -m cProfile  -s tottime trek_bot.py 
     python venv/lib/python3.9/site-packages/gprof2dot.py -f pstats test.pstats
-1. Having trace_file as a parameter to the constructor, but not using it until run_program makes no sense.
-1. remove REM from code coverage, many of the are unreachable
-1. check k9(count of Klingons alive)  at end, to see if trek bot won
-1. Need to support "ELSE" for superstartrek3.bas
-1. It should be possible to save code coverage data across multiple runs,
-   so I can get to 100% coverage.
-    1. Should have better formatting to tell what lines I still need to execute.
-1. Can I re-raise exceptions differently, so I don't lose
+
+1. Debugging Improvements
+    1. Desperately need "step over" vs "step into" for debugging.
+    1. Add "trace on" and "trace off" statements to the language, to control writing of the trace file.
+    1. Having trace_file as a parameter to the constructor, but not using it until run_program makes no sense.
+    1. Need to flush the trace file periodically. maybe every line. Otherwise it gets lost when we crash.
+    1. Should remove REM statements from code coverage, many of them are unreachable
+    1. Can I re-raise exceptions differently, so I don't lose
 stack information for the original exception?
-1. Add support for automatically understanding new two-character operators.
-    FIX lexer.
-1. Support dialects. At least for the four star trek programs I have. (basic_dialects.py)
-    Cool thought: Auto-detect dialects?
-1. Now have a parsed statement for all statement types.
-    1. All expressions should be lexed at parse time, but are not yet.
-    1. Let statements do this, but I think ON...GOSUB and others don't, yet.
-1.  Should we precompute expressions to ASTs on load? - Yes, but not done yet.
-1. More built in functions: EXP, LOG10. (have LOG) 
-1. Write smaller test programs.
-1. Split tests
-    1. tests of basic (integration). These should be implementation independent.
-    1. tests of internal functions. Unit tests.
-1. Write "renum" utility. Split all multiline statements, and renumber at increments of 10
-    1. Then reformat the startrek source.
-    1. Run a trace of star strek, befre and after for verificaion.
-1. Fix functions to store their extra into in the symbol table, not in the "op" parameter.
-    1. store data in symbol table
-    2. Use it
-    3. remove old versions.
-    4. Hmm. Looks like the issues is not the symbol table, its that the expression evaluator doesn't
-        pass that information into FUNC_MONO_OP
-1. TODO Fix the lexer to allow all two character operators, and to require no changes if more are added.
-1.     TODO Replace namedtuple for ste with dataclass (maybe)
-1.     TODO Search and destroy for literal strings used for what should be enums.
-1. Maybe move the operators enum to it's own file, so  it has no dependencies, and then use a dict
+1. Parsing/Lexing issues.
+   1. BASIC is an ugly language, which is not designed for easy parsing.
+      Newer dialects of BASIC are better, but TrekBASIC supports syntax like:
+
+       "IFX>YANDX<ZTHEN100"
+
+    1. All expressions should be lexed at parse time. Most are, but not all.
+    1. Maybe move the operators enum to it's own file, so  it has no dependencies, and then use a dict
 for the mapping.
-1. could also move the lexing to parsed_statements, and then basic_openators.py wouldn't need the lexer
-1. Operator eval functions need to return the correct type, not just always "num". Start by returning the type passed in
-1. Maybe write trace to a file. With the variables on that line. Or build a debugger. Debugger built.
-    X=3, Y=4
-    100 IFX+Y>3THENPRINT"FOO"
-1. Add "trace on" and "trace off" statements to the language, to control writing of the trace file.
-1. Need to flush the trace file periodically. maybe every line.
-1. Maybe add "run" vs. "continue" for the debugging. Have single step now.
+    1. could also move the lexing to parsed_statements, and then basic_openators.py wouldn't need the lexer
+    1. Operator eval functions need to return the correct type, not just always "num". Start by returning the type passed in
+1. Testing Improvements
+   1. Write smaller test programs.
+    1. Split tests
+        1. tests of basic (integration). These should not be implementation independent.
+        1. tests of internal functions. Unit tests.
+1. Renumber
+    1. Now working. 
+    1. Run a trace of star strek, before and after renumbering, for verificaion.
+1. TODO Search and destroy for literal strings used for what should be enums.
 1. You know, maybe I don't need to pass the symbol_type everywhere. You can tell the type of a variable
    from its name. FNx = function, $ == string, I guess you still have to know array vs. not.
-1. Desperately need step over vs step into for debugging.
 1. Need to clarify when BASIC would keep a number as an int vs. a float.
-1. Should add parsing of all line numbers used in a line, so I can renumber
-1. Should add parsing of all variables, so I can search references.
+1. Should add parsing of all variables, so I can find references to a variable. 
     1.  Could do this in parse tree.
-1. Some versions of basic allowed a single quote for REM
-1. load in basic shell doesn't reload a changed program (Can't reproduce. Maybe forgot to save?)
 
 
 ## Bugs in the BASIC program (superstartrek.bas):
+
+### Infinite Recursion on Error
 When trek_bot continuously gave a command of "SHE", when "SHIELD CONTROL INOPERABLE",
 I eventually hit
 Syntax Error in line 2080: SyntaxError: FORs nested too deeply: 2080 FORI=1TO9:IFLEFT$(A$,3)<>MID$(A1$,3*I-2,3)THEN2160
@@ -81,6 +82,7 @@ This looks to be a bug in the original basic, that would never matter, as
 a human wouldn't give an error response 2000 times.
 Current state is:  CheatState.SHIELDS
 
+### Division by Zero
 1. TrekBot may have found a bug in superstartrek.bas: Syntax Error in line 8330: Division by zero: 8330 PRINT"DIRECTION =";C1+(ABS(A)/ABS(X)):GOTO8460
 
 maybe course is 1 <= course <= 9. 9 appears to be the same as one, 0 is not 
