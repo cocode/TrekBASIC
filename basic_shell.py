@@ -468,6 +468,8 @@ class BasicShell:
         for key in self.commands:
             tup = self.commands[key]
             print(F"\t{key}: {tup[1]}")
+        print("Commands can be abbreviated to shortest unique prefix.")
+        print("For convenience, 'r' works for 'run', and 'c' for 'continue'")
 
     cmd_abrev = {
         # Abbreviations for commands that get typed a lot.
@@ -514,7 +516,10 @@ class BasicShell:
     def do_command(self):
         while True:
             print("> ", end='')
-            cmd_line = input()
+            try:
+                cmd_line = input()
+            except EOFError as e:
+                sys.exit(0)
 
             # Make ?A$ work, not just ? A$
             if cmd_line.startswith("?") and len(cmd_line) > 1 and cmd_line[1] != ' ':
@@ -544,11 +549,10 @@ class BasicShell:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run BASIC programs.')
-    parser.add_argument('program', help="The name of the basic file to run. Will add '.bas' of not found.")
+    parser.add_argument('program', nargs='?', help="The name of the basic file to run. Will add '.bas' of not found.")
     args = parser.parse_args()
-    # Makes it to 1320 of superstartrek, and line 20 of startrek.bas
-    if len(sys.argv) < 2:
-        print("Usage: python3 basic_intrpreter.py name_of_program.bas")
+    if len(sys.argv) > 1:
+        print(F"Usage: python3 basic_shell.py name_of_program.bas")
         sys.exit(1)
     cmd = None
     debugger = BasicShell(args.program)
