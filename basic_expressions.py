@@ -112,8 +112,7 @@ class Expression:
                         arg = symbols.get_symbol_arg(current.token, SymbolType.FUNCTION)
                         op_stack.append(OP_TOKEN(current.token, SymbolType.FUNCTION, arg, symbol_value, symbols=symbols))
                     else:
-                        # Handle function as operators. Lower priority than "(", but higher than everything else.
-                        # So don't append this to the data stack, append it to the op stack as a function.
+                        # Array access
                         arg = current.token
                         op_stack.append(OP_TOKEN(ARRAY_ACCESS, "array_access", arg, None, symbols=symbols))
                 else:
