@@ -1,7 +1,16 @@
-Notes and thoughts writing wasm basic
+# Future
 
-1. Maybe this should be a LLVM frontend for basic, then you get basic everywhere.
-        1. https://www.youtube.com/watch?v=hTWmU9IJBSI basic compiler
+It would be interesting to make BASIC available in more places, such as web
+assembly. 
+
+
+LLVM could be used to generate code for multiple backends, including wasm.
+I see no particular need for using basic to script web applications, but 
+the idea amuses me.
+
+
+# References
+    1. https://www.youtube.com/watch?v=hTWmU9IJBSI basic compiler
     1. https://np.reddit.com/r/LLVM/comments/j0lvuj/how_the_ever_loving_hell_does_a_beginner_start/
     1. https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/index.html
     1. https://www.ibm.com/developerworks/library/os-createcompilerllvm1/index.html (2012)
@@ -18,3 +27,4 @@ Notes and thoughts writing wasm basic
     1. http://dev.stephendiehl.com/numpile/
     1. https://blog.scottlogic.com/2019/05/17/webassembly-compiler.html
     1. https://hacks.mozilla.org/2017/02/a-cartoon-intro-to-webassembly/
+    1. https://np.reddit.com/r/rust/comments/4r8n2k/writing_an_llvmir_compiler_in_rust_getting_started/
