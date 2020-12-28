@@ -1,14 +1,13 @@
 # TrekBasic
-This is a full BASIC interpreter, written in Python.
+TrekBASIC is a full BASIC interpreter, written in Python.
 
 My goal was to be able to play the old Star Trek game, which was written in BASIC.
-https://en.wikipedia.org/wiki/Star_Trek_(1971_video_game). I have achieved
-that goal.
 
-One future challenge is that virtually every version of BASIC is different, 
-sometimes substantially, and the available versions of start trek do not
-specify which version of basic they were written for. See documentation/faq.md 
-for more details.
+    https://en.wikipedia.org/wiki/Star_Trek_(1971_video_game). 
+
+I have achieved that goal.
+
+
 
 I considered simply porting Star Trek to Python, but 
 writing an interpreter sounded like more fun.
@@ -28,12 +27,22 @@ runs only programs/superstartrek.bas.
 
 ## Features
 
-This is actually a full basic development environment. It has code and data 
-breakpoints, single stepping, execution timing, executions tracing. code 
-coverage, and renumbering.
+TrekBASIC actually provides a full basic development environment which has:
+* Code breakpoints 
+* Data write breakpoints 
+* Single stepping
+* Execution timing 
+* Execution tracing
+* Code coverage reports
+* Reformatting
+* Renumbering
 
-You can profile the code using python profilers. I have used cProfile and gprof2dot.py. 
-I don't have":dot installed, I just found an online version, and used that. 
+# Profiling
+You can profile the code using python profilers. 
+
+I have used cProfile and gprof2dot.py. You'll need to install gprof2dot.py 
+I don't have dot installed, I just found an online version, and used that. 
+
     python -m cProfile  -s tottime trek_bot.py 
     python venv/lib/python3.9/site-packages/gprof2dot.py -f pstats test.pstats
 
