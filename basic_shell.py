@@ -93,6 +93,8 @@ class BasicShell:
         except FileNotFoundError as e:
             print(F"File {self._program_file} not found.")
             return
+        except BasicSyntaxError:
+            return
         except Exception as e:
             print(e)
             traceback.print_exc()
