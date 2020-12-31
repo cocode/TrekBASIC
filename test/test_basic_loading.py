@@ -6,7 +6,7 @@ from basic_statements import Keywords
 from basic_types import ProgramLine, lexer_token
 from basic_loading import tokenize_line, load_program, tokenize
 from basic_utils import format_program
-from parsed_statements import ParsedStatementIf
+from basic_parsing import ParsedStatementIf
 from basic_interpreter import Executor
 
 

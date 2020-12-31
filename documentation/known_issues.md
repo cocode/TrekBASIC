@@ -54,7 +54,7 @@ stack information for the original exception?
     1. All expressions should be lexed at parse time. Most are, but not all.
     1. Maybe move the operators enum to it's own file, so  it has no dependencies, and then use a dict
 for the mapping.
-    1. could also move the lexing to parsed_statements, and then basic_openators.py wouldn't need the lexer
+    1. could also move the lexing to basic_parsing, and then basic_openators.py wouldn't need the lexer
     1. Operator eval functions need to return the correct type, not just always "num". Start by returning the type passed in
 1. Testing Improvements
    1. Write smaller test programs.
