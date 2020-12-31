@@ -8,10 +8,9 @@ from basic_dialect import UPPERCASE_INPUT
 from basic_types import BasicSyntaxError, assert_syntax, is_valid_identifier
 from basic_types import SymbolType, RunStatus
 
-from basic_parsing import ParsedStatement, ParsedStatementIf, ParsedStatementFor, ParsedStatementOnGoto, \
-    ParsedStatementLet, ParsedStatementNoArgs, ParsedStatementDef, ParsedStatementPrint, ParsedStatementDim, \
-    ParsedStatementOpen
-from basic_parsing import ParsedStatementGo
+from basic_parsing import ParsedStatement, ParsedStatementIf, ParsedStatementFor, ParsedStatementOnGoto
+from basic_parsing import ParsedStatementLet, ParsedStatementNoArgs, ParsedStatementDef, ParsedStatementPrint
+from basic_parsing import ParsedStatementGo, ParsedStatementDim
 from basic_parsing import ParsedStatementInput, ParsedStatementNext
 from basic_lexer import get_lexer
 from basic_types import NUMBERS, LETTERS
