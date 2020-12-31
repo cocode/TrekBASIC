@@ -13,7 +13,7 @@ class PredefinedFunctions:
         self.functions = {
             "ABS":    bo.MonoOp(lambda x: abs(x)),
             "ASC":    bo.StrMonoOp(lambda x: ord(x), return_type="num"),
-            "CHR$":   bo.StrMonoOp(lambda x: chr(int(x), return_type="str")),
+            "CHR$":   bo.StrMonoOp(lambda x: chr(int(x)), return_type="str"),
             "COS":    bo.MonoOp(lambda x: cos(x)),
             "EXP":    bo.MonoOp(lambda x: exp(x)),
             "INT":    bo.MonoOp(lambda x: int(x)),
