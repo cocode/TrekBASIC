@@ -20,7 +20,6 @@ class TestCheatStrategy(TestCase):
     def test_setup(self):
         player = Player(self._program, self._strategy, False)
         player.play_one_game()
-        player.executor._symbols.dump()
         self._strategy._setup(player)
         self.assertTrue(type(self._strategy._galaxy)== list, "Wrong type for galaxy")
         self.assertTrue(type(self._strategy._energy)== float, "Wrong type for energy")
