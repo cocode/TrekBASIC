@@ -15,7 +15,7 @@ class Test(TestCase):
         """
         Asserts the that symbol has the expected value
 
-        ONLY CHECKS THE SYMBOL TABLE SymbolTable.VARIABLE, not ARRAY, or FUNCTION
+        THIS ONLY CHECKS THE SYMBOL TABLE SymbolTable.VARIABLE, not ARRAY, or FUNCTION
         :param executor:
         :param symbol:
         :param expected_value:
@@ -833,7 +833,7 @@ class Test(TestCase):
         # Syntax Error
         executor = self.runit_se(['1000 A='])
 
-    def test_run_status(self):
+    def test_run_status2(self):
         program = tokenize(['1000 A=3:ERROR'])
         executor = Executor(program)
         try:
