@@ -43,6 +43,11 @@ class Test(TestCase):
         return executor
 
     def runit_capture(self, listing, input=None):
+        """
+        Run the program, but capture the output, instead of printing it.
+        This allows us to verify the output in tests, and it also can be
+        used just to keep the output from littering the test output.
+        """
         old = sys.stdout
         output = StringIO()
         sys.stdout = output
@@ -66,7 +71,7 @@ class Test(TestCase):
         :return:
         """
         with self.assertRaises(BasicSyntaxError):
-            executor = self.runit(listing)
+            executor = self.runit_capture(listing)
 
     def test_assignment(self):
         executor = self.runit(['100 Z$="Fred"'])
