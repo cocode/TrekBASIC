@@ -341,7 +341,7 @@ class Test(TestCase):
             executor = self.runit(listing)
 
     def test_array_assignment_error4(self):
-        # Array not initialized. Some basics allow this. For now, we don't
+        # Array is not initialized. Some basics allow this. For now, we don't
         listing = [
             '110 A(1)=1',
         ]
@@ -355,7 +355,7 @@ class Test(TestCase):
         ]
         executor = self.runit(listing)
         A = executor.get_symbol("A", SymbolType.ARRAY)
-        # It looks like "startrek.bas" expects zero based arrays, and superstartrek.bas expects 1
+        # It looks like "startrek.bas" expects zero-based arrays, and superstartrek.bas expects 1
         self.assertEqual(0, A[0], 0)  # Check for initialization
         self.assertEqual(17, A[3-ARRAY_OFFSET])   # Verify assignment.
 
@@ -867,5 +867,5 @@ class Test(TestCase):
         self.assert_value(executor, "S", -17)
         S = executor.get_symbol("S", SymbolType.ARRAY)
         for i in range(0, 8):
-            self.assertTrue(S[i]==(i+1)*(i+1))
+            self.assertTrue(S[i] == (i+1)*(i+1))
 
