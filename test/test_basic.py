@@ -1,5 +1,5 @@
 from io import StringIO
-from unittest import TestCase
+from unittest import TestCase, mock
 import sys
 
 from basic_interpreter import Executor
@@ -24,7 +24,7 @@ class Test(TestCase):
         for item in expected_values.items():
             self.assert_value(executor, item[0], item[1])
 
-
+    # TODO These functions are defined in each test file. Need to have a common parent class.
     def runit(self, listing, trace=False):
         program = tokenize(listing)
         self.assertEqual(len(listing), len(program))
@@ -50,7 +50,8 @@ class Test(TestCase):
         :return:
         """
         with self.assertRaises(BasicSyntaxError):
-            executor = self.runit(listing)
+            with mock.patch('sys.stdout', new=StringIO()):
+                executor = self.runit(listing)
 
     def test_trace(self):
         # This doesn't actually test the output, but it's handy to have for debugging trace.
@@ -63,5 +64,6 @@ class Test(TestCase):
         self.assertEqual(len(listing), len(program))
         with open("tracefile.txt", "w") as f:
             executor = Executor(program, trace_file=f)
-            executor.run_program()
+            with mock.patch('sys.stdout', new=StringIO()):
+                executor.run_program()
 
