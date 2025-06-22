@@ -166,7 +166,7 @@ class Executor:
     def get_current_line(self):
         return self._program[self._location.index]
 
-    def get_current_location(self)->int:
+    def get_current_location(self)->ControlLocation:
         """
         Gets the index into self._program for the next line to be executed,
         and the offset into that line.
