@@ -8,7 +8,7 @@ from basic_statements import Keywords
 
 def tokenize_statements(commands_text:list[str]):
     """
-    Parses individual statements. A ine of the program may have multiple statements in it.
+    Parses individual statements. A line of the program may have multiple statements in it.
 
     This line has three statements.
 
