@@ -115,7 +115,7 @@ class Test(TestCase):
     def test_load_program(self):
         # TODO This no longer works. format_program assumes everything is in stmt.args,
         # which is no longer true after implementing PreparedStatements for all keywords.
-        input_file = "../programs/simple_test.bas"
+        input_file = "./programs/simple_test.bas"
         with open(input_file) as f:
             source = f.read()
         program = load_program(input_file)

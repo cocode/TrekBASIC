@@ -4,9 +4,14 @@ from basic_shell import BasicShell
 
 
 class TestBasicShell(TestCase):
+    def test_file_not_found(self):
+        b = BasicShell("../does_not_exist.bas")
+        self.assertFalse(b.load_status)
+
     def test_load(self):
-        b = BasicShell("simple_test.bas")
+        b = BasicShell("./programs/simple_test.bas")
         b.load_from_file()
+        self.assertTrue(b.load_status)
 
     def test_build_line_map(self):
         listing = [
@@ -71,8 +76,10 @@ class TestBasicShell(TestCase):
     #
     def test_cmd_symbols(self):
         # Just so it gets called.
-        b = BasicShell("simple_test.bas")
-        b.cmd_symbols(None)
+        b = BasicShell("./programs/simple_test.bas")
+        self.assertTrue(b.load_status)
+        # print symbols for check.
+        # b.cmd_symbols(None)
 
 
     # def test_cmd_print(self):

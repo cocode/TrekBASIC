@@ -59,6 +59,8 @@ class BasicShell:
     def __init__(self, program_file=None):
         self._program_file = program_file
         self.executor = None
+        # TODO Investigate better failure handling
+        self.load_status = False
         if self._program_file:
             self.load_from_file()
         self._breakpoints = []
@@ -70,6 +72,7 @@ class BasicShell:
         Used by test code
         :return:
         """
+        # TODO Do I need better error handling here?
         program = tokenize(listing)
         executor = Executor(program)
         self.executor = executor
@@ -79,15 +82,23 @@ class BasicShell:
         Used by renum code to replace source program with renumbered one
         :return:
         """
+        # TODO Do I need better error handling here?
         executor = Executor(program)
         self.executor = executor
 
+    def load_from_file(self, coverage:bool=False) -> None:
+        self.load_status = False
 
-    def load_from_file(self, coverage=False):
         if not os.path.exists(self._program_file):
             if os.path.exists(self._program_file+".bas"):
                 self._program_file += ".bas"
+
+        if not os.path.exists(self._program_file):
+            print("File not found: " + self._program_file)
+            return
+
         print("Loading ", self._program_file)
+        # TODO Clean up handling load failures. This is a quick hack.
         try:
             program = load_program(self._program_file)
         except FileNotFoundError as e:
@@ -101,6 +112,8 @@ class BasicShell:
             return
         executor = Executor(program, coverage=coverage)
         self.executor = executor
+        self.load_status = True
+        return
 
     def usage(self, cmd):
         """
