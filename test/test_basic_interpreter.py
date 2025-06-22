@@ -11,7 +11,7 @@ from basic_loading import tokenize
 
 
 class Test(TestCase):
-    def assert_value(self, executor:Executor, symbol:str, expected_value):
+    def assert_value(self, executor: Executor, symbol: str, expected_value):
         """
         Asserts the that symbol has the expected value
 
@@ -24,7 +24,7 @@ class Test(TestCase):
         value = executor.get_symbol(symbol)
         self.assertEqual(expected_value, value)
 
-    def assert_values(self, executor:Executor, expected_values):
+    def assert_values(self, executor: Executor, expected_values):
         """
         Verifies the symbol table contains the values passed in.
         Does NOT check for extra values.
@@ -34,7 +34,6 @@ class Test(TestCase):
         """
         for item in expected_values.items():
             self.assert_value(executor, item[0], item[1])
-
 
     def runit(self, listing, trace_file=None):
         program = tokenize(listing)
@@ -80,7 +79,7 @@ class Test(TestCase):
             '110 A= A+A',
             '120 B= B*A',
         ]
-        executor= self.runit(listing)
+        executor = self.runit(listing)
         self.assertEqual(2, executor.get_symbol_count())
         self.assert_value(executor, "A", 10)
         self.assert_value(executor, "B", 60)
@@ -104,8 +103,11 @@ class Test(TestCase):
         self.assertEqual(1, executor.get_symbol_count())
         # self.assert_value(executor, "FNA", "X^2+1")
         value = executor.get_symbol("FNA", symbol_type=SymbolType.FUNCTION)
-        expected = [lexer_token(token='X', type='id'), lexer_token(token='^', type='op'), lexer_token(token=2.0, type='num'),
-         lexer_token(token='+', type='op'), lexer_token(token=1.0, type='num')]
+        expected = [lexer_token(token='X', type='id'),
+                    lexer_token(token='^', type='op'),
+                    lexer_token(token=2.0, type='num'),
+                    lexer_token(token='+', type='op'),
+                    lexer_token(token=1.0, type='num')]
         self.assertEqual(expected, value)
 
         AT = executor.get_symbol_type("FNA", SymbolType.FUNCTION)
@@ -117,7 +119,7 @@ class Test(TestCase):
             '110 Y=FNA(5)',
             '120 Z=FNA(7*7)',
         ]
-        executor= self.runit(listing)
+        executor = self.runit(listing)
         self.assertEqual(3, executor.get_symbol_count())
         self.assert_value(executor, "Y", 26)
         self.assert_value(executor, "Z", 2402)
@@ -129,7 +131,7 @@ class Test(TestCase):
             '110 Y=FNA(5)',
             '120 Z=FNA(A*A)',
         ]
-        executor= self.runit(listing)
+        executor = self.runit(listing)
         self.assertEqual(4, executor.get_symbol_count())
         self.assert_value(executor, "Y", 126)
         self.assert_value(executor, "Z", 730)
@@ -141,30 +143,30 @@ class Test(TestCase):
             '120 DEF FNC(X)=FNA(3*X)+FNB(X+1)',
             '130 Z=FNC(3)'
         ]
-        executor= self.runit(listing)
+        executor = self.runit(listing)
         self.assertEqual(4, executor.get_symbol_count())
         self.assert_value(executor, "Z", 92)
 
     def test_def5(self):
         listing = [
-            '100 DEF FNA(X)=X^2', # 16, 36
-            '110 DEF FNB(X)=2*FNA(X)+3', # 35, 75
+            '100 DEF FNA(X)=X^2',  # 16, 36
+            '110 DEF FNB(X)=2*FNA(X)+3',  # 35, 75
             '120 X=FNB(4)',
-            '130 Y=FNB(6)', # 110
+            '130 Y=FNB(6)',  # 110
             '140 Z=X+Y'
         ]
-        executor= self.runit(listing)
+        executor = self.runit(listing)
         self.assertEqual(5, executor.get_symbol_count())
         self.assert_value(executor, "Z", 110)
 
     def test_def6(self):
         listing = [
-            '100 DEF FNA(X)=X^2', # 16, 36
-            '110 DEF FNB(X)=2*FNA(X)+3', # 35, 75
-            '120 DEF FNC(X)=FNB(X+1)+FNB(X*2)', # 110
+            '100 DEF FNA(X)=X^2',  # 16, 36
+            '110 DEF FNB(X)=2*FNA(X)+3',  # 35, 75
+            '120 DEF FNC(X)=FNB(X+1)+FNB(X*2)',  # 110
             '130 Z=FNC(3)'
         ]
-        executor= self.runit(listing)
+        executor = self.runit(listing)
         self.assertEqual(4, executor.get_symbol_count())
         self.assert_value(executor, "Z", 110)
 
@@ -172,7 +174,7 @@ class Test(TestCase):
         listing = [
             '90 A=INT(1.99)',
         ]
-        executor= self.runit(listing)
+        executor = self.runit(listing)
         self.assertEqual(1, executor.get_symbol_count())
         self.assert_value(executor, "A", 1)
 
@@ -180,7 +182,7 @@ class Test(TestCase):
         listing = [
             '90 A=RND(1)',
         ]
-        executor= self.runit(listing)
+        executor = self.runit(listing)
         self.assertEqual(1, executor.get_symbol_count())
         A = executor.get_symbol("A")
         self.assertTrue(A > 0 and A < 1.0)
@@ -191,7 +193,7 @@ class Test(TestCase):
             '1010 B=SGN(-3711)',
             '1020 C=SGN(0)',
         ]
-        executor= self.runit(listing)
+        executor = self.runit(listing)
         self.assertEqual(3, executor.get_symbol_count())
         self.assert_value(executor, "A", 1)
         self.assert_value(executor, "B", -1)
@@ -201,7 +203,7 @@ class Test(TestCase):
         listing = [
             '10000 A=EXP(1)',
         ]
-        executor= self.runit(listing)
+        executor = self.runit(listing)
         self.assertEqual(1, executor.get_symbol_count())
         self.assert_value(executor, "A", e)
 
@@ -213,7 +215,7 @@ class Test(TestCase):
             '130 D$="ABC"',
             '140 E$=D$+"DEF"',
         ]
-        executor= self.runit(listing)
+        executor = self.runit(listing)
         self.assertEqual(5, executor.get_symbol_count())
         self.assert_value(executor, "A", 3)
         self.assert_value(executor, "B", 4)
@@ -226,7 +228,7 @@ class Test(TestCase):
             '100 A =2+1',
             '110 B=A/2',
         ]
-        executor= self.runit(listing)
+        executor = self.runit(listing)
         self.assertEqual(2, executor.get_symbol_count())
         A = executor.get_symbol("A")
         B = executor.get_symbol("B")
@@ -237,7 +239,7 @@ class Test(TestCase):
         listing = [
             '100 A=2+"1"',
         ]
-        executor= self.runit_se(listing)
+        self.runit_se(listing)
 
     def test_goto(self):
         listing = [
@@ -247,7 +249,7 @@ class Test(TestCase):
             '130 B  = 2',
             '140 END',
         ]
-        executor= self.runit(listing)
+        executor = self.runit(listing)
         self.assertEqual(1, executor.get_symbol_count())
         self.assertFalse(executor.is_symbol_defined("A"))
         self.assert_value(executor, "B", 2)
@@ -257,7 +259,7 @@ class Test(TestCase):
             '100 A=3:GOTO 120:A=4',
             '120 B=4000',
         ]
-        executor= self.runit(listing)
+        executor = self.runit(listing)
         self.assertEqual(2, executor.get_symbol_count())
         self.assert_value(executor, "A", 3)
         self.assert_value(executor, "B", 4000)
@@ -271,11 +273,10 @@ class Test(TestCase):
             '1010 A= A+A',
             '1020 RETURN',
         ]
-        executor= self.runit(listing)
+        executor = self.runit(listing)
         self.assertEqual(2, executor.get_symbol_count())
         self.assert_value(executor, "A", 10)
         self.assert_value(executor, "B", 4000)
-
 
     def test_end(self):
         listing = [
@@ -283,7 +284,7 @@ class Test(TestCase):
             '110 A$="1"',
             '130 B  = 2',
         ]
-        executor= self.runit(listing)
+        executor = self.runit(listing)
         self.assertEqual(0, executor.get_symbol_count())
 
     def test_print(self):
@@ -318,21 +319,21 @@ class Test(TestCase):
             '110 A(3,2=1',
         ]
         with self.assertRaises(BasicSyntaxError):
-            executor= self.runit(listing)
+            executor = self.runit(listing)
 
     def test_array_assignment_error2(self):
         listing = [
             '110 A()=1',
         ]
         with self.assertRaises(BasicSyntaxError):
-            executor= self.runit(listing)
+            executor = self.runit(listing)
 
     def test_array_assignment_error3(self):
         listing = [
             '110 A(1,2,3)=1',
         ]
         with self.assertRaises(BasicSyntaxError):
-            executor= self.runit(listing)
+            executor = self.runit(listing)
 
     def test_array_assignment_error4(self):
         # Array not initialized. Some basics allow this. For now, we don't
@@ -340,17 +341,17 @@ class Test(TestCase):
             '110 A(1)=1',
         ]
         with self.assertRaises(BasicSyntaxError):
-            executor= self.runit(listing)
+            executor = self.runit(listing)
 
     def test_array_assignment1(self):
         listing = [
             '100 DIMA(10)',
             '110 A(3)=17',
         ]
-        executor= self.runit(listing)
+        executor = self.runit(listing)
         A = executor.get_symbol("A", SymbolType.ARRAY)
         # It looks like "startrek.bas" expects zero based arrays, and superstartrek.bas expects 1
-        self.assertEqual(0, A[0], 0) # Check for initialization
+        self.assertEqual(0, A[0], 0)  # Check for initialization
         self.assertEqual(17, A[3-ARRAY_OFFSET])   # Verify assignment.
 
     def test_array_assignment2(self):
@@ -359,9 +360,9 @@ class Test(TestCase):
             '105 I5=2*3',
             '110 A(I5)=I5+1',
         ]
-        executor= self.runit(listing)
+        executor = self.runit(listing)
         A = executor.get_symbol("A", SymbolType.ARRAY)
-        self.assertEqual(0, A[0], 0) # Check for initialization
+        self.assertEqual(0, A[0], 0)  # Check for initialization
         self.assertEqual(7, A[6-ARRAY_OFFSET])   # Verify assignment
 
     def test_array_assignment3(self):
@@ -373,17 +374,17 @@ class Test(TestCase):
             '210 B(1, 4)=Y*2',
             '220 Z=B(1,4)+3'
         ]
-        executor= self.runit(listing)
+        executor = self.runit(listing)
         A = executor.get_symbol_value("A", SymbolType.ARRAY)
         B = executor.get_symbol_value("B", SymbolType.ARRAY)
         Y = executor.get_symbol_value("Y", SymbolType.VARIABLE)
         Z = executor.get_symbol_value("Z", SymbolType.VARIABLE)
 
-        self.assertEqual(A[0], 0) # Check for initialization
-        self.assertEqual(A[3-ARRAY_OFFSET], 7) # Verify assignment
-        self.assertEqual(Y, 8) # Verify element access
-        self.assertEqual(B[0][3], 16) # Verify element access
-        self.assertEqual(Z, 19) # Verify element access
+        self.assertEqual(A[0], 0)  # Check for initialization
+        self.assertEqual(A[3-ARRAY_OFFSET], 7)  # Verify assignment
+        self.assertEqual(Y, 8)  # Verify element access
+        self.assertEqual(B[0][3], 16)  # Verify element access
+        self.assertEqual(Z, 19)  # Verify element access
 
     def test_array_assignment4(self):
         listing = [
@@ -393,26 +394,26 @@ class Test(TestCase):
             '130 Y=A(1,2,3)+1',
             '140 Z=A(1,2,1)-1',
         ]
-        executor= self.runit(listing)
+        executor = self.runit(listing)
         A = executor.get_symbol("A", SymbolType.ARRAY)
         Y = executor.get_symbol("Y", SymbolType.VARIABLE)
         Z = executor.get_symbol("Z", SymbolType.VARIABLE)
-        self.assertEqual(0, A[0][0][0]) # Check for initialization
-        self.assertEqual(27, A[1-ARRAY_OFFSET][2-ARRAY_OFFSET][3-ARRAY_OFFSET]) # Verify assignment
+        self.assertEqual(0, A[0][0][0])  # Check for initialization
+        self.assertEqual(27, A[1-ARRAY_OFFSET][2-ARRAY_OFFSET][3-ARRAY_OFFSET])  # Verify assignment
         self.assertEqual(6, A[1-ARRAY_OFFSET][2-ARRAY_OFFSET][1-ARRAY_OFFSET])  # Verify array rows aren't all the same.
-        self.assertEqual(28, Y) # Verify element access
-        self.assertEqual(5, Z) # Verify element access
+        self.assertEqual(28, Y)  # Verify element access
+        self.assertEqual(5, Z)  # Verify element access
 
     def test_is_valid_variable(self):
         is_valid_identifier("A")
         is_valid_identifier("B1")
         is_valid_identifier("B1$")
         with self.assertRaises(BasicSyntaxError):
-            executor= is_valid_identifier("LONG")
+            executor = is_valid_identifier("LONG")
         with self.assertRaises(BasicSyntaxError):
-            executor= is_valid_identifier("1A")
+            executor = is_valid_identifier("1A")
         with self.assertRaises(BasicSyntaxError):
-            executor= is_valid_identifier("1$$")
+            executor = is_valid_identifier("1$$")
 
     def test_if(self):
         # 'IFR1>.98THENK3=3:K9=K9+3:GOTO980'
@@ -423,8 +424,8 @@ class Test(TestCase):
             '120 IFR1>.98THENK3=12',
             '130 IFR1<.98THENK4=15',
         ]
-        executor= self.runit(listing)
-        self.assert_value(executor,"K3", 12)
+        executor = self.runit(listing)
+        self.assert_value(executor, "K3", 12)
         self.assertFalse(executor.is_symbol_defined("K4"))
 
     def test_if2(self):
@@ -437,9 +438,8 @@ class Test(TestCase):
             '110 K3=-1',
             '120 IFR1>.98THENK3=12',
         ]
-        executor= self.runit(listing)
-        self.assert_value(executor,"K3", 12)
-
+        executor = self.runit(listing)
+        self.assert_value(executor, "K3", 12)
 
     def test_if_not(self):
         # Test if condition is false in IF THEN
@@ -447,7 +447,7 @@ class Test(TestCase):
             '100 A=1.0:B=2:C=3:D=4',
             '120 IFA<.98THENB=12'
         ]
-        executor= self.runit(listing)
+        executor = self.runit(listing)
         self.assert_value(executor, "B", 2)
 
     def test_if_nested(self):
@@ -457,21 +457,21 @@ class Test(TestCase):
             '120 IFA>.98THENB=12:IF B>1THENE=17',
             '130 IFA>.98THENB=12:IF B<1THENF=5555'
         ]
-        executor= self.runit(listing)
-        self.assert_values(executor, {"B":12, "E":17, "F":-1})
+        executor = self.runit(listing)
+        self.assert_values(executor, {"B": 12, "E": 17, "F": -1})
 
     def test_if_se(self):
         listing = [
             '100 IF I > 0'
         ]
-        executor= self.runit_se(listing)
+        self.runit_se(listing)
 
     def test_order_se(self):
         listing = [
             '100 REM ',
             '100 REM'
         ]
-        executor= self.runit_se(listing)
+        self.runit_se(listing)
 
     def test_not_equals(self):
         listing = [
@@ -485,10 +485,10 @@ class Test(TestCase):
     def test_and(self):
         listing = [
             '100 X=10:Y=3',
-            '110 IFX>YANDY>0THENA=9', # True, True => True
-            '120 IFX>YANDY<0THENB=10', # True, False => False
-            '130 IFX<YANDY>0THENC=11', # False, True => False
-            '140 IFX<YANDY<0THEND=12', # False, False => False
+            '110 IFX>YANDY>0THENA=9',  # True, True => True
+            '120 IFX>YANDY<0THENB=10',  # True, False => False
+            '130 IFX<YANDY>0THENC=11',  # False, True => False
+            '140 IFX<YANDY<0THEND=12',  # False, False => False
         ]
         executor = self.runit(listing)
         self.assert_value(executor, "X", 10)
@@ -501,10 +501,10 @@ class Test(TestCase):
     def test_or(self):
         listing = [
             '100 X=10:Y=3',
-            '110 IFX>YORY>0THENA=9', # True, True => True
-            '120 IFX>YORY<0THENB=10', # True, False => True
-            '130 IFX<YORY>0THENC=11', # False, True => True
-            '140 IFX<YORY<0THEND=12', # False, False => False
+            '110 IFX>YORY>0THENA=9',  # True, True => True
+            '120 IFX>YORY<0THENB=10',  # True, False => True
+            '130 IFX<YORY>0THENC=11',  # False, True => True
+            '140 IFX<YORY<0THEND=12',  # False, False => False
         ]
         executor = self.runit(listing)
         self.assert_value(executor, "X", 10)
@@ -522,7 +522,7 @@ class Test(TestCase):
     #   STEP other than 1
     # TODO
     # O. Need some way to tell if this is the first time I've started the for, or if we are comnig back from the next!
-         # Could split it into two statements: I=1:FOR TO 10 STEP 1 and have the next to the modified FOR stmt.
+        # Could split it into two statements: I=1:FOR TO 10 STEP 1 and have the next to the modified FOR stmt.
     # 1. add a for / next stack to executor
     # 2. add a for method to start a for to the executor
     # 3. add a next method to the exector
@@ -552,7 +552,7 @@ class Test(TestCase):
             '120 NEXTJ:NEXTI',
         ]
         executor = self.runit(listing)
-        self.assert_value(executor, "I", 11) # I think this is not visible in basic, but probably depends on dialect
+        self.assert_value(executor, "I", 11)  # I think this is not visible in basic, but probably depends on dialect
         self.assert_value(executor, "J", 11)
         self.assert_value(executor, "K", 200)
 
@@ -659,7 +659,7 @@ class Test(TestCase):
             '1000 A=3',
             '1010 CLEAR 1000',
         ]
-        executor= self.runit(listing)
+        executor = self.runit(listing)
         self.assertEqual(0, executor.get_symbol_count())
         self.assertFalse(executor.is_symbol_defined("A"))
 
@@ -678,7 +678,7 @@ class Test(TestCase):
     def test_array_access_error(self):
         listing = [
             '1000 DIMA(2)',
-            '1030 D=A(1,2)', # Too many dimensions
+            '1030 D=A(1,2)',  # Too many dimensions
         ]
         self.runit_se(listing)
 
@@ -763,7 +763,7 @@ class Test(TestCase):
         ]
         executor = self.runit(listing)
         C = executor.get_symbol("C", SymbolType.ARRAY)
-        self.assertEqual([3,10], C[2])
+        self.assertEqual([3, 10], C[2])
 
     def test_example_2(self):
         listing = [
@@ -821,7 +821,6 @@ class Test(TestCase):
     #     executor = self.runit(listing)
     #     self.assert_value(executor, "A", -9999)
 
-
     def test_run_status(self):
         executor = self.runit(['1000 A=3'])
         self.assertEqual(RunStatus.END_OF_PROGRAM, executor._run)
@@ -831,7 +830,7 @@ class Test(TestCase):
         executor = self.runit(['1000 A=3:A=4:IFA=3THENGOTO1000'])
         self.assertEqual(RunStatus.END_OF_PROGRAM, executor._run)
         # Syntax Error
-        executor = self.runit_se(['1000 A='])
+        self.runit_se(['1000 A='])
 
     def test_run_status2(self):
         program = tokenize(['1000 A=3:ERROR'])
@@ -851,7 +850,7 @@ class Test(TestCase):
         executor = self.runit(listing)
         self.assert_value(executor, "X", 0)
         A = executor.get_symbol("A", SymbolType.ARRAY)
-        self.assertTrue(A[1]==17)
+        self.assertTrue(A[1] == 17)
 
     def test_array_names(self):
         # Test to see that array names don't conflict with scalar variable names.
@@ -862,6 +861,6 @@ class Test(TestCase):
         executor = self.runit(listing)
         self.assert_value(executor, "S", -17)
         S = executor.get_symbol("S", SymbolType.ARRAY)
-        for i in range(0,8):
+        for i in range(0, 8):
             self.assertTrue(S[i]==(i+1)*(i+1))
 
