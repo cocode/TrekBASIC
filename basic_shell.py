@@ -17,7 +17,7 @@ import traceback
 
 from basic_types import UndefinedSymbol, BasicSyntaxError, SymbolType, ProgramLine
 
-from basic_interpreter import Executor, ControlLocation
+from basic_interpreter import Executor
 from basic_loading import load_program, tokenize
 from basic_statements import eval_expression
 from basic_types import RunStatus
