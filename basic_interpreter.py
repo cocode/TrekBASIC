@@ -82,7 +82,7 @@ class Executor:
 
         random.seed(1)
 
-    def run_program(self, breaklist:list[tuple]=[], data_breakpoints:list[str]=[], single_step=False):
+    def run_program(self, breaklist:list[tuple]=None, data_breakpoints:list[str]=None, single_step=False):
         """
         Run the program. This can also be called to resume after a breakpoint.
 
@@ -98,6 +98,10 @@ class Executor:
         :param single_step: If True, run one statement (not line) and then return
         :return: A value from RunStatus
         """
+        if breaklist is None:
+            breaklist: list[tuple] = []
+        if data_breakpoints is None:
+            data_breakpoints:list[str] = []
         self._run = RunStatus.RUN
         self._data_breakpoints = data_breakpoints
 
