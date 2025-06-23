@@ -21,6 +21,7 @@ from basic_interpreter import Executor
 from basic_loading import load_program, tokenize
 from basic_statements import eval_expression
 from basic_types import RunStatus
+from llvm.codegen import generate_llvm_ir
 
 
 def print_coverage_report(coverage, program, lines):
@@ -430,7 +431,25 @@ class BasicShell:
         self.load_program(new_program)
         print(F"Renumbered {len(old_program)} lines, and {st_count} statements to {len(new_program)} lines")
 
+    def cmd_llvm(self, args):
+        """
+        Generate LLVM IR for the loaded program.
+        :param args: Optional filename to save the IR to.
+        :return:
+        """
+        if not self.executor or not self.executor._program:
+            print("No program loaded.")
+            return
 
+        ir_code = generate_llvm_ir(self.executor._program)
+
+        if args:
+            filename = args.strip()
+            with open(filename, "w") as f:
+                f.write(ir_code)
+            print(f"LLVM IR saved to {filename}")
+        else:
+            print(ir_code)
 
     def cmd_break(self, args):
         """
@@ -517,6 +536,8 @@ class BasicShell:
                 "\n\t\tSaves the current program to a new file."),
         "?": (cmd_print, "Usage: ? expression\n\t\tEvaluates and prints an expression."
               "\n\t\tNote: You can't print single array variables. Use 'sym'"),
+        "llvm": (cmd_llvm, "llvm [file]: generate LLVM IR and print to console or save to file"),
+
     }
 
     def find_command(self, prefix):
