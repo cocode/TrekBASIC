@@ -243,6 +243,10 @@ def stmt_end(executor, stmt):
     print("Ending program")
     executor._run = RunStatus.END_CMD
 
+def stmt_stop(executor, stmt):
+    print("Ending program")
+    executor._run = RunStatus.END_STOP
+
 
 def stmt_def(executor, stmt:ParsedStatementDef):
     """

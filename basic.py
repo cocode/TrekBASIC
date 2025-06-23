@@ -57,5 +57,8 @@ if __name__ == "__main__":
     if args.symbols:
         pprint.pprint(executor._symbols.dump())
 
-    status_code = 0 if rc in [RunStatus.END_OF_PROGRAM, RunStatus.END_CMD] else 1
-    sys.exit(status_code)
+    if rc in [RunStatus.END_OF_PROGRAM, RunStatus.END_CMD]:
+        sys.exit(0)
+    if rc == RunStatus.END_STOP:
+        sys.exit(1)
+    sys.exit(2)
