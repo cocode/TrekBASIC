@@ -587,9 +587,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run BASIC programs.')
     parser.add_argument('program', nargs='?', help="The name of the basic file to run. Will add '.bas' of not found.")
     args = parser.parse_args()
-    if len(sys.argv) > 1:
-        print(F"Usage: python3 basic_shell.py name_of_program.bas")
-        sys.exit(1)
     cmd = None
     debugger = BasicShell(args.program)
     debugger.do_command()
