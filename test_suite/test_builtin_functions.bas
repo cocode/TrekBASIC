@@ -1,0 +1,22 @@
+10 REM Test built-in functions
+20 A=ABS(-5)
+30 B=COS(0)
+40 C=EXP(1)
+50 D=LOG(2.718)
+60 E=SIN(0)
+70 F=SQR(16)
+80 G=ASC("A")
+90 H$=CHR$(65)
+100 I$=SPACE$(3)
+110 J$=STR$(42)
+120 PRINT "ABS(-5) ="; A
+130 PRINT "COS(0) ="; B
+140 PRINT "EXP(1) ="; C
+150 PRINT "LOG(2.718) ="; D
+160 PRINT "SIN(0) ="; E
+170 PRINT "SQR(16) ="; F
+180 PRINT "ASC('A') ="; G
+190 PRINT "CHR$(65) ="; H$
+200 PRINT "SPACE$(3) ="; I$; "END"
+210 PRINT "STR$(42) ="; J$
+220 END 

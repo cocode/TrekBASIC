@@ -1,0 +1,11 @@
+10 REM Test user-defined functions
+20 DEF FNA(X)=X*X
+30 DEF FNB(X)=2*X+1
+40 DEF FNC(X)=FNA(X)+FNB(X)
+50 A=FNA(5)
+60 B=FNB(3)
+70 C=FNC(2)
+80 PRINT "FNA(5) ="; A
+90 PRINT "FNB(3) ="; B
+100 PRINT "FNC(2) ="; C
+110 END 
