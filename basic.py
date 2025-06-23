@@ -8,7 +8,7 @@ import traceback
 
 from basic_interpreter import Executor
 from basic_loading import load_program
-from basic_types import BasicSyntaxError
+from basic_types import BasicSyntaxError, RunStatus
 from llvm.codegen import generate_llvm_ir
 
 if __name__ == "__main__":
@@ -45,7 +45,6 @@ if __name__ == "__main__":
         print(f"LLVM IR saved to {filename}")
         sys.exit(0)
 
-
     if args.trace:
         with open("tracefile.txt", "w") as f:
             executor = Executor(program, trace_file=f)
@@ -57,3 +56,6 @@ if __name__ == "__main__":
 
     if args.symbols:
         pprint.pprint(executor._symbols.dump())
+
+    status_code = 0 if rc in [RunStatus.END_OF_PROGRAM, RunStatus.END_CMD] else 1
+    sys.exit(status_code)
