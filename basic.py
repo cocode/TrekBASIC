@@ -4,6 +4,7 @@ Main program for running a basic program from the command line.
 import sys
 import argparse
 import pprint
+import traceback
 
 from basic_interpreter import Executor
 from basic_loading import load_program
@@ -27,10 +28,11 @@ if __name__ == "__main__":
     try:
         program = load_program(args.program)
     except BasicSyntaxError as bse:
-        print(F"Sxyntax Error in line {bse.line_number}: {bse.message}")
+        print(F"Syntax Error {bse.message} in line {bse.line_number}")
+        # traceback.print_exc()
         sys.exit(1)
     except FileNotFoundError as f:
-        print(F"File not found in line {f.line_number}: {f.message}")
+        print(F"File not found {f}")
         sys.exit(1)
 
 
