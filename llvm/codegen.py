@@ -25,6 +25,8 @@ class LLVMCodeGenerator:
         self.symbol_table = {}
         self.line_blocks = {}
         self.loop_stack = []  # Track nested FOR loops
+        self.if_condition = None  # Track current IF condition
+        self.return_stack = []  # Track GOSUB return addresses
 
     def generate_ir(self):
         main_func_type = ir.FunctionType(ir.IntType(32), [])
@@ -50,6 +52,7 @@ class LLVMCodeGenerator:
         # Generate code for each line
         for i, line in enumerate(self.program):
             self.builder.position_at_end(self.line_blocks[line.line])
+            self.if_condition = None  # Reset IF condition for each line
             
             for stmt in line.stmts:
                 self._generate_statement_ir(stmt)
@@ -89,8 +92,12 @@ class LLVMCodeGenerator:
              self._codegen_for(stmt)
         elif isinstance(stmt, ParsedStatementNext):
              self._codegen_next(stmt)
+        elif isinstance(stmt, ParsedStatementIf):
+             self._codegen_if(stmt)
         elif stmt.keyword.name == "END":
              self.builder.ret(ir.Constant(ir.IntType(32), 0))
+        elif stmt.keyword.name == "RETURN":
+             self._codegen_return(stmt)
         # Add other statements here
         else:
             print(f"Warning: Codegen for statement '{type(stmt).__name__}' not implemented.")
@@ -180,12 +187,16 @@ class LLVMCodeGenerator:
         # Position builder at after block for any code that follows
         self.builder.position_at_end(loop_context['after_block'])
 
-    def _codegen_goto(self, stmt):
-        target_line = int(stmt.destination)
-        if target_line in self.line_blocks:
-            self.builder.branch(self.line_blocks[target_line])
-        else:
-            raise Exception(f"GOTO target line not found: {target_line}")
+    def _codegen_return(self, stmt):
+        """Generate LLVM IR for a RETURN statement"""
+        if not self.return_stack:
+            raise Exception("RETURN without corresponding GOSUB")
+        
+        # Pop the return address from the stack
+        return_address = self.return_stack.pop()
+        
+        # Branch back to the return address
+        self.builder.branch(return_address)
 
     def _codegen_let(self, stmt):
         var_name = stmt._variable
@@ -197,10 +208,56 @@ class LLVMCodeGenerator:
             self.symbol_table[var_name] = var_ptr
         
         value = self._codegen_expr(stmt._tokens)
-        self.builder.store(value, var_ptr)
+        
+        # If we're in an IF context, make this a conditional assignment
+        if self.if_condition is not None:
+            # Create blocks for then and after
+            func = self.builder.block.function
+            then_block = func.append_basic_block(name=f"if_then_{self.builder.block.name}")
+            after_block = func.append_basic_block(name=f"if_after_{self.builder.block.name}")
+            
+            # Branch based on condition
+            self.builder.cbranch(self.if_condition, then_block, after_block)
+            
+            # THEN block: do the assignment
+            self.builder.position_at_end(then_block)
+            self.builder.store(value, var_ptr)
+            self.builder.branch(after_block)
+            
+            # AFTER block: continue normally
+            self.builder.position_at_end(after_block)
+            self.if_condition = None  # Clear the condition
+        else:
+            # Normal assignment
+            self.builder.store(value, var_ptr)
 
     def _codegen_print(self, stmt: ParsedStatementPrint):
         lexer = get_lexer()
+        
+        # If we're in an IF context, make this a conditional print
+        if self.if_condition is not None:
+            # Create blocks for then and after
+            func = self.builder.block.function
+            then_block = func.append_basic_block(name=f"if_then_{self.builder.block.name}")
+            after_block = func.append_basic_block(name=f"if_after_{self.builder.block.name}")
+            
+            # Branch based on condition
+            self.builder.cbranch(self.if_condition, then_block, after_block)
+            
+            # THEN block: do the printing
+            self.builder.position_at_end(then_block)
+            self._do_print(stmt, lexer)
+            self.builder.branch(after_block)
+            
+            # AFTER block: continue normally
+            self.builder.position_at_end(after_block)
+            self.if_condition = None  # Clear the condition
+        else:
+            # Normal print
+            self._do_print(stmt, lexer)
+
+    def _do_print(self, stmt, lexer):
+        """Helper method to do the actual printing"""
         for output in stmt._outputs:
             if output.startswith('"') and output.endswith('"'):
                 # String literal
@@ -248,6 +305,30 @@ class LLVMCodeGenerator:
             result = self.builder.fmul(left, right, name="multmp")
         elif op.token == '/':
             result = self.builder.fdiv(left, right, name="divtmp")
+        elif op.token == '=':
+            # Equal comparison
+            cmp_result = self.builder.fcmp_ordered("==", left, right, name="cmptmp")
+            result = self.builder.uitofp(cmp_result, ir.DoubleType(), name="booltmp")
+        elif op.token == '<>':
+            # Not equal comparison
+            cmp_result = self.builder.fcmp_ordered("!=", left, right, name="cmptmp")
+            result = self.builder.uitofp(cmp_result, ir.DoubleType(), name="booltmp")
+        elif op.token == '<':
+            # Less than comparison
+            cmp_result = self.builder.fcmp_ordered("<", left, right, name="cmptmp")
+            result = self.builder.uitofp(cmp_result, ir.DoubleType(), name="booltmp")
+        elif op.token == '>':
+            # Greater than comparison
+            cmp_result = self.builder.fcmp_ordered(">", left, right, name="cmptmp")
+            result = self.builder.uitofp(cmp_result, ir.DoubleType(), name="booltmp")
+        elif op.token == '<=':
+            # Less than or equal comparison
+            cmp_result = self.builder.fcmp_ordered("<=", left, right, name="cmptmp")
+            result = self.builder.uitofp(cmp_result, ir.DoubleType(), name="booltmp")
+        elif op.token == '>=':
+            # Greater than or equal comparison
+            cmp_result = self.builder.fcmp_ordered(">=", left, right, name="cmptmp")
+            result = self.builder.uitofp(cmp_result, ir.DoubleType(), name="booltmp")
         else:
             raise NotImplementedError(f"Operator {op.token} not implemented")
         
@@ -289,6 +370,73 @@ class LLVMCodeGenerator:
             return data_stack[0]
         else:
             raise Exception("Expression evaluation failed, stack has multiple values.")
+
+    def _codegen_if(self, stmt):
+        """Generate LLVM IR for an IF/THEN statement"""
+        # Evaluate the condition
+        condition_val = self._codegen_expr(stmt._tokens)
+        
+        # Convert to boolean (non-zero is true)
+        zero = ir.Constant(ir.DoubleType(), 0.0)
+        condition = self.builder.fcmp_ordered("!=", condition_val, zero, name="if_condition")
+        
+        # Store the condition for this line
+        self.if_condition = condition
+
+    def _codegen_goto(self, stmt):
+        target_line = int(stmt.destination)
+        if target_line in self.line_blocks:
+            # Check if this is GOSUB or GOTO
+            is_gosub = stmt.keyword.name == "GOSUB"
+            
+            # If we're in an IF context, make this a conditional GOTO/GOSUB
+            if self.if_condition is not None:
+                # Create blocks for then and after
+                func = self.builder.block.function
+                then_block = func.append_basic_block(name=f"if_then_{self.builder.block.name}")
+                after_block = func.append_basic_block(name=f"if_after_{self.builder.block.name}")
+                
+                # Branch based on condition
+                self.builder.cbranch(self.if_condition, then_block, after_block)
+                
+                # THEN block: do the GOTO/GOSUB
+                self.builder.position_at_end(then_block)
+                if is_gosub:
+                    # For GOSUB, push return address and branch
+                    next_line = self.program[self.program.index(self.program[self.program.index(self.program[0]) + 1])].line if self.program.index(self.program[0]) + 1 < len(self.program) else None
+                    if next_line:
+                        return_block = self.line_blocks[next_line]
+                        self.return_stack.append(return_block)
+                    self.builder.branch(self.line_blocks[target_line])
+                else:
+                    # Normal GOTO
+                    self.builder.branch(self.line_blocks[target_line])
+                
+                # AFTER block: continue normally
+                self.builder.position_at_end(after_block)
+                self.if_condition = None  # Clear the condition
+            else:
+                # Normal unconditional GOTO/GOSUB
+                if is_gosub:
+                    # For GOSUB, push return address and branch
+                    # Find the next line to return to
+                    current_line_index = None
+                    for i, line in enumerate(self.program):
+                        if line.line == self.builder.block.name.split('_')[1]:  # Extract line number from block name
+                            current_line_index = i
+                            break
+                    
+                    if current_line_index is not None and current_line_index + 1 < len(self.program):
+                        next_line = self.program[current_line_index + 1].line
+                        return_block = self.line_blocks[next_line]
+                        self.return_stack.append(return_block)
+                    
+                    self.builder.branch(self.line_blocks[target_line])
+                else:
+                    # Normal GOTO
+                    self.builder.branch(self.line_blocks[target_line])
+        else:
+            raise Exception(f"GOTO/GOSUB target line not found: {target_line}")
 
 
 def generate_llvm_ir(program):
