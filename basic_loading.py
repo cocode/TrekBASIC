@@ -53,7 +53,7 @@ def tokenize_statements(commands_text:list[str]):
 
 def tokenize_line(program_line: str) -> ProgramLine:
     """
-    Converts the line into a partially digested form. tokenizing basic is mildly annoying,
+    Converts the line into a partially digested form. Tokenizing basic is mildly annoying,
     as there may not be a delimiter between the cmd and the args. Example:
 
     FORI=1TO8:FORJ=1TO8:K3=0:Z(I,J)=0:R1=RND(1)
@@ -66,8 +66,11 @@ def tokenize_line(program_line: str) -> ProgramLine:
     """
     if len(program_line) == 0:
         return None
-    number, partial = program_line.split(" ", 1)
-    assert_syntax(str.isdigit(number), F"Line number is not in correct format: {number}")
+    try:
+        number, partial = program_line.split(" ", 1)
+    except ValueError as v:
+        raise BasicSyntaxError("Syntax Error in: " + program_line) from v
+    assert_syntax(str.isdigit(number), F"Invalid line number : {number} in {program_line}")
     number = int(number)
 
     # Rem commands don't split on colons, other lines do.
@@ -86,9 +89,12 @@ def tokenize_line(program_line: str) -> ProgramLine:
 
 def tokenize(program_lines:list[str]) -> list[ProgramLine]:
     tokenized_lines = []
-    last_line = None
-    for line in program_lines:
-        tokenized_line = tokenize_line(line)
+    last_line: str = None
+    for line_number, line in enumerate(program_lines):
+        try:
+            tokenized_line = tokenize_line(line)
+        except BasicSyntaxError as v:
+            raise BasicSyntaxError(v.message, line_number+1) from v
         if tokenized_line is None:
             continue    # Ignore blank lines.
         if last_line is not None:

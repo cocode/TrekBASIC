@@ -28,7 +28,7 @@ if __name__ == "__main__":
     try:
         program = load_program(args.program)
     except BasicSyntaxError as bse:
-        print(F"Syntax Error {bse.message} in line {bse.line_number}")
+        print(F"{bse.message} in line {bse.line_number} of file.")
         # traceback.print_exc()
         sys.exit(1)
     except FileNotFoundError as f:
