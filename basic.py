@@ -7,6 +7,7 @@ import pprint
 
 from basic_interpreter import Executor
 from basic_loading import load_program
+from basic_types import BasicSyntaxError
 from llvm.codegen import generate_llvm_ir
 
 if __name__ == "__main__":
@@ -23,7 +24,15 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    program = load_program(args.program)
+    try:
+        program = load_program(args.program)
+    except BasicSyntaxError as bse:
+        print(F"Sxyntax Error in line {bse.line_number}: {bse.message}")
+        sys.exit(1)
+    except FileNotFoundError as f:
+        print(F"File not found in line {f.line_number}: {f.message}")
+        sys.exit(1)
+
 
     if args.llvm:
         executor = Executor(program)

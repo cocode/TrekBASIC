@@ -99,18 +99,7 @@ class BasicShell:
             return
 
         print("Loading ", self._program_file)
-        # TODO Clean up handling load failures. This is a quick hack.
-        try:
-            program = load_program(self._program_file)
-        except FileNotFoundError as e:
-            print(F"File {self._program_file} not found.")
-            return
-        except BasicSyntaxError:
-            return
-        except Exception as e:
-            print(e)
-            traceback.print_exc()
-            return
+        program = load_program(self._program_file)
         executor = Executor(program, coverage=coverage)
         self.executor = executor
         self.load_status = True
@@ -129,7 +118,12 @@ class BasicShell:
     def cmd_load(self, args):
         if args is not None:
             self._program_file = args
-        self.load_from_file()
+        try:
+            self.load_from_file()
+        except BasicSyntaxError as bse:
+            print(F"Syntax Error in line {bse.line_number}: {bse.message}")
+        except FileNotFoundError as f:
+            print(F"File not found in line {f.line_number}: {f.message}")
 
     def cmd_koverage(self, args):
         """

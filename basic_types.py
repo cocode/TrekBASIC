@@ -27,9 +27,13 @@ ste = namedtuple("Symbol", "value type arg")
 
 
 class BasicSyntaxError(Exception):
-    def __init__(self, message):
+    def __init__(self, message, line_number: int = -1):
+        """
+        There are two numbers,
+        """
         super(BasicSyntaxError, self).__init__(message)
-        self.message = message
+        self.line_number = line_number
+        self.message = message # do I need this, the parent has a message.
 
 class UndefinedSymbol(BasicSyntaxError):
     def __init__(self, message):

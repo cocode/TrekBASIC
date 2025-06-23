@@ -78,9 +78,8 @@ def tokenize_line(program_line: str) -> ProgramLine:
     try:
         list_of_statements = tokenize_statements(commands_text)
     except BasicSyntaxError as bse:
-        print(F"Syntax Error in line {number}: {bse.message}: {program_line}")
-        print()
-        raise bse
+        # Annotate it with the line number and rethrow
+        raise BasicSyntaxError(bse.message, number)
     s = ProgramLine(number, list_of_statements, -1, source=program_line)
     return s
 
@@ -112,18 +111,16 @@ def tokenize(program_lines:list[str]) -> list[ProgramLine]:
     return finished_lines
 
 
-def load_program(program_filename):
+def load_program(program_filename) -> list[ProgramLine]:
     """
     Loads and preprocesses a BASIC program.
     :param program_filename:  The filename to read the program from.
     :return: A tokenized program.
     """
-    try:
-        with open(program_filename) as f:
-            lines = f.readlines()
-    except FileNotFoundError as f:
-        print(f)
-        return
+
+    with open(program_filename) as f:
+        lines = f.readlines()
+
     lines = [line.strip() for line in lines]
     program = tokenize(lines)
     return program
