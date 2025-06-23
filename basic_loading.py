@@ -14,6 +14,10 @@ def tokenize_statements(commands_text:list[str]):
 
     100 A=3:PRINT"A is equal to";A:X=6
 
+        A=3
+        PRINT"A is equal to";A
+        X=6
+
     :param commands_text:
     :return:
     """
@@ -35,13 +39,14 @@ def tokenize_statements(commands_text:list[str]):
         list_of_statements.append(parsed_statement)
         # This picks up the clauses after then "THEN" in an "IF ... THEN ..."
         additional_text = parsed_statement.get_additional()
-        commands_array = smart_split(additional_text)
-        for i in range(len(commands_array)):
-            # Handle special case of "IF x THEN X=3:100"
-            if commands_array[i].strip().isdigit():
-                commands_array[i] = "GOTO "+commands_array[i]
-        additional = tokenize_statements(commands_array)
-        list_of_statements.extend(additional)
+        if additional_text:
+            commands_array = smart_split(additional_text)
+            for i in range(len(commands_array)):
+                # Handle special case of "IF x THEN X=3:100"
+                if commands_array[i].strip().isdigit():
+                    commands_array[i] = "GOTO "+commands_array[i]
+            additional = tokenize_statements(commands_array)
+            list_of_statements.extend(additional)
 
     return list_of_statements
 
