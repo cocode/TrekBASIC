@@ -21,6 +21,19 @@ class LLVMCodeGenerator:
         printf_type = ir.FunctionType(ir.IntType(32), [ir.IntType(8).as_pointer()], var_arg=True)
         self.printf = ir.Function(self.module, printf_type, name="printf")
 
+        # Declare strcat for string concatenation
+        strcat_type = ir.FunctionType(ir.IntType(8).as_pointer(), 
+                                     [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer()])
+        self.strcat = ir.Function(self.module, strcat_type, name="strcat")
+        
+        # Declare malloc for dynamic memory allocation
+        malloc_type = ir.FunctionType(ir.IntType(8).as_pointer(), [ir.IntType(64)])
+        self.malloc = ir.Function(self.module, malloc_type, name="malloc")
+        
+        # Declare strlen for string length
+        strlen_type = ir.FunctionType(ir.IntType(64), [ir.IntType(8).as_pointer()])
+        self.strlen = ir.Function(self.module, strlen_type, name="strlen")
+        
         self.builder = None
         self.symbol_table = {}
         self.array_info = {}  # Track array dimensions and storage
@@ -34,6 +47,7 @@ class LLVMCodeGenerator:
         self.return_stack_size = 100  # Maximum depth
         self.return_stack_ptr = None
         self.return_stack_top = None
+        self.newline_counter = 0
 
     def generate_ir(self):
         main_func_type = ir.FunctionType(ir.IntType(32), [])
@@ -415,8 +429,19 @@ class LLVMCodeGenerator:
 
                 # Check if this is a string value (pointer to char)
                 if hasattr(val, 'type') and val.type == ir.IntType(8).as_pointer():
-                    # String value - print directly
+                    # String value - print with newline
                     self.builder.call(self.printf, [val])
+                    # Add newline after string
+                    newline_fmt = "\n\0"
+                    c_newline = ir.Constant(ir.ArrayType(ir.IntType(8), len(newline_fmt)),
+                                            bytearray(newline_fmt.encode("utf8")))
+                    global_newline = ir.GlobalVariable(self.module, c_newline.type, name=f"newline_{self.newline_counter}")
+                    self.newline_counter += 1
+                    global_newline.linkage = 'internal'
+                    global_newline.global_constant = True
+                    global_newline.initializer = c_newline
+                    newline_ptr = self.builder.bitcast(global_newline, ir.IntType(8).as_pointer())
+                    self.builder.call(self.printf, [newline_ptr])
                 else:
                     # Numeric value - print as float
                     fmt = "%f\n\0"
@@ -450,8 +475,8 @@ class LLVMCodeGenerator:
                 str_val = token.token
                 # Process escape sequences
                 str_val = str_val.encode('utf-8').decode('unicode_escape')
-                # Create a global string constant with newline for printing
-                fmt = str_val + "\n\0"
+                # Create a global string constant without newline (newlines added by PRINT)
+                fmt = str_val + "\0"
                 c_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(fmt)),
                                     bytearray(fmt.encode("utf8")))
                 global_fmt = ir.GlobalVariable(self.module, c_fmt.type, name=f"str_{hash(fmt)}")
@@ -533,6 +558,27 @@ class LLVMCodeGenerator:
         else:
             raise Exception("Expression evaluation failed, stack has multiple values.")
 
+    def _concatenate_strings(self, left, right):
+        """Concatenate two strings using strcat"""
+        # Get lengths of both strings
+        left_len = self.builder.call(self.strlen, [left])
+        right_len = self.builder.call(self.strlen, [right])
+        
+        # Allocate memory for result (left_len + right_len + 1 for null terminator)
+        total_len = self.builder.add(left_len, right_len)
+        one = ir.Constant(ir.IntType(64), 1)
+        alloc_size = self.builder.add(total_len, one)
+        
+        result_ptr = self.builder.call(self.malloc, [alloc_size])
+        
+        # Copy first string to result
+        self.builder.call(self.strcat, [result_ptr, left])
+        
+        # Concatenate second string
+        self.builder.call(self.strcat, [result_ptr, right])
+        
+        return result_ptr
+
     def _one_op(self, op_stack, data_stack):
         op = op_stack.pop()
         
@@ -570,9 +616,8 @@ class LLVMCodeGenerator:
                 # In a more sophisticated implementation, we'd need to track types
                 if (isinstance(left, ir.LoadInstr) and left.type == ir.IntType(8).as_pointer()) or \
                    (isinstance(right, ir.LoadInstr) and right.type == ir.IntType(8).as_pointer()):
-                    # String concatenation - for now, just use the first string
-                    # TODO: Implement proper string concatenation with dynamic allocation
-                    result = left
+                    # String concatenation - use strcat
+                    result = self._concatenate_strings(left, right)
                 else:
                     # Numeric addition
                     result = self.builder.fadd(left, right, name="addtmp")
