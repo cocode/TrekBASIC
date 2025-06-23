@@ -19,6 +19,14 @@ See also future.md
    1. Support more built-in functions: LOG10. Can now add more functions easily in basic_functions.py 
    1. Need to support "ELSE" for superstartrek3.bas
    1. Some versions of basic allowed a single quote for REM. Should add this.
+   2. I'm going to note here: on multi-statement lines, with an IF/THEN, if the condition is false, then 
+   we go to the next LINE, not the next statement on the IF / THEN line. 
+      3. 100 I = 0: J = 0: K = 0
+      4. 200 if 1 = 0 then I = 1: J = 2: K = 3
+      5. 300 PRINT K
+   6. will print 3
+   7. obviouslyl, if a=b then 200: k=4
+   8. should never execute the statement k=4
 
 1. TrekBot Improvements
    
