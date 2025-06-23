@@ -39,7 +39,7 @@ class Expression:
 
     def eval(self, tokens:list[lexer_token], *, symbols=None) -> lexer_token:
         """
-        Evalulates an expression, like "2+3*5-A+RND()"
+        Evaluates an expression, like "2+3*5-A+RND()"
         :param symbols: Symbols (BASIC variables) to use when evaluating the expression
         :param tokens: the incoming list[lexer_token]
         :return: A lexer token with the result and the type.
