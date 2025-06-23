@@ -7,18 +7,34 @@ import pprint
 
 from basic_interpreter import Executor
 from basic_loading import load_program
+from llvm.codegen import generate_llvm_ir
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run BASIC programs.')
     parser.add_argument('program', help="The name of the basic file to run. Will add '.bas' of not found.")
     parser.add_argument('--trace', '-t', action='store_true', help="Write  a trace of execution to 'tracefile.txt'.")
     parser.add_argument('--symbols', '-s', action='store_true', help="Dump the symbol table on exit.")
+    parser.add_argument(
+        '-l', '--llvm',
+        metavar='llvm',
+        help='Save the basic program as LLVM IR code. This is the export filename',
+        type=str,
+        required=False
+    )
     args = parser.parse_args()
-    # Makes it to 1320 of superstartrek, and line 20 of startrek.bas
-    if len(sys.argv) < 2:
-        print("Usage: python3 basic_intrpreter.py name_of_program.bas")
-        sys.exit(1)
+
     program = load_program(args.program)
+
+    if args.llvm:
+        executor = Executor(program)
+        filename = args.llvm
+        ir_code = generate_llvm_ir(program)
+        with open(filename, "w") as f:
+            f.write(ir_code)
+        print(f"LLVM IR saved to {filename}")
+        sys.exit(0)
+
+
     if args.trace:
         with open("tracefile.txt", "w") as f:
             executor = Executor(program, trace_file=f)
