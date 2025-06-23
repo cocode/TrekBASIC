@@ -120,9 +120,9 @@ class FuncMonoOp(MonoOp):
 
 
 # TODO Basic allows for multiple arguments to array subscripts
-class ArrayAccessMonoOp(MonoOp):
+class ArrayAccessOp(MonoOp):
     """
-    handles user defined functions.
+    Handles array access.
     """
     def eval1(self, first, *, op):
         array_name = op.arg
@@ -145,6 +145,15 @@ class ArrayAccessMonoOp(MonoOp):
             assert_syntax(int(first) == first, F"Non-integral array subscript {first}'")
             subscript = int(first) - ARRAY_OFFSET
             return variable[subscript] # TODO This will only work for one dimensional arrays, that don't have expressions as subscripts.
+
+    def eval(self, stack, *, op):
+        self.check_args(stack)
+        first = stack.pop()
+        answer = self.eval1(first.token, op=op)
+        
+        # Determine the type from the array name
+        result_type = "str" if op.arg.endswith("$") else "num"
+        return lexer_token(answer, result_type)
 
 
 class BinOp(OP):
@@ -232,7 +241,7 @@ class Operators(Enum):
     OPEN=          OpDef('(',   9, OP())
     FUNC=          OpDef('∫',   8, FuncMonoOp())
     UNARY_MINUS=   OpDef('—',   7, MinusMonoOp()) # M-dash
-    ARRAY_ACCESS=  OpDef('@',   8, ArrayAccessMonoOp())
+    ARRAY_ACCESS=  OpDef('@',   8, ArrayAccessOp())
 
 
 OP_MAP={k.value.text:k for k in Operators}
