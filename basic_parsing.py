@@ -203,10 +203,12 @@ class ParsedStatementOnGoto(ParsedStatement):
 
 class ParsedStatementLet(ParsedStatement):
     """
-    Handles LET statements, whether or not they have an explicit LET
+    Handles LET statements, whether they have an explicit LET or not.
     """
     def __init__(self, keyword, args):
         super().__init__(keyword, "")
+        if "=" not in args:
+            raise BasicSyntaxError(F"Command not recognized. '{args}'")
 
         try:
             variable, value = args.split("=", 1)
