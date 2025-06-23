@@ -749,23 +749,38 @@ class LLVMCodeGenerator:
             # Calculate total size needed
             total_size = 1
             for dim in dimensions:
-                total_size *= (dim + 1)  # +1 because BASIC arrays are 0-based internally
-            
-            # Allocate array storage directly
-            array_type = ir.ArrayType(ir.DoubleType(), total_size)
+                total_size *= (dim + 1)  # +1 because BASIC arrays are 1-based
+
+            # Determine array type based on name
+            is_string_array = name.endswith("$")
+            if is_string_array:
+                element_type = ir.IntType(8).as_pointer()
+                # Initialize with empty strings
+                empty_str_val = "\0"
+                c_empty_str = ir.Constant(ir.ArrayType(ir.IntType(8), len(empty_str_val)), bytearray(empty_str_val.encode("utf8")))
+                global_empty_str = ir.GlobalVariable(self.module, c_empty_str.type, name=f"empty_str_{name}")
+                global_empty_str.linkage = 'internal'
+                global_empty_str.global_constant = True
+                global_empty_str.initializer = c_empty_str
+                default_value = self.builder.bitcast(global_empty_str, element_type)
+            else:
+                element_type = ir.DoubleType()
+                default_value = ir.Constant(element_type, 0.0)
+
+            array_type = ir.ArrayType(element_type, total_size)
             array_storage = self.builder.alloca(array_type, name=f"{name}_storage")
             
-            # Initialize all elements to 0.0
-            zero = ir.Constant(ir.DoubleType(), 0.0)
+            # Initialize all elements
             for i in range(total_size):
                 element_ptr = self.builder.gep(array_storage, [ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), i)])
-                self.builder.store(zero, element_ptr)
+                self.builder.store(default_value, element_ptr)
             
             # Store array info for access
             self.array_info[name] = {
                 'storage': array_storage,
                 'dimensions': dimensions,
-                'total_size': total_size
+                'total_size': total_size,
+                'is_string': is_string_array
             }
             
             # Store the array storage directly in symbol table
