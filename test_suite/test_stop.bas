@@ -1,5 +1,6 @@
-10 REM Test STOP statement
-20 PRINT "Before STOP"
-30 STOP
-40 PRINT "After STOP - should not reach here"
-50 END 
+10 REM EXPECT_EXIT_CODE=1
+20 REM Test STOP statement
+30 PRINT "Before STOP"
+40 STOP
+50 PRINT "After STOP - should not reach here"
+60 END 

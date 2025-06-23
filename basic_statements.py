@@ -244,7 +244,7 @@ def stmt_end(executor, stmt):
     executor._run = RunStatus.END_CMD
 
 def stmt_stop(executor, stmt):
-    print("Ending program")
+    print("Stopping program")
     executor._run = RunStatus.END_STOP
 
 
@@ -306,6 +306,6 @@ class Keywords(Enum):
     PRINT = KB(stmt_print, ParsedStatementPrint)
     REM = KB(stmt_rem, ParsedStatement)
     RETURN = KB(stmt_return, ParsedStatementNoArgs)
-    STOP = KB(stmt_end, ParsedStatementNoArgs) # Variant of END
+    STOP = KB(stmt_stop, ParsedStatementNoArgs) # Variant of END
     WIDTH = KB(stmt_width, ParsedStatement) # To support another version of superstartrek I found. Ignored
 

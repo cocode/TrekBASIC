@@ -2,7 +2,7 @@
 """
 Test runner for BASIC programs in the test_suite directory.
 Finds all .bas files, runs them with the BASIC interpreter,
-and verifies they return a successful exit code (zero).
+and verifies they return the expected exit code.
 """
 
 import os
@@ -15,6 +15,17 @@ def find_basic_programs(test_suite_dir):
     """Find all .bas files in the test_suite directory."""
     pattern = os.path.join(test_suite_dir, "*.bas")
     return glob.glob(pattern)
+
+def get_expected_exit_code(program_path):
+    """Extract expected exit code from REM comment in first line"""
+    try:
+        with open(program_path, 'r') as f:
+            first_line = f.readline().strip()
+            if first_line.startswith('10 REM EXPECT_EXIT_CODE='):
+                return int(first_line.split('=')[1])
+    except:
+        pass
+    return 0  # Default to success
 
 def run_basic_program(program_path):
     """Run a BASIC program and return the exit code."""
@@ -55,16 +66,17 @@ def main():
     # Run each program
     for program_path in sorted(basic_programs):
         program_name = os.path.basename(program_path)
+        expected_exit = get_expected_exit_code(program_path)
         print(f"Testing {program_name}...", end=" ")
         
         exit_code, stdout, stderr = run_basic_program(program_path)
         
-        if exit_code == 0:
+        if exit_code == expected_exit:
             print("PASS")
             passed += 1
         else:
             print("FAIL")
-            print(f"  Exit code: {exit_code}")
+            print(f"  Expected exit code: {expected_exit}, got: {exit_code}")
             if stdout:
                 print(f"  Stdout: {stdout.strip()}")
             if stderr:

@@ -66,10 +66,10 @@ class SymbolType(Enum):
 
 # Records the ending status of the program.
 class RunStatus(Enum):
-    RUN=auto()          # Running normally
-    END_CMD=auto()          # Hit and END statement
-    END_STOP=auto()         # Hit a STOP statement
-    END_OF_PROGRAM=auto()   # Fell of the end
+    RUN=auto()                  # Running normally
+    END_CMD=auto()              # Hit and END statement. Returns status 0 (success)
+    END_STOP=auto()             # Hit a STOP statement. Returns status 1 (failed)
+    END_OF_PROGRAM=auto()       # Fell of the end of the program. Returns status 0 (success)
     END_ERROR_SYNTAX=auto()
     END_ERROR_INTERNAL=auto()
     BREAK_CODE=auto()
