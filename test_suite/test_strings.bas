@@ -1,0 +1,8 @@
+100 LET A$ = "Hello"
+110 LET B$ = "World"
+120 PRINT A$
+130 PRINT B$
+140 PRINT A$ + B$
+150 LET C$ = A$ + " " + B$
+160 PRINT C$
+170 END 
