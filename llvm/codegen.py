@@ -205,8 +205,10 @@ class LLVMCodeGenerator:
             if output.startswith('"') and output.endswith('"'):
                 # String literal
                 str_val = output[1:-1]
+                # Process escape sequences
+                str_val = str_val.encode('utf-8').decode('unicode_escape')
                 # Create a global string constant
-                fmt = str_val + "\\n\\0"
+                fmt = str_val + "\n\0"
                 c_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(fmt)),
                                     bytearray(fmt.encode("utf8")))
                 global_fmt = ir.GlobalVariable(self.module, c_fmt.type, name=f"fmt_{hash(fmt)}")
@@ -221,7 +223,7 @@ class LLVMCodeGenerator:
                 val = self._codegen_expr(tokens)
 
                 # Print float
-                fmt = "%f\\n\\0"
+                fmt = "%f\n\0"
                 c_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(fmt)),
                                     bytearray(fmt.encode("utf8")))
                 global_fmt = ir.GlobalVariable(self.module, c_fmt.type, name="fmt_float")
