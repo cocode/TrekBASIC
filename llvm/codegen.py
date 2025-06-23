@@ -95,21 +95,44 @@ class LLVMCodeGenerator:
 
     def _allocate_variables(self):
         var_names = set()
+        string_var_names = set()
         array_names = set()
         
         for line in self.program:
             for stmt in line.stmts:
                 if isinstance(stmt, ParsedStatementLet):
-                    var_names.add(stmt._variable)
+                    var_name = stmt._variable
+                    if var_name.endswith('$'):
+                        string_var_names.add(var_name)
+                    else:
+                        var_names.add(var_name)
                 elif isinstance(stmt, ParsedStatementFor):
                     var_names.add(stmt._index_clause)
                 elif isinstance(stmt, ParsedStatementDim):
                     for name, dimensions in stmt._dimensions:
                         array_names.add(name)
         
-        # Allocate regular variables
+        # Allocate regular variables (numeric)
         for var_name in var_names:
             var_ptr = self.builder.alloca(ir.DoubleType(), name=var_name)
+            self.symbol_table[var_name] = var_ptr
+        
+        # Allocate string variables (pointers to strings)
+        for var_name in string_var_names:
+            # Initialize with empty string
+            empty_str = "\0"
+            c_empty = ir.Constant(ir.ArrayType(ir.IntType(8), len(empty_str)),
+                                  bytearray(empty_str.encode("utf8")))
+            global_empty = ir.GlobalVariable(self.module, c_empty.type, name=f"empty_{var_name}")
+            global_empty.linkage = 'internal'
+            global_empty.global_constant = True
+            global_empty.initializer = c_empty
+            
+            # Allocate pointer to store string address
+            var_ptr = self.builder.alloca(ir.IntType(8).as_pointer(), name=var_name)
+            # Initialize with empty string
+            empty_ptr = self.builder.bitcast(global_empty, ir.IntType(8).as_pointer())
+            self.builder.store(empty_ptr, var_ptr)
             self.symbol_table[var_name] = var_ptr
         
         # Arrays will be allocated in DIM statements, not here
@@ -298,8 +321,25 @@ class LLVMCodeGenerator:
             # Regular variable assignment
             var_ptr = self.symbol_table.get(var_name)
             if not var_ptr:
-                var_ptr = self.builder.alloca(ir.DoubleType(), name=var_name)
-                self.symbol_table[var_name] = var_ptr
+                # Variable not pre-allocated, allocate it now
+                if var_name.endswith('$'):
+                    # String variable
+                    empty_str = "\0"
+                    c_empty = ir.Constant(ir.ArrayType(ir.IntType(8), len(empty_str)),
+                                          bytearray(empty_str.encode("utf8")))
+                    global_empty = ir.GlobalVariable(self.module, c_empty.type, name=f"empty_{var_name}")
+                    global_empty.linkage = 'internal'
+                    global_empty.global_constant = True
+                    global_empty.initializer = c_empty
+                    
+                    var_ptr = self.builder.alloca(ir.IntType(8).as_pointer(), name=var_name)
+                    empty_ptr = self.builder.bitcast(global_empty, ir.IntType(8).as_pointer())
+                    self.builder.store(empty_ptr, var_ptr)
+                    self.symbol_table[var_name] = var_ptr
+                else:
+                    # Numeric variable
+                    var_ptr = self.builder.alloca(ir.DoubleType(), name=var_name)
+                    self.symbol_table[var_name] = var_ptr
             
             value = self._codegen_expr(stmt._tokens)
             
@@ -358,11 +398,11 @@ class LLVMCodeGenerator:
                 str_val = output[1:-1]
                 # Process escape sequences
                 str_val = str_val.encode('utf-8').decode('unicode_escape')
-                # Create a global string constant
+                # Create a global string constant with newline for printing
                 fmt = str_val + "\n\0"
                 c_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(fmt)),
                                     bytearray(fmt.encode("utf8")))
-                global_fmt = ir.GlobalVariable(self.module, c_fmt.type, name=f"fmt_{hash(fmt)}")
+                global_fmt = ir.GlobalVariable(self.module, c_fmt.type, name=f"str_{hash(fmt)}")
                 global_fmt.linkage = 'internal'
                 global_fmt.global_constant = True
                 global_fmt.initializer = c_fmt
@@ -373,17 +413,22 @@ class LLVMCodeGenerator:
                 tokens = lexer.lex(output)
                 val = self._codegen_expr(tokens)
 
-                # Print float
-                fmt = "%f\n\0"
-                c_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(fmt)),
-                                    bytearray(fmt.encode("utf8")))
-                global_fmt = ir.GlobalVariable(self.module, c_fmt.type, name="fmt_float")
-                global_fmt.linkage = 'internal'
-                global_fmt.global_constant = True
-                global_fmt.initializer = c_fmt
-                fmt_ptr = self.builder.bitcast(global_fmt, ir.IntType(8).as_pointer())
+                # Check if this is a string value (pointer to char)
+                if hasattr(val, 'type') and val.type == ir.IntType(8).as_pointer():
+                    # String value - print directly
+                    self.builder.call(self.printf, [val])
+                else:
+                    # Numeric value - print as float
+                    fmt = "%f\n\0"
+                    c_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(fmt)),
+                                        bytearray(fmt.encode("utf8")))
+                    global_fmt = ir.GlobalVariable(self.module, c_fmt.type, name="fmt_float")
+                    global_fmt.linkage = 'internal'
+                    global_fmt.global_constant = True
+                    global_fmt.initializer = c_fmt
+                    fmt_ptr = self.builder.bitcast(global_fmt, ir.IntType(8).as_pointer())
 
-                self.builder.call(self.printf, [fmt_ptr, val])
+                    self.builder.call(self.printf, [fmt_ptr, val])
 
     def _codegen_expr(self, tokens):
         data_stack = []
@@ -399,6 +444,22 @@ class LLVMCodeGenerator:
             
             if token.type == 'num':
                 data_stack.append(ir.Constant(ir.DoubleType(), float(token.token)))
+                is_unary_context = False
+            elif token.type == 'str':
+                # String literal - create a global string constant
+                str_val = token.token
+                # Process escape sequences
+                str_val = str_val.encode('utf-8').decode('unicode_escape')
+                # Create a global string constant with newline for printing
+                fmt = str_val + "\n\0"
+                c_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(fmt)),
+                                    bytearray(fmt.encode("utf8")))
+                global_fmt = ir.GlobalVariable(self.module, c_fmt.type, name=f"str_{hash(fmt)}")
+                global_fmt.linkage = 'internal'
+                global_fmt.global_constant = True
+                global_fmt.initializer = c_fmt
+                fmt_ptr = self.builder.bitcast(global_fmt, ir.IntType(8).as_pointer())
+                data_stack.append(fmt_ptr)
                 is_unary_context = False
             elif token.type == 'id':
                 # Check if this is followed by array access
@@ -437,7 +498,12 @@ class LLVMCodeGenerator:
                         data_stack.append(array_storage)
                     else:
                         # Regular variable
-                        data_stack.append(self.builder.load(self.symbol_table[token.token], name=f"load_{token.token}"))
+                        if token.token.endswith('$'):
+                            # String variable - load the string pointer
+                            data_stack.append(self.builder.load(self.symbol_table[token.token], name=f"load_{token.token}"))
+                        else:
+                            # Numeric variable
+                            data_stack.append(self.builder.load(self.symbol_table[token.token], name=f"load_{token.token}"))
                 is_unary_context = False
             elif token.type == 'op':
                 current_op_token = token
@@ -499,7 +565,17 @@ class LLVMCodeGenerator:
             left = data_stack.pop()
 
             if op.token == '+':
-                result = self.builder.fadd(left, right, name="addtmp")
+                # Check if this is string concatenation
+                # For now, we'll assume if either operand is a string pointer, it's string concatenation
+                # In a more sophisticated implementation, we'd need to track types
+                if (isinstance(left, ir.LoadInstr) and left.type == ir.IntType(8).as_pointer()) or \
+                   (isinstance(right, ir.LoadInstr) and right.type == ir.IntType(8).as_pointer()):
+                    # String concatenation - for now, just use the first string
+                    # TODO: Implement proper string concatenation with dynamic allocation
+                    result = left
+                else:
+                    # Numeric addition
+                    result = self.builder.fadd(left, right, name="addtmp")
             elif op.token == '-':
                 result = self.builder.fsub(left, right, name="subtmp")
             elif op.token == '*':
