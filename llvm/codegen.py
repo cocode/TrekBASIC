@@ -34,6 +34,33 @@ class LLVMCodeGenerator:
         strlen_type = ir.FunctionType(ir.IntType(64), [ir.IntType(8).as_pointer()])
         self.strlen = ir.Function(self.module, strlen_type, name="strlen")
         
+        # Declare math functions
+        sin_type = ir.FunctionType(ir.DoubleType(), [ir.DoubleType()])
+        self.sin = ir.Function(self.module, sin_type, name="sin")
+        
+        cos_type = ir.FunctionType(ir.DoubleType(), [ir.DoubleType()])
+        self.cos = ir.Function(self.module, cos_type, name="cos")
+        
+        sqrt_type = ir.FunctionType(ir.DoubleType(), [ir.DoubleType()])
+        self.sqrt = ir.Function(self.module, sqrt_type, name="sqrt")
+        
+        exp_type = ir.FunctionType(ir.DoubleType(), [ir.DoubleType()])
+        self.exp = ir.Function(self.module, exp_type, name="exp")
+        
+        log_type = ir.FunctionType(ir.DoubleType(), [ir.DoubleType()])
+        self.log = ir.Function(self.module, log_type, name="log")
+        
+        abs_type = ir.FunctionType(ir.DoubleType(), [ir.DoubleType()])
+        self.fabs = ir.Function(self.module, abs_type, name="fabs")
+
+        # Create a single global variable for float format string
+        fmt = "%f\n\0"
+        c_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(fmt)), bytearray(fmt.encode("utf8")))
+        self.global_fmt_float = ir.GlobalVariable(self.module, c_fmt.type, name="fmt_float")
+        self.global_fmt_float.linkage = 'internal'
+        self.global_fmt_float.global_constant = True
+        self.global_fmt_float.initializer = c_fmt
+        
         self.builder = None
         self.symbol_table = {}
         self.array_info = {}  # Track array dimensions and storage
@@ -444,14 +471,7 @@ class LLVMCodeGenerator:
                     self.builder.call(self.printf, [newline_ptr])
                 else:
                     # Numeric value - print as float
-                    fmt = "%f\n\0"
-                    c_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(fmt)),
-                                        bytearray(fmt.encode("utf8")))
-                    global_fmt = ir.GlobalVariable(self.module, c_fmt.type, name="fmt_float")
-                    global_fmt.linkage = 'internal'
-                    global_fmt.global_constant = True
-                    global_fmt.initializer = c_fmt
-                    fmt_ptr = self.builder.bitcast(global_fmt, ir.IntType(8).as_pointer())
+                    fmt_ptr = self.builder.bitcast(self.global_fmt_float, ir.IntType(8).as_pointer())
 
                     self.builder.call(self.printf, [fmt_ptr, val])
 
@@ -487,33 +507,69 @@ class LLVMCodeGenerator:
                 data_stack.append(fmt_ptr)
                 is_unary_context = False
             elif token.type == 'id':
-                # Check if this is followed by array access
+                # Check if this is followed by parentheses
                 if i + 1 < len(tokens) and tokens[i + 1].token == '(':
-                    # This is array access - handle it specially
-                    array_name = token.token
-                    if array_name not in self.array_info:
-                        raise Exception(f"Array {array_name} not declared")
+                    # This could be array access or function call
+                    identifier = token.token
                     
-                    # Find the closing parenthesis and extract indices
-                    indices = []
-                    i += 2  # Skip the opening parenthesis
-                    while i < len(tokens) and tokens[i].token != ')':
-                        if tokens[i].type == 'num':
-                            indices.append(ir.Constant(ir.DoubleType(), float(tokens[i].token)))
-                        elif tokens[i].type == 'id':
-                            indices.append(self.builder.load(self.symbol_table[tokens[i].token], name=f"load_{tokens[i].token}"))
-                        else:
-                            raise Exception(f"Invalid array index: {tokens[i].token}")
-                        i += 1
-                        if i < len(tokens) and tokens[i].token == ',':
-                            i += 1  # Skip comma
-                    
-                    if i >= len(tokens) or tokens[i].token != ')':
-                        raise Exception("Missing closing parenthesis in array access")
-                    
-                    # Get array element
-                    element_ptr = self._codegen_array_access(array_name, indices)
-                    data_stack.append(self.builder.load(element_ptr, name=f"load_{array_name}_element"))
+                    # Check if it's a known function
+                    known_functions = ["SIN", "COS", "SQR", "EXP", "LOG", "ABS"]
+                    if identifier in known_functions:
+                        # This is a function call
+                        # Find the closing parenthesis and extract arguments
+                        args = []
+                        i += 2  # Skip the opening parenthesis
+                        
+                        # Parse the argument as an expression
+                        arg_tokens = []
+                        paren_count = 0
+                        while i < len(tokens) and (tokens[i].token != ')' or paren_count > 0):
+                            if tokens[i].token == '(':
+                                paren_count += 1
+                            elif tokens[i].token == ')':
+                                paren_count -= 1
+                            
+                            if paren_count >= 0:
+                                arg_tokens.append(tokens[i])
+                            i += 1
+                        
+                        if i >= len(tokens) or tokens[i].token != ')':
+                            raise Exception("Missing closing parenthesis in function call")
+                        
+                        # Evaluate the argument expression
+                        if arg_tokens:
+                            arg_value = self._codegen_expr(arg_tokens)
+                            args.append(arg_value)
+                        
+                        # Call the function
+                        result = self._codegen_function_call(identifier, args)
+                        data_stack.append(result)
+                    else:
+                        # This is array access - handle it specially
+                        array_name = identifier
+                        if array_name not in self.array_info:
+                            raise Exception(f"Array {array_name} not declared")
+                        
+                        # Find the closing parenthesis and extract indices
+                        indices = []
+                        i += 2  # Skip the opening parenthesis
+                        while i < len(tokens) and tokens[i].token != ')':
+                            if tokens[i].type == 'num':
+                                indices.append(ir.Constant(ir.DoubleType(), float(tokens[i].token)))
+                            elif tokens[i].type == 'id':
+                                indices.append(self.builder.load(self.symbol_table[tokens[i].token], name=f"load_{tokens[i].token}"))
+                            else:
+                                raise Exception(f"Invalid array index: {tokens[i].token}")
+                            i += 1
+                            if i < len(tokens) and tokens[i].token == ',':
+                                i += 1  # Skip comma
+                        
+                        if i >= len(tokens) or tokens[i].token != ')':
+                            raise Exception("Missing closing parenthesis in array access")
+                        
+                        # Get array element
+                        element_ptr = self._codegen_array_access(array_name, indices)
+                        data_stack.append(self.builder.load(element_ptr, name=f"load_{array_name}_element"))
                 else:
                     # Regular variable
                     if token.token in self.array_info:
@@ -578,6 +634,23 @@ class LLVMCodeGenerator:
         self.builder.call(self.strcat, [result_ptr, right])
         
         return result_ptr
+
+    def _codegen_function_call(self, func_name, args):
+        """Generate LLVM IR for a function call"""
+        if func_name == "SIN":
+            return self.builder.call(self.sin, [args[0]], name="sin_result")
+        elif func_name == "COS":
+            return self.builder.call(self.cos, [args[0]], name="cos_result")
+        elif func_name == "SQR":
+            return self.builder.call(self.sqrt, [args[0]], name="sqrt_result")
+        elif func_name == "EXP":
+            return self.builder.call(self.exp, [args[0]], name="exp_result")
+        elif func_name == "LOG":
+            return self.builder.call(self.log, [args[0]], name="log_result")
+        elif func_name == "ABS":
+            return self.builder.call(self.fabs, [args[0]], name="abs_result")
+        else:
+            raise NotImplementedError(f"Function {func_name} not implemented")
 
     def _one_op(self, op_stack, data_stack):
         op = op_stack.pop()
