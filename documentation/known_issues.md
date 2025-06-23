@@ -41,6 +41,7 @@ See also future.md
    2. is there really not a "clear workspace" command?
    3. does list really not work on an empty workspace?
    4. load command should accept quotes
+   5. Support lower case commands.print as well as PRINT
 1. Debugging Improvements
     1. Desperately need "step over" vs "step into" for debugging.
     1. Add "trace on" and "trace off" statements to the language, to control writing of the trace file.
