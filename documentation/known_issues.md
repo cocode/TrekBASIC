@@ -37,6 +37,10 @@ See also future.md
     python -m cProfile  -s tottime trek_bot.py 
     python venv/lib/python3.9/site-packages/gprof2dot.py -f pstats test.pstats
 
+1. COMMAND ISSUES
+   2. is there really not a "clear workspace" command?
+   3. does list really not work on an empty workspace?
+   4. load command should accept quotes
 1. Debugging Improvements
     1. Desperately need "step over" vs "step into" for debugging.
     1. Add "trace on" and "trace off" statements to the language, to control writing of the trace file.
