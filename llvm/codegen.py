@@ -90,6 +90,46 @@ class LLVMCodeGenerator:
         self.return_stack_top = None
         self.newline_counter = 0
 
+        # User-defined functions: map name to LLVM function
+        self.user_functions = {}
+        self.user_function_defs = []  # Store DEF statements for later processing
+        
+        # First pass: scan for user-defined functions and create declarations
+        for program_line in self.program:
+            for stmt in program_line.stmts:
+                print(f"DEBUG: Statement type: {type(stmt).__name__}, keyword: {getattr(stmt, 'keyword', None)}")
+                if hasattr(stmt, 'keyword') and getattr(stmt.keyword, 'name', None) == 'DEF':
+                    fn_name = stmt._variable  # e.g., FNA
+                    print(f"DEBUG: Found DEF statement for function {fn_name}")
+                    # Create LLVM function declaration: double fn(double)
+                    fn_type = ir.FunctionType(ir.DoubleType(), [ir.DoubleType()])
+                    llvm_fn = ir.Function(self.module, fn_type, name=fn_name)
+                    self.user_functions[fn_name] = llvm_fn
+                    self.user_function_defs.append(stmt)
+        
+        print(f"DEBUG: Created {len(self.user_functions)} user functions: {list(self.user_functions.keys())}")
+        
+        # Second pass: generate function bodies
+        for stmt in self.user_function_defs:
+            fn_name = stmt._variable
+            arg_name = stmt._function_arg
+            body_tokens = stmt._tokens
+            llvm_fn = self.user_functions[fn_name]
+            
+            # Create function body
+            entry_block = llvm_fn.append_basic_block('entry')
+            builder = ir.IRBuilder(entry_block)
+            
+            # Set up a local symbol table for the argument
+            local_vars = {}
+            arg_ptr = builder.alloca(ir.DoubleType(), name=arg_name)
+            builder.store(llvm_fn.args[0], arg_ptr)
+            local_vars[arg_name] = arg_ptr
+            
+            # Evaluate the body expression
+            result = self._codegen_expr(body_tokens, local_vars=local_vars, builder=builder)
+            builder.ret(result)
+
     def generate_ir(self):
         main_func_type = ir.FunctionType(ir.IntType(32), [])
         main_func = ir.Function(self.module, main_func_type, name="main")
@@ -209,6 +249,8 @@ class LLVMCodeGenerator:
              self._codegen_dim(stmt)
         elif stmt.keyword.name == "END":
              self.builder.ret(ir.Constant(ir.IntType(32), 0))
+        elif stmt.keyword.name == "STOP":
+             self.builder.ret(ir.Constant(ir.IntType(32), 1))  # Error exit code
         elif stmt.keyword.name == "RETURN":
              self._codegen_return(stmt)
         # Add other statements here
@@ -489,7 +531,20 @@ class LLVMCodeGenerator:
 
                     self.builder.call(self.printf, [fmt_ptr, val])
 
-    def _codegen_expr(self, tokens):
+    def _codegen_expr(self, tokens, local_vars=None, builder=None):
+        """
+        Generate LLVM IR for an expression.
+        
+        Args:
+            tokens: List of tokens representing the expression
+            local_vars: Optional local variable table (for function bodies)
+            builder: Optional IRBuilder (for function bodies)
+        """
+        if local_vars is None:
+            local_vars = {}
+        if builder is None:
+            builder = self.builder
+
         data_stack = []
         op_stack = []
         is_unary_context = True
@@ -521,49 +576,41 @@ class LLVMCodeGenerator:
                 data_stack.append(fmt_ptr)
                 is_unary_context = False
             elif token.type == 'id':
+                print(f"DEBUG: id token encountered: '{token.token}' at index {i}")
                 # Check if this is followed by parentheses
                 if i + 1 < len(tokens) and tokens[i + 1].token == '(':
-                    # This could be array access or function call
+                    # This could be function call or array access
                     identifier = token.token
-                    
-                    # Check if it's a known function
                     known_functions = ["SIN", "COS", "SQR", "EXP", "LOG", "ABS", "ASC", "CHR$", "SPACE$", "STR$", "LEN", "LEFT$", "RIGHT$", "MID$", "INT"]
-                    if identifier in known_functions:
+                    if identifier in known_functions or identifier in self.user_functions:
                         # This is a function call
+                        print(f"DEBUG: Found function call to {identifier}")
                         # Find the closing parenthesis and extract arguments
                         args = []
                         i += 2  # Skip the opening parenthesis
-                        
                         # Parse the argument as an expression
                         arg_tokens = []
                         paren_count = 0
                         while i < len(tokens) and (tokens[i].token != ')' or paren_count > 0):
-                            if tokens[i].token == '(':
-                                paren_count += 1
-                            elif tokens[i].token == ')':
-                                paren_count -= 1
-                            
+                            if tokens[i].token == '(': paren_count += 1
+                            elif tokens[i].token == ')': paren_count -= 1
                             if paren_count >= 0:
                                 arg_tokens.append(tokens[i])
                             i += 1
-                        
                         if i >= len(tokens) or tokens[i].token != ')':
                             raise Exception("Missing closing parenthesis in function call")
-                        
                         # Evaluate the argument expression
                         if arg_tokens:
-                            arg_value = self._codegen_expr(arg_tokens)
+                            arg_value = self._codegen_expr(arg_tokens, local_vars=local_vars, builder=builder)
                             args.append(arg_value)
-                        
                         # Call the function
-                        result = self._codegen_function_call(identifier, args)
+                        result = self._codegen_function_call(identifier, args, builder)
                         data_stack.append(result)
                     else:
                         # This is array access - handle it specially
                         array_name = identifier
                         if array_name not in self.array_info:
                             raise Exception(f"Array {array_name} not declared")
-                        
                         # Find the closing parenthesis and extract indices
                         indices = []
                         i += 2  # Skip the opening parenthesis
@@ -577,10 +624,8 @@ class LLVMCodeGenerator:
                             i += 1
                             if i < len(tokens) and tokens[i].token == ',':
                                 i += 1  # Skip comma
-                        
                         if i >= len(tokens) or tokens[i].token != ')':
                             raise Exception("Missing closing parenthesis in array access")
-                        
                         # Get array element
                         element_ptr = self._codegen_array_access(array_name, indices)
                         data_stack.append(self.builder.load(element_ptr, name=f"load_{array_name}_element"))
@@ -592,13 +637,24 @@ class LLVMCodeGenerator:
                         array_storage = self.symbol_table[token.token]
                         data_stack.append(array_storage)
                     else:
-                        # Regular variable
-                        if token.token.endswith('$'):
-                            # String variable - load the string pointer
-                            data_stack.append(self.builder.load(self.symbol_table[token.token], name=f"load_{token.token}"))
+                        # Regular variable - check local vars first, then global
+                        if token.token in local_vars:
+                            # Local variable (function argument)
+                            data_stack.append(builder.load(local_vars[token.token], name=f"load_{token.token}"))
+                        elif token.token in self.symbol_table:
+                            # Global variable
+                            if token.token.endswith('$'):
+                                # String variable - load the string pointer
+                                data_stack.append(builder.load(self.symbol_table[token.token], name=f"load_{token.token}"))
+                            else:
+                                # Numeric variable
+                                data_stack.append(builder.load(self.symbol_table[token.token], name=f"load_{token.token}"))
                         else:
-                            # Numeric variable
-                            data_stack.append(self.builder.load(self.symbol_table[token.token], name=f"load_{token.token}"))
+                            # Undefined variable - initialize to 0
+                            var_ptr = builder.alloca(ir.DoubleType(), name=token.token)
+                            builder.store(ir.Constant(ir.DoubleType(), 0.0), var_ptr)
+                            self.symbol_table[token.token] = var_ptr
+                            data_stack.append(builder.load(var_ptr, name=f"load_{token.token}"))
                 is_unary_context = False
             elif token.type == 'op':
                 current_op_token = token
@@ -608,7 +664,7 @@ class LLVMCodeGenerator:
                     data_stack.append(ir.Constant(ir.DoubleType(), 0.0))
 
                 while op_stack and op_stack[-1].token != '(' and get_precedence(op_stack[-1]) >= get_precedence(current_op_token):
-                    self._one_op(op_stack, data_stack)
+                    self._one_op(op_stack, data_stack, builder)
                 
                 if current_op_token.token == ')':
                     op_stack.pop() # Pop '('
@@ -620,7 +676,7 @@ class LLVMCodeGenerator:
             i += 1
 
         while op_stack:
-            self._one_op(op_stack, data_stack)
+            self._one_op(op_stack, data_stack, builder)
 
         print(f"DEBUG: Final data_stack size: {len(data_stack)}")  # Debug output
         if len(data_stack) == 1:
@@ -667,23 +723,25 @@ class LLVMCodeGenerator:
             global_fmt.initializer = c_fmt
         return self.builder.bitcast(global_fmt, ir.IntType(8).as_pointer())
 
-    def _codegen_function_call(self, func_name, args):
+    def _codegen_function_call(self, func_name, args, builder=None):
         """Generate LLVM IR for a function call"""
+        if builder is None:
+            builder = self.builder
         if func_name == "SIN":
-            return self.builder.call(self.sin, [args[0]], name="sin_result")
+            return builder.call(self.sin, [args[0]], name="sin_result")
         elif func_name == "COS":
-            return self.builder.call(self.cos, [args[0]], name="cos_result")
+            return builder.call(self.cos, [args[0]], name="cos_result")
         elif func_name == "SQR":
-            return self.builder.call(self.sqrt, [args[0]], name="sqrt_result")
+            return builder.call(self.sqrt, [args[0]], name="sqrt_result")
         elif func_name == "EXP":
-            return self.builder.call(self.exp, [args[0]], name="exp_result")
+            return builder.call(self.exp, [args[0]], name="exp_result")
         elif func_name == "LOG":
-            return self.builder.call(self.log, [args[0]], name="log_result")
+            return builder.call(self.log, [args[0]], name="log_result")
         elif func_name == "ABS":
-            return self.builder.call(self.fabs, [args[0]], name="abs_result")
+            return builder.call(self.fabs, [args[0]], name="abs_result")
         elif func_name == "INT":
             # INT(x) - truncate to integer (floor function)
-            return self.builder.call(self.int_func, [args[0]], name="int_result")
+            return builder.call(self.int_func, [args[0]], name="int_result")
         elif func_name == "ASC":
             # ASC(string) - return ASCII code of first character
             # For now, return a reasonable default (65 for 'A')
@@ -716,10 +774,24 @@ class LLVMCodeGenerator:
             # MID$(string, start, length) - return substring
             # For now, return a reasonable default
             return self._create_string_constant("MID")
+        elif func_name in self.user_functions:
+            # User-defined function call
+            return builder.call(self.user_functions[func_name], [args[0]], name=f"{func_name.lower()}_result")
         else:
             raise NotImplementedError(f"Function {func_name} not implemented")
 
-    def _one_op(self, op_stack, data_stack):
+    def _one_op(self, op_stack, data_stack, builder=None):
+        """
+        Process one operator from the operator stack.
+        
+        Args:
+            op_stack: Stack of operators
+            data_stack: Stack of data values
+            builder: Optional IRBuilder (for function bodies)
+        """
+        if builder is None:
+            builder = self.builder
+
         op = op_stack.pop()
         
         if op.token == '@':  # ARRAY_ACCESS operator
@@ -760,51 +832,51 @@ class LLVMCodeGenerator:
                     result = self._concatenate_strings(left, right)
                 else:
                     # Numeric addition
-                    result = self.builder.fadd(left, right, name="addtmp")
+                    result = builder.fadd(left, right, name="addtmp")
             elif op.token == '-':
-                result = self.builder.fsub(left, right, name="subtmp")
+                result = builder.fsub(left, right, name="subtmp")
             elif op.token == '*':
-                result = self.builder.fmul(left, right, name="multmp")
+                result = builder.fmul(left, right, name="multmp")
             elif op.token == '/':
-                result = self.builder.fdiv(left, right, name="divtmp")
+                result = builder.fdiv(left, right, name="divtmp")
             elif op.token == '=':
                 # Equal comparison
-                cmp_result = self.builder.fcmp_ordered("==", left, right, name="cmptmp")
-                result = self.builder.uitofp(cmp_result, ir.DoubleType(), name="booltmp")
+                cmp_result = builder.fcmp_ordered("==", left, right, name="cmptmp")
+                result = builder.uitofp(cmp_result, ir.DoubleType(), name="booltmp")
             elif op.token == '<>':
                 # Not equal comparison
-                cmp_result = self.builder.fcmp_ordered("!=", left, right, name="cmptmp")
-                result = self.builder.uitofp(cmp_result, ir.DoubleType(), name="booltmp")
+                cmp_result = builder.fcmp_ordered("!=", left, right, name="cmptmp")
+                result = builder.uitofp(cmp_result, ir.DoubleType(), name="booltmp")
             elif op.token == '<':
                 # Less than comparison
-                cmp_result = self.builder.fcmp_ordered("<", left, right, name="cmptmp")
-                result = self.builder.uitofp(cmp_result, ir.DoubleType(), name="booltmp")
+                cmp_result = builder.fcmp_ordered("<", left, right, name="cmptmp")
+                result = builder.uitofp(cmp_result, ir.DoubleType(), name="booltmp")
             elif op.token == '>':
                 # Greater than comparison
-                cmp_result = self.builder.fcmp_ordered(">", left, right, name="cmptmp")
-                result = self.builder.uitofp(cmp_result, ir.DoubleType(), name="booltmp")
+                cmp_result = builder.fcmp_ordered(">", left, right, name="cmptmp")
+                result = builder.uitofp(cmp_result, ir.DoubleType(), name="booltmp")
             elif op.token == '<=':
                 # Less than or equal comparison
-                cmp_result = self.builder.fcmp_ordered("<=", left, right, name="cmptmp")
-                result = self.builder.uitofp(cmp_result, ir.DoubleType(), name="booltmp")
+                cmp_result = builder.fcmp_ordered("<=", left, right, name="cmptmp")
+                result = builder.uitofp(cmp_result, ir.DoubleType(), name="booltmp")
             elif op.token == '>=':
                 # Greater than or equal comparison
-                cmp_result = self.builder.fcmp_ordered(">=", left, right, name="cmptmp")
-                result = self.builder.uitofp(cmp_result, ir.DoubleType(), name="booltmp")
+                cmp_result = builder.fcmp_ordered(">=", left, right, name="cmptmp")
+                result = builder.uitofp(cmp_result, ir.DoubleType(), name="booltmp")
             elif op.token == 'AND':
                 # Logical AND: (left != 0) and (right != 0)
-                left_nonzero = self.builder.fcmp_ordered('!=', left, ir.Constant(ir.DoubleType(), 0.0))
-                right_nonzero = self.builder.fcmp_ordered('!=', right, ir.Constant(ir.DoubleType(), 0.0))
-                and_result = self.builder.and_(left_nonzero, right_nonzero)
+                left_nonzero = builder.fcmp_ordered('!=', left, ir.Constant(ir.DoubleType(), 0.0))
+                right_nonzero = builder.fcmp_ordered('!=', right, ir.Constant(ir.DoubleType(), 0.0))
+                and_result = builder.and_(left_nonzero, right_nonzero)
                 # Convert i1 to double
-                result = self.builder.uitofp(and_result, ir.DoubleType())
+                result = builder.uitofp(and_result, ir.DoubleType())
             elif op.token == 'OR':
                 # Logical OR: (left != 0) or (right != 0)
-                left_nonzero = self.builder.fcmp_ordered('!=', left, ir.Constant(ir.DoubleType(), 0.0))
-                right_nonzero = self.builder.fcmp_ordered('!=', right, ir.Constant(ir.DoubleType(), 0.0))
-                or_result = self.builder.or_(left_nonzero, right_nonzero)
+                left_nonzero = builder.fcmp_ordered('!=', left, ir.Constant(ir.DoubleType(), 0.0))
+                right_nonzero = builder.fcmp_ordered('!=', right, ir.Constant(ir.DoubleType(), 0.0))
+                or_result = builder.or_(left_nonzero, right_nonzero)
                 # Convert i1 to double
-                result = self.builder.uitofp(or_result, ir.DoubleType())
+                result = builder.uitofp(or_result, ir.DoubleType())
             else:
                 raise NotImplementedError(f"Operator {op.token} not implemented")
             
