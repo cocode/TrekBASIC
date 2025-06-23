@@ -1,0 +1,9 @@
+10 A = 1 OR 1
+20 B = 1 OR 0
+30 C = 0 OR 1
+40 D = 0 OR 0
+50 PRINT "A ="; A
+60 PRINT "B ="; B
+70 PRINT "C ="; C
+80 PRINT "D ="; D
+90 END 

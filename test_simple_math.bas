@@ -1,0 +1,13 @@
+10 A = SIN(0)
+20 B = COS(0)
+30 C = SQR(16)
+40 D = EXP(1)
+50 E = LOG(2.718)
+60 F = ABS(-5)
+70 PRINT "SIN(0) ="; A
+80 PRINT "COS(0) ="; B
+90 PRINT "SQR(16) ="; C
+100 PRINT "EXP(1) ="; D
+110 PRINT "LOG(2.718) ="; E
+120 PRINT "ABS(-5) ="; F
+130 END 

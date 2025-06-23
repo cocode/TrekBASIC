@@ -1,0 +1,14 @@
+10 A = 1
+20 B = 1.0
+30 C = 1.000000
+40 PRINT "A ="; A
+50 PRINT "B ="; B
+60 PRINT "C ="; C
+70 IF A <> 1 THEN PRINT "A <> 1": STOP
+80 IF B <> 1 THEN PRINT "B <> 1": STOP
+90 IF C <> 1 THEN PRINT "C <> 1": STOP
+100 IF A <> 1.0 THEN PRINT "A <> 1.0": STOP
+110 IF B <> 1.0 THEN PRINT "B <> 1.0": STOP
+120 IF C <> 1.0 THEN PRINT "C <> 1.0": STOP
+130 PRINT "All comparisons passed!"
+140 END 

@@ -1,0 +1,9 @@
+10 A = 1 AND 1
+20 B = 1 AND 0
+30 C = 0 AND 1
+40 D = 0 AND 0
+50 PRINT "A ="; A
+60 PRINT "B ="; B
+70 PRINT "C ="; C
+80 PRINT "D ="; D
+90 END 
