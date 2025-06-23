@@ -6,4 +6,5 @@ enum_test.py
 tracefile.txt
 *.pdf
 *.pstats
+*.ll
 
