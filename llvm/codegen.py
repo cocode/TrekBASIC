@@ -173,23 +173,28 @@ class LLVMCodeGenerator:
             self.builder.position_at_end(self.line_blocks[line.line])
             self.current_line_index = i  # Track current line index for GOSUB
             
-            j = 0
-            while j < len(line.stmts):
-                stmt = line.stmts[j]
-                
-                # Check if this is an IF statement - it will handle remaining statements
-                if isinstance(stmt, ParsedStatementIf):
-                    self._generate_statement_ir(stmt, line_stmts=line.stmts, stmt_index=j)
-                    # IF statement handles all remaining statements on the line
-                    break
+            # Check if this basic block is empty (no instructions yet)
+            block_was_empty = len(self.builder.block.instructions) == 0
+            
+            self._generate_line_statements(line.stmts)
+            
+            # If block is still empty after processing statements, add a no-op
+            if block_was_empty and len(self.builder.block.instructions) == 0:
+                # Add a simple no-op to prevent empty basic blocks
+                temp_val = ir.Constant(ir.DoubleType(), 0.0)
+                if "noop_var" not in self.module.globals:
+                    noop_global = ir.GlobalVariable(self.module, ir.DoubleType(), name="noop_var")
+                    noop_global.linkage = 'internal'
+                    noop_global.global_constant = False
+                    noop_global.initializer = temp_val
                 else:
-                    self._generate_statement_ir(stmt, line_stmts=line.stmts, stmt_index=j)
-                    j += 1
+                    noop_global = self.module.get_global("noop_var")
+                self.builder.store(temp_val, noop_global)
             
             # Branch to next line if not a branching statement
             if not self.builder.block.is_terminated:
-                if line.next is not None:
-                     next_line_num = self.program[line.next].line
+                if i + 1 < len(self.program):
+                     next_line_num = self.program[i + 1].line
                      self.builder.branch(self.line_blocks[next_line_num])
                 else:
                      self.builder.ret(ir.Constant(ir.IntType(32), 0))
@@ -288,6 +293,49 @@ class LLVMCodeGenerator:
                 if isinstance(stmt, ParsedStatementDim):
                     self._codegen_dim(stmt)
 
+    def _generate_line_statements(self, stmts):
+        """Generate IR for a list of statements on a line, handling GOSUB properly"""
+        j = 0
+        while j < len(stmts):
+            stmt = stmts[j]
+            
+            # Check if this is a GOSUB statement in a compound line
+            if isinstance(stmt, ParsedStatementGo) and stmt.keyword.name == "GOSUB" and j + 1 < len(stmts):
+                # This is a GOSUB with remaining statements on the same line
+                # Create a continuation block for statements after GOSUB
+                func = self.builder.block.function
+                continuation_block = func.append_basic_block(name=f"gosub_cont_{self.program[self.current_line_index].line}_{j}")
+                
+                # Store continuation block as return address for this GOSUB
+                continuation_line_num = self.program[self.current_line_index].line * 1000 + j + 1  # Unique ID for continuation
+                self.line_blocks[continuation_line_num] = continuation_block
+                self._push_return_address(continuation_line_num)
+                
+                # Generate the GOSUB
+                target_line = int(stmt.destination)
+                print(f"DEBUG: GOSUB from line {self.program[self.current_line_index].line} to {target_line}, return to continuation {continuation_line_num}")
+                self.builder.branch(self.line_blocks[target_line])
+                
+                # Switch to continuation block for remaining statements
+                self.builder.position_at_end(continuation_block)
+                
+                # Continue with remaining statements
+                j += 1
+                continue
+            elif isinstance(stmt, ParsedStatementIf):
+                # IF statement handles all remaining statements on the line
+                self._generate_statement_ir(stmt, line_stmts=stmts, stmt_index=j)
+                break
+            else:
+                # Normal statement
+                self._generate_statement_ir(stmt, line_stmts=stmts, stmt_index=j)
+                
+                # If this statement terminated the block, stop processing
+                if self.builder.block.is_terminated:
+                    break
+                    
+                j += 1
+
     def _initialize_string_variables(self):
         """Initialize global string variables with empty strings at runtime"""
         for var_name, var_ptr in self.symbol_table.items():
@@ -343,9 +391,25 @@ class LLVMCodeGenerator:
              self.builder.ret(ir.Constant(ir.IntType(32), 1))  # Error exit code
         elif stmt.keyword.name == "RETURN":
              self._codegen_return(stmt)
+        elif isinstance(stmt, ParsedStatementInput):
+             self._codegen_input(stmt)
+        elif isinstance(stmt, ParsedStatementOnGoto):
+             self._codegen_on_goto(stmt)
         # Add other statements here
         else:
             print(f"Warning: Codegen for statement '{type(stmt).__name__}' not implemented.")
+            # Generate a simple no-op to avoid broken control flow
+            # Create a global noop variable if it doesn't exist
+            if "noop_var" not in self.module.globals:
+                noop_global = ir.GlobalVariable(self.module, ir.DoubleType(), name="noop_var")
+                noop_global.linkage = 'internal'
+                noop_global.global_constant = False
+                noop_global.initializer = ir.Constant(ir.DoubleType(), 0.0)
+            else:
+                noop_global = self.module.get_global("noop_var")
+            # Add a simple store instruction to prevent empty basic blocks
+            temp_val = ir.Constant(ir.DoubleType(), 0.0)
+            self.builder.store(temp_val, noop_global)
 
     def _codegen_for(self, stmt):
         """Generate LLVM IR for a FOR loop"""
@@ -437,6 +501,42 @@ class LLVMCodeGenerator:
         
         # Position builder at after block for any code that follows
         self.builder.position_at_end(loop_context['after_block'])
+
+    def _codegen_input(self, stmt):
+        """Generate LLVM IR for an INPUT statement (placeholder implementation)"""
+        # For now, just assign default values to input variables
+        # This is a simplified implementation for compilation purposes
+        for var_name in stmt._input_vars:
+            if var_name.endswith('$'):
+                # String variable - assign empty string
+                empty_str = self._create_string_constant("")
+                if var_name not in self.symbol_table:
+                    # Create the variable if it doesn't exist
+                    global_var = ir.GlobalVariable(self.module, ir.IntType(8).as_pointer(), name=f"global_{var_name}")
+                    global_var.linkage = 'internal'
+                    global_var.global_constant = False
+                    global_var.initializer = ir.Constant(ir.IntType(8).as_pointer(), None)
+                    self.symbol_table[var_name] = global_var
+                self.builder.store(empty_str, self.symbol_table[var_name])
+            else:
+                # Numeric variable - assign 0
+                if var_name not in self.symbol_table:
+                    # Create the variable if it doesn't exist
+                    global_var = ir.GlobalVariable(self.module, ir.DoubleType(), name=f"global_{var_name}")
+                    global_var.linkage = 'internal'
+                    global_var.global_constant = False
+                    global_var.initializer = ir.Constant(ir.DoubleType(), 0.0)
+                    self.symbol_table[var_name] = global_var
+                self.builder.store(ir.Constant(ir.DoubleType(), 0.0), self.symbol_table[var_name])
+
+    def _codegen_on_goto(self, stmt):
+        """Generate LLVM IR for an ON...GOTO statement (placeholder implementation)"""
+        # This is a simplified implementation - just go to the first target
+        if stmt._target_lines and len(stmt._target_lines) > 0:
+            first_target = int(stmt._target_lines[0])
+            if first_target in self.line_blocks:
+                if not self.builder.block.is_terminated:
+                    self.builder.branch(self.line_blocks[first_target])
 
     def _codegen_return(self, stmt):
         """Generate LLVM IR for a RETURN statement"""
@@ -735,7 +835,7 @@ class LLVMCodeGenerator:
                             index_value = self._codegen_expr(index_tokens, local_vars=local_vars, builder=builder)
                             indices.append(index_value)
                         # Get array element
-                        element_ptr = self._codegen_array_access(array_name, indices)
+                        element_ptr = self._codegen_array_access(array_name, indices, builder)
                         data_stack.append(builder.load(element_ptr, name=f"load_{array_name}_element"))
                 else:
                     # Regular variable
@@ -1105,10 +1205,11 @@ class LLVMCodeGenerator:
 
             if op.token == '+':
                 # Check if this is string concatenation
-                # For now, we'll assume if either operand is a string pointer, it's string concatenation
-                # In a more sophisticated implementation, we'd need to track types
-                if (isinstance(left, ir.LoadInstr) and left.type == ir.IntType(8).as_pointer()) or \
-                   (isinstance(right, ir.LoadInstr) and right.type == ir.IntType(8).as_pointer()):
+                # Check if either operand is a string pointer type
+                left_is_string = (hasattr(left, 'type') and left.type == ir.IntType(8).as_pointer())
+                right_is_string = (hasattr(right, 'type') and right.type == ir.IntType(8).as_pointer())
+                
+                if left_is_string or right_is_string:
                     # String concatenation - use strcat
                     result = self._concatenate_strings(left, right)
                 else:
@@ -1247,8 +1348,7 @@ class LLVMCodeGenerator:
             self.builder.cbranch(condition, then_block, else_block)
         else:
             # Current block is already terminated - this IF statement is unreachable
-            # We still need to create the blocks but they won't be connected
-            pass
+            return
         
         # THEN block: execute all remaining statements on this line
         self.builder.position_at_end(then_block)
@@ -1326,6 +1426,7 @@ class LLVMCodeGenerator:
             if not self.builder.block.is_terminated:
                 if is_gosub:
                     # For GOSUB, push return address and branch
+                    # This method is only called for standalone GOSUB (not compound statements)
                     # Find the next line to return to using tracked index
                     if self.current_line_index + 1 < len(self.program):
                         next_line = self.program[self.current_line_index + 1].line
@@ -1420,8 +1521,11 @@ class LLVMCodeGenerator:
             # Store the array storage directly in symbol table
             self.symbol_table[name] = global_array
 
-    def _codegen_array_access(self, array_name, indices):
+    def _codegen_array_access(self, array_name, indices, builder=None):
         """Generate LLVM IR for array access"""
+        if builder is None:
+            builder = self.builder
+            
         if array_name not in self.array_info:
             raise Exception(f"Array {array_name} not declared")
         
@@ -1439,20 +1543,20 @@ class LLVMCodeGenerator:
         
         for i in range(len(indices) - 1, -1, -1):
             # Convert 1-based index to 0-based
-            index_val = self.builder.fptoui(indices[i], ir.IntType(32))
+            index_val = builder.fptoui(indices[i], ir.IntType(32))
             one = ir.Constant(ir.IntType(32), 1)
-            zero_based_index = self.builder.sub(index_val, one)
+            zero_based_index = builder.sub(index_val, one)
             
             # Add to offset
-            index_offset = self.builder.mul(zero_based_index, ir.Constant(ir.IntType(32), multiplier))
-            offset = self.builder.add(offset, index_offset)
+            index_offset = builder.mul(zero_based_index, ir.Constant(ir.IntType(32), multiplier))
+            offset = builder.add(offset, index_offset)
             
             # Update multiplier for next dimension
             if i > 0:
                 multiplier *= (dimensions[i] + 1)
         
         # Get element pointer
-        element_ptr = self.builder.gep(array_storage, [ir.Constant(ir.IntType(32), 0), offset])
+        element_ptr = builder.gep(array_storage, [ir.Constant(ir.IntType(32), 0), offset])
         return element_ptr
 
 
