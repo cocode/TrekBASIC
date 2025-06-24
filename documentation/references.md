@@ -12,6 +12,10 @@
     1. https://rosettacode.org/wiki/BNF_Grammar#BASIC
 1. Full GW-BASIC implementation / PC emulator
     1. https://robhagemans.github.io/pcbasic/
+## Super Startrek rules
+https://github.com/beejjorgensen/Super-Star-Trek-Info/blob/main/doc/sst_spec.md
+source
+https://github.com/beejjorgensen/Super-Star-Trek-Info/blob/main/sources/sst.bas
 
 ## LLVM Tutorial References
 1. Generating LLVM IR from Python: https://pypi.org/project/llvmlite/
