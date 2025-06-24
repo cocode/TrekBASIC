@@ -1,5 +1,6 @@
 # TrekBasic
-TrekBASIC is a full BASIC interpreter, written in Python.
+
+TrekBASIC is now both a full BASIC interpreter, written in Python, and a BASIC compiler, via LLVM.
 
 My goal was to be able to play the old Star Trek game, which was written in BASIC.
 
@@ -7,18 +8,35 @@ My goal was to be able to play the old Star Trek game, which was written in BASI
 
 I have achieved that goal.
 
+## To play:
 
+### Interpreted
+
+python basic.py programs/superstartrek.bas
+
+### Compiled 
+
+python tbc.py programs/superstartrek.bas
+
+# Justification
 
 I considered simply porting Star Trek to Python, but 
 writing an interpreter sounded like more fun.
 
 ## Versions
+
 There are several versions of Star Trek available. 
 
-TrekBASIC currently
-runs only programs/superstartrek.bas.
+### Currently Supported
+
+TrekBASIC currently runs only programs/superstartrek.bas
 
 * supertrek: http://www.vintage-basic.net/bcg/superstartrek.bas
+
+It's not that we don't want to add support for other versions of Star Trek, it's that other versions of Star Trek
+require other, incompatible basic interpreters/compilers. It's not a matter of needing more features, it's a matter
+of need different versions of existing features. 
+
 
 ### Other Versions
 * startrek.bas: http://www.bobsoremweb.com/startrek.html
@@ -38,7 +56,7 @@ TrekBASIC actually provides a full basic development environment which has:
 * Renumbering
 
 # Profiling
-You can profile the code using python profilers. 
+You can profile the interpreters code using python profilers. 
 
 I have used cProfile and gprof2dot.py. You'll need to install gprof2dot.py 
 I don't have dot installed, I just found an online version, and used that. 
@@ -55,6 +73,8 @@ TrekBasic requires python 3
 
 *HINT* If you don't put your shields up, the first hit will kill you! :-)
 
+# Developing in BASIC
+
 If you want the development environment, similar to what you would have had with a command line BASIC
 
     python basic_shell.py
@@ -63,6 +83,10 @@ Use "help" to get available commands, like "load programs/superstartrek.abs" and
 
 I have not implemented an editor in basic_shell. While the old-style line-by-line editing might be nostalgic,
 modern editors are *so* much better. 
+
+## Features
+
+TrekBasic has many features never found in older basics, like data breakpoints and execution traces.
 
 
 ## Terminology
