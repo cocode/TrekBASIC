@@ -50,7 +50,11 @@ See also future.md
    3. does list really not work on an empty workspace?
    4. load command should accept quotes
    5. Support lower case commands.print as well as PRINT
-1. Debugging Improvements
+1. Compiler issues (LLVM)
+   2. Much harder to do dynamic array dimensions in a compiler. 
+   3. For now, do all arrays and functions statically.Can we throw an error on redefintions?
+   4. 
+2. Debugging Improvements
     1. Desperately need "step over" vs "step into" for debugging.
     1. Add "trace on" and "trace off" statements to the language, to control writing of the trace file.
     1. Having trace_file as a parameter to the constructor, but not using it until run_program makes no sense.
