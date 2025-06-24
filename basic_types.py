@@ -97,11 +97,9 @@ def is_valid_identifier(variable:str) -> None:
         return
     if len(variable) == 2 and variable[1] == '$':
         return
-    # TODO Should this be a syntax error?
     assert_syntax(variable[1] in NUMBERS, F"Second char of '{variable}' must be a number or $.")
     if len(variable) == 2:
         return
-    # TODO Should this be a syntax error?
     assert_syntax(variable[2] == '$', F"Invalid variable name {variable}")
 
 def tokens_to_str(tokens:list[lexer_token]):
