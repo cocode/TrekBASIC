@@ -7,6 +7,7 @@ import argparse
 import subprocess
 import tempfile
 import traceback
+import time
 
 from basic_loading import load_program
 from basic_types import BasicSyntaxError
@@ -21,6 +22,8 @@ def main():
                        help='Output executable name (default: <basename>)')
     parser.add_argument('--ir-only', action='store_true',
                        help='Only generate LLVM IR, do not compile or run')
+    parser.add_argument('--time', action='store_true',
+                       help='Time the execution only (excluding compilation)')
     args = parser.parse_args()
 
     # Load and parse the BASIC program
@@ -84,9 +87,15 @@ def main():
                 exec_cmd = [executable_file]
             else:
                 exec_cmd = [f"./{executable_file}"]
+            
+            if args.time:
+                start_time = time.time()
             result = subprocess.run(exec_cmd, 
                                   capture_output=False, 
                                   text=True)
+            if args.time:
+                end_time = time.time()
+                execution_time = end_time - start_time
             exit_code = result.returncode
         except KeyboardInterrupt:
             print("\nProgram interrupted by user")
@@ -96,6 +105,8 @@ def main():
             exit_code = 1
         
         print("-" * 40)
+        if args.time:
+            print(f"Execution time: {execution_time:.5f} seconds")
         print(f"Program finished with exit code: {exit_code}")
         
         # Step 5: Clean up intermediate files (unless --keep-files)

@@ -4,6 +4,7 @@ Main program for running a basic program from the command line.
 import sys
 import argparse
 import pprint
+import time
 
 from basic_interpreter import Executor
 from basic_loading import load_program
@@ -14,6 +15,7 @@ if __name__ == "__main__":
     parser.add_argument('program', help="The name of the basic file to run. Will add '.bas' of not found.")
     parser.add_argument('--trace', '-t', action='store_true', help="Write  a trace of execution to 'tracefile.txt'.")
     parser.add_argument('--symbols', '-s', action='store_true', help="Dump the symbol table on exit.")
+    parser.add_argument('--time', action='store_true', help="Time the execution (excluding parsing/loading).")
     args = parser.parse_args()
 
     try:
@@ -29,10 +31,22 @@ if __name__ == "__main__":
     if args.trace:
         with open("tracefile.txt", "w") as f:
             executor = Executor(program, trace_file=f)
+            if args.time:
+                start_time = time.time()
             rc = executor.run_program()
+            if args.time:
+                end_time = time.time()
+                execution_time = end_time - start_time
+                print(f"Execution time: {execution_time:.5f} seconds")
     else:
         executor = Executor(program)
+        if args.time:
+            start_time = time.time()
         rc = executor.run_program()
+        if args.time:
+            end_time = time.time()
+            execution_time = end_time - start_time
+            print(f"Execution time: {execution_time:.5f} seconds")
     print(F"Program completed with a status of {rc}")
 
     if args.symbols:
