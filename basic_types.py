@@ -72,6 +72,7 @@ class RunStatus(Enum):
     END_OF_PROGRAM=auto()       # Fell of the end of the program. Returns status 0 (success)
     END_ERROR_SYNTAX=auto()
     END_ERROR_INTERNAL=auto()
+    END_ERROR_RUNTIME=auto()
     BREAK_CODE=auto()
     BREAK_DATA=auto()
     BREAK_STEP=auto()
@@ -81,7 +82,7 @@ NUMBERS = "0123456789]"
 LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 
-def is_valid_identifier(variable:str):
+def is_valid_identifier(variable:str) -> None:
     """
     Checks if the identifier is a valid variable name to assign to.
     Assumes that spaces have already been removed.
@@ -96,9 +97,11 @@ def is_valid_identifier(variable:str):
         return
     if len(variable) == 2 and variable[1] == '$':
         return
+    # TODO Should this be a syntax error?
     assert_syntax(variable[1] in NUMBERS, F"Second char of '{variable}' must be a number or $.")
     if len(variable) == 2:
         return
+    # TODO Should this be a syntax error?
     assert_syntax(variable[2] == '$', F"Invalid variable name {variable}")
 
 def tokens_to_str(tokens:list[lexer_token]):
