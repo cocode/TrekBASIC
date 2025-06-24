@@ -18,10 +18,8 @@ if __name__ == "__main__":
     parser.add_argument('--symbols', '-s', action='store_true', help="Dump the symbol table on exit.")
     parser.add_argument(
         '-l', '--llvm',
-        metavar='llvm',
-        help='Save the basic program as LLVM IR code. This is the export filename',
-        type=str,
-        required=False
+        action='store_true',
+        help='Save the basic program as LLVM IR code to <basename>.ll'
     )
     args = parser.parse_args()
 
@@ -38,7 +36,10 @@ if __name__ == "__main__":
 
     if args.llvm:
         executor = Executor(program)
-        filename = args.llvm
+        # Generate filename from input program name
+        import os
+        base_name = os.path.splitext(args.program)[0]
+        filename = f"{base_name}.ll"
         ir_code = generate_llvm_ir(program)
         with open(filename, "w") as f:
             f.write(ir_code)

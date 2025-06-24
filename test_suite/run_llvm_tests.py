@@ -13,14 +13,17 @@ from test_runner_common import run_test_suite
 
 def llvm_command_generator(program_path):
     """Generate command to compile and run a BASIC program with LLVM."""
-    # Create a temporary directory for the compiled output
+    # Create a temporary directory for the compiled executable
     temp_dir = tempfile.mkdtemp()
     program_name = os.path.splitext(os.path.basename(program_path))[0]
-    llvm_file = os.path.join(temp_dir, f"{program_name}.ll")
+    
+    # The LLVM IR file will be created next to the source file
+    program_dir = os.path.dirname(program_path)
+    llvm_file = os.path.join(program_dir, f"{program_name}.ll")
     executable_file = os.path.join(temp_dir, program_name)
     
     # Step 1: Generate LLVM IR
-    generate_cmd = [sys.executable, "basic.py", "-l", llvm_file, program_path]
+    generate_cmd = [sys.executable, "basic.py", program_path, "-l"]
     result = subprocess.run(generate_cmd, capture_output=True, text=True)
     if result.returncode != 0:
         raise Exception(f"Failed to generate LLVM IR: {result.stderr}")
