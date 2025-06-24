@@ -125,8 +125,7 @@ def main():
         
     except Exception as e:
         print(f"Compilation error: {e}")
-        if "--verbose" in sys.argv:
-            traceback.print_exc()
+        traceback.print_exc()
         sys.exit(1)
 
 if __name__ == "__main__":

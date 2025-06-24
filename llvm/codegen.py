@@ -371,8 +371,9 @@ class LLVMCodeGenerator:
         new_val = self.builder.fadd(current_val, loop_context['step_val'], name=f"inc_{loop_var}")
         self.builder.store(new_val, loop_context['var_ptr'])
         
-        # Branch back to condition block
-        self.builder.branch(loop_context['cond_block'])
+        # Branch back to condition block (only if current block is not terminated)
+        if not self.builder.block.is_terminated:
+            self.builder.branch(loop_context['cond_block'])
         
         # Position builder at after block for any code that follows
         self.builder.position_at_end(loop_context['after_block'])
@@ -431,8 +432,32 @@ class LLVMCodeGenerator:
             # Array assignment
             self.builder.store(value, element_ptr)
         elif var_name in self.array_info:
-            # This is a bare array name - shouldn't happen in valid BASIC
-            raise Exception(f"Invalid assignment to array {var_name} without indices")
+            # Array name used as scalar - create a separate scalar variable
+            # This is allowed in BASIC - array name can be used as a regular variable too
+            var_ptr = self.symbol_table.get(f"{var_name}_scalar")
+            if not var_ptr:
+                # Create a separate scalar variable for the array name
+                if var_name.endswith('$'):
+                    # String variable
+                    empty_str = "\0"
+                    c_empty = ir.Constant(ir.ArrayType(ir.IntType(8), len(empty_str)),
+                                          bytearray(empty_str.encode("utf8")))
+                    global_empty = ir.GlobalVariable(self.module, c_empty.type, name=f"empty_{var_name}_scalar")
+                    global_empty.linkage = 'internal'
+                    global_empty.global_constant = True
+                    global_empty.initializer = c_empty
+                    
+                    var_ptr = self.builder.alloca(ir.IntType(8).as_pointer(), name=f"{var_name}_scalar")
+                    empty_ptr = self.builder.bitcast(global_empty, ir.IntType(8).as_pointer())
+                    self.builder.store(empty_ptr, var_ptr)
+                    self.symbol_table[f"{var_name}_scalar"] = var_ptr
+                else:
+                    # Numeric variable
+                    var_ptr = self.builder.alloca(ir.DoubleType(), name=f"{var_name}_scalar")
+                    self.symbol_table[f"{var_name}_scalar"] = var_ptr
+            
+            value = self._codegen_expr(stmt._tokens)
+            self.builder.store(value, var_ptr)
         else:
             # Regular variable assignment
             var_ptr = self.symbol_table.get(var_name)
@@ -570,25 +595,36 @@ class LLVMCodeGenerator:
                 if i + 1 < len(tokens) and tokens[i + 1].token == '(':
                     # This could be function call or array access
                     identifier = token.token
-                    known_functions = ["SIN", "COS", "SQR", "EXP", "LOG", "ABS", "ASC", "CHR$", "SPACE$", "STR$", "LEN", "LEFT$", "RIGHT$", "MID$", "INT", "RND"]
+                    known_functions = ["SIN", "COS", "SQR", "EXP", "LOG", "ABS", "ASC", "CHR$", "SPACE$", "STR$", "LEN", "LEFT$", "RIGHT$", "MID$", "INT", "RND", "TAB"]
                     if identifier in known_functions or identifier in self.user_functions:
                         # This is a function call
                         print(f"DEBUG: Found function call to {identifier}")
                         # Find the closing parenthesis and extract arguments
                         args = []
                         i += 2  # Skip the opening parenthesis
-                        # Parse the argument as an expression
+                        # Parse arguments separated by commas
                         arg_tokens = []
                         paren_count = 0
                         while i < len(tokens) and (tokens[i].token != ')' or paren_count > 0):
-                            if tokens[i].token == '(': paren_count += 1
-                            elif tokens[i].token == ')': paren_count -= 1
-                            if paren_count >= 0:
+                            if tokens[i].token == '(':
+                                paren_count += 1
+                                arg_tokens.append(tokens[i])
+                            elif tokens[i].token == ')':
+                                paren_count -= 1
+                                if paren_count >= 0:
+                                    arg_tokens.append(tokens[i])
+                            elif tokens[i].token == ',' and paren_count == 0:
+                                # This comma separates arguments
+                                if arg_tokens:
+                                    arg_value = self._codegen_expr(arg_tokens, local_vars=local_vars, builder=builder)
+                                    args.append(arg_value)
+                                    arg_tokens = []
+                            else:
                                 arg_tokens.append(tokens[i])
                             i += 1
                         if i >= len(tokens) or tokens[i].token != ')':
                             raise Exception("Missing closing parenthesis in function call")
-                        # Evaluate the argument expression
+                        # Process the last argument
                         if arg_tokens:
                             arg_value = self._codegen_expr(arg_tokens, local_vars=local_vars, builder=builder)
                             args.append(arg_value)
@@ -603,28 +639,69 @@ class LLVMCodeGenerator:
                         # Find the closing parenthesis and extract indices
                         indices = []
                         i += 2  # Skip the opening parenthesis
-                        while i < len(tokens) and tokens[i].token != ')':
-                            if tokens[i].type == 'num':
-                                indices.append(ir.Constant(ir.DoubleType(), float(tokens[i].token)))
-                            elif tokens[i].type == 'id':
-                                indices.append(self.builder.load(self.symbol_table[tokens[i].token], name=f"load_{tokens[i].token}"))
+                        # Parse indices separated by commas
+                        index_tokens = []
+                        paren_count = 0
+                        while i < len(tokens) and (tokens[i].token != ')' or paren_count > 0):
+                            if tokens[i].token == '(':
+                                paren_count += 1
+                                index_tokens.append(tokens[i])
+                            elif tokens[i].token == ')':
+                                paren_count -= 1
+                                if paren_count >= 0:
+                                    index_tokens.append(tokens[i])
+                            elif tokens[i].token == ',' and paren_count == 0:
+                                # This comma separates array indices
+                                if index_tokens:
+                                    index_value = self._codegen_expr(index_tokens, local_vars=local_vars, builder=builder)
+                                    indices.append(index_value)
+                                    index_tokens = []
                             else:
-                                raise Exception(f"Invalid array index: {tokens[i].token}")
+                                index_tokens.append(tokens[i])
                             i += 1
-                            if i < len(tokens) and tokens[i].token == ',':
-                                i += 1  # Skip comma
                         if i >= len(tokens) or tokens[i].token != ')':
                             raise Exception("Missing closing parenthesis in array access")
+                        # Process the last index
+                        if index_tokens:
+                            index_value = self._codegen_expr(index_tokens, local_vars=local_vars, builder=builder)
+                            indices.append(index_value)
                         # Get array element
                         element_ptr = self._codegen_array_access(array_name, indices)
                         data_stack.append(self.builder.load(element_ptr, name=f"load_{array_name}_element"))
                 else:
                     # Regular variable
                     if token.token in self.array_info:
-                        # This is an array variable, we need to handle it specially
-                        # For now, just load the array storage pointer
-                        array_storage = self.symbol_table[token.token]
-                        data_stack.append(array_storage)
+                        # Array name used as scalar - check for scalar version
+                        scalar_name = f"{token.token}_scalar"
+                        if scalar_name in self.symbol_table:
+                            # Load the scalar version
+                            if token.token.endswith('$'):
+                                data_stack.append(builder.load(self.symbol_table[scalar_name], name=f"load_{scalar_name}"))
+                            else:
+                                data_stack.append(builder.load(self.symbol_table[scalar_name], name=f"load_{scalar_name}"))
+                        else:
+                            # Initialize scalar version to 0 if not found
+                            if token.token.endswith('$'):
+                                # String variable
+                                empty_str = "\0"
+                                c_empty = ir.Constant(ir.ArrayType(ir.IntType(8), len(empty_str)),
+                                                      bytearray(empty_str.encode("utf8")))
+                                global_empty = ir.GlobalVariable(self.module, c_empty.type, name=f"empty_{scalar_name}")
+                                global_empty.linkage = 'internal'
+                                global_empty.global_constant = True
+                                global_empty.initializer = c_empty
+                                
+                                var_ptr = builder.alloca(ir.IntType(8).as_pointer(), name=scalar_name)
+                                empty_ptr = builder.bitcast(global_empty, ir.IntType(8).as_pointer())
+                                builder.store(empty_ptr, var_ptr)
+                                self.symbol_table[scalar_name] = var_ptr
+                                data_stack.append(builder.load(var_ptr, name=f"load_{scalar_name}"))
+                            else:
+                                # Numeric variable
+                                var_ptr = builder.alloca(ir.DoubleType(), name=scalar_name)
+                                builder.store(ir.Constant(ir.DoubleType(), 0.0), var_ptr)
+                                self.symbol_table[scalar_name] = var_ptr
+                                data_stack.append(builder.load(var_ptr, name=f"load_{scalar_name}"))
                     else:
                         # Regular variable - check local vars first, then global
                         if token.token in local_vars:
@@ -777,6 +854,10 @@ class LLVMCodeGenerator:
             # MID$(string, start, length) - return substring
             # For now, return a reasonable default
             return self._create_string_constant("MID")
+        elif func_name == "TAB":
+            # TAB(n) - return string with n spaces for print formatting
+            # For now, return a reasonable default (some spaces)
+            return self._create_string_constant("        ")
         elif func_name in self.user_functions:
             # User-defined function call
             return builder.call(self.user_functions[func_name], [args[0]], name=f"{func_name.lower()}_result")
@@ -911,8 +992,13 @@ class LLVMCodeGenerator:
             # We'll determine the next line block later
             else_block = func.append_basic_block(name=f"if_next_line_{self.builder.block.name}")
         
-        # Branch based on condition
-        self.builder.cbranch(condition, then_block, else_block)
+        # Branch based on condition (only if current block is not terminated)
+        if not self.builder.block.is_terminated:
+            self.builder.cbranch(condition, then_block, else_block)
+        else:
+            # Current block is already terminated - this IF statement is unreachable
+            # We still need to create the blocks but they won't be connected
+            pass
         
         # THEN block: execute all remaining statements on this line
         self.builder.position_at_end(then_block)
@@ -986,19 +1072,20 @@ class LLVMCodeGenerator:
             # Check if this is GOSUB or GOTO
             is_gosub = stmt.keyword.name == "GOSUB"
             
-            # Normal unconditional GOTO/GOSUB
-            if is_gosub:
-                # For GOSUB, push return address and branch
-                # Find the next line to return to using tracked index
-                if self.current_line_index + 1 < len(self.program):
-                    next_line = self.program[self.current_line_index + 1].line
-                    self._push_return_address(next_line)
-                    print(f"DEBUG: GOSUB from line {self.program[self.current_line_index].line} to {target_line}, return to {next_line}")
-                
-                self.builder.branch(self.line_blocks[target_line])
-            else:
-                # Normal GOTO
-                self.builder.branch(self.line_blocks[target_line])
+            # Normal unconditional GOTO/GOSUB (only if current block is not terminated)
+            if not self.builder.block.is_terminated:
+                if is_gosub:
+                    # For GOSUB, push return address and branch
+                    # Find the next line to return to using tracked index
+                    if self.current_line_index + 1 < len(self.program):
+                        next_line = self.program[self.current_line_index + 1].line
+                        self._push_return_address(next_line)
+                        print(f"DEBUG: GOSUB from line {self.program[self.current_line_index].line} to {target_line}, return to {next_line}")
+                    
+                    self.builder.branch(self.line_blocks[target_line])
+                else:
+                    # Normal GOTO
+                    self.builder.branch(self.line_blocks[target_line])
         else:
             raise Exception(f"GOTO/GOSUB target line not found: {target_line}")
 
