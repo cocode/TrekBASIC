@@ -7,35 +7,15 @@ and verifies they return the expected exit code.
 
 import sys
 import os
-import tempfile
 import subprocess
 from test_runner_common import run_test_suite
 
 def llvm_command_generator(program_path):
-    """Generate command to compile and run a BASIC program with LLVM."""
-    # Create a temporary directory for the compiled executable
-    temp_dir = tempfile.mkdtemp()
-    program_name = os.path.splitext(os.path.basename(program_path))[0]
-    
-    # The LLVM IR file will be created next to the source file
-    program_dir = os.path.dirname(program_path)
-    llvm_file = os.path.join(program_dir, f"{program_name}.ll")
-    executable_file = os.path.join(temp_dir, program_name)
-    
-    # Step 1: Generate LLVM IR
-    generate_cmd = [sys.executable, "basic.py", program_path, "-l"]
-    result = subprocess.run(generate_cmd, capture_output=True, text=True)
-    if result.returncode != 0:
-        raise Exception(f"Failed to generate LLVM IR: {result.stderr}")
-    
-    # Step 2: Compile LLVM IR to executable
-    compile_cmd = ["clang", "-o", executable_file, llvm_file, "-lm"]
-    result = subprocess.run(compile_cmd, capture_output=True, text=True)
-    if result.returncode != 0:
-        raise Exception(f"Failed to compile LLVM IR: {result.stderr}")
-    
-    # Step 3: Return command to run the executable
-    return [executable_file]
+    """Generate command to compile and run a BASIC program with LLVM using tbc.py."""
+    # Use tbc.py to compile and run the program
+    # tbc.py handles the full pipeline: BASIC -> LLVM IR -> executable -> run
+    # Since run_llvm_tests.py is run from the project directory, tbc.py is in the current directory
+    return [sys.executable, "tbc.py", program_path]
 
 def main():
     # Get the directory containing this script
