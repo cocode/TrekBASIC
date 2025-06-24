@@ -53,6 +53,22 @@ class LLVMCodeGenerator:
         fabs_type = ir.FunctionType(ir.DoubleType(), [ir.DoubleType()])
         self.fabs = ir.Function(self.module, fabs_type, name="fabs")
         
+        # Declare pow function for exponentiation
+        pow_type = ir.FunctionType(ir.DoubleType(), [ir.DoubleType(), ir.DoubleType()])
+        self.pow = ir.Function(self.module, pow_type, name="pow")
+        
+        # Declare rand function for random numbers
+        rand_type = ir.FunctionType(ir.IntType(32), [])
+        self.rand = ir.Function(self.module, rand_type, name="rand")
+        
+        # Declare srand function for seeding random number generator
+        srand_type = ir.FunctionType(ir.VoidType(), [ir.IntType(32)])
+        self.srand = ir.Function(self.module, srand_type, name="srand")
+        
+        # Declare time function for seeding
+        time_type = ir.FunctionType(ir.IntType(64), [ir.IntType(64).as_pointer()])
+        self.time = ir.Function(self.module, time_type, name="time")
+        
         # Declare INT function
         int_type = ir.FunctionType(ir.DoubleType(), [ir.DoubleType()])
         self.int_func = ir.Function(self.module, int_type, name="floor")
@@ -397,12 +413,12 @@ class LLVMCodeGenerator:
         self.builder.ret(ir.Constant(ir.IntType(32), 1))
 
     def _codegen_let(self, stmt):
-        var_name = stmt._variable
+        var_name = stmt._variable.strip()
         
-        # Check if this is an array assignment
+        # Check if this is an array assignment by parsing the variable name
         if '(' in var_name:
-            # Parse array name and indices
-            array_name = var_name[:var_name.find('(')]
+            # Parse array name and indices from the variable name
+            array_name = var_name[:var_name.find('(')].strip()  # Strip whitespace from array name
             indices_str = var_name[var_name.find('(')+1:var_name.rfind(')')]
             indices = [self._codegen_expr(get_lexer().lex(idx.strip())) for idx in indices_str.split(',')]
             
@@ -412,8 +428,11 @@ class LLVMCodeGenerator:
             # Store the value
             value = self._codegen_expr(stmt._tokens)
             
-            # Normal assignment
+            # Array assignment
             self.builder.store(value, element_ptr)
+        elif var_name in self.array_info:
+            # This is a bare array name - shouldn't happen in valid BASIC
+            raise Exception(f"Invalid assignment to array {var_name} without indices")
         else:
             # Regular variable assignment
             var_ptr = self.symbol_table.get(var_name)
@@ -561,7 +580,7 @@ class LLVMCodeGenerator:
                 if i + 1 < len(tokens) and tokens[i + 1].token == '(':
                     # This could be function call or array access
                     identifier = token.token
-                    known_functions = ["SIN", "COS", "SQR", "EXP", "LOG", "ABS", "ASC", "CHR$", "SPACE$", "STR$", "LEN", "LEFT$", "RIGHT$", "MID$", "INT"]
+                    known_functions = ["SIN", "COS", "SQR", "EXP", "LOG", "ABS", "ASC", "CHR$", "SPACE$", "STR$", "LEN", "LEFT$", "RIGHT$", "MID$", "INT", "RND"]
                     if identifier in known_functions or identifier in self.user_functions:
                         # This is a function call
                         print(f"DEBUG: Found function call to {identifier}")
@@ -588,7 +607,7 @@ class LLVMCodeGenerator:
                         data_stack.append(result)
                     else:
                         # This is array access - handle it specially
-                        array_name = identifier
+                        array_name = identifier.strip()
                         if array_name not in self.array_info:
                             raise Exception(f"Array {array_name} not declared")
                         # Find the closing parenthesis and extract indices
@@ -722,6 +741,20 @@ class LLVMCodeGenerator:
         elif func_name == "INT":
             # INT(x) - truncate to integer (floor function)
             return builder.call(self.int_func, [args[0]], name="int_result")
+        elif func_name == "RND":
+            # RND(x) - return random number between 0 and 1
+            # First seed the random number generator if not already done
+            null_ptr = ir.Constant(ir.IntType(64).as_pointer(), None)
+            time_val = builder.call(self.time, [null_ptr], name="time_val")
+            time_int = builder.trunc(time_val, ir.IntType(32), name="time_int")
+            builder.call(self.srand, [time_int])
+            
+            # Get random integer and convert to float between 0 and 1
+            rand_int = builder.call(self.rand, [], name="rand_int")
+            rand_float = builder.uitofp(rand_int, ir.DoubleType(), name="rand_float")
+            max_rand = ir.Constant(ir.DoubleType(), 2147483647.0)  # RAND_MAX
+            result = builder.fdiv(rand_float, max_rand, name="rnd_result")
+            return result
         elif func_name == "ASC":
             # ASC(string) - return ASCII code of first character
             # For now, return a reasonable default (65 for 'A')
@@ -858,6 +891,9 @@ class LLVMCodeGenerator:
                 or_result = builder.or_(left_nonzero, right_nonzero)
                 # Convert i1 to double: true -> 1.0, false -> 0.0
                 result = builder.uitofp(or_result, ir.DoubleType())
+            elif op.token == '^':
+                # Exponentiation: left ^ right
+                result = builder.call(self.pow, [left, right], name="pow_result")
             else:
                 raise NotImplementedError(f"Operator {op.token} not implemented")
             
