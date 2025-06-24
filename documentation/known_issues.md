@@ -1,5 +1,37 @@
 # Known Issues
 See also future.md
+Renumber bug. Critical
+Loading  test_suite/test_for_limits.bas
+> list
+100 REM check limits on for loops
+101 FOR J = 3 TO 3 STEP 1
+102 IF J <> 3 THEN STOP
+103 NEXT J
+105 S = 0
+110 FOR J = 17 TO 27 STEP 3
+120 S = S + J
+125 PRINT S, J
+130 NEXT J
+140 PRINT "S";17 + 19 + 21 + 23 + 25 + 27
+> renumber
+Renumber starting with line 100, with increment 10
+Renumbered 11 lines, and 14 statements to 14 lines
+> list
+100 REM check limits on for loops
+110 FOR J = 3 TO 3
+120 IF J<>3 THEN STOP
+**130 STOP**
+140 NEXT J
+150 LET S=0quit
+160 FOR J = 17 TO 27 step 3
+170 LET S=S+J
+180 PRINT S, J
+190 NEXT J
+
+
+Syntax errors should have program line number, when available 
+SyntaxError: No TO found for FOR in line 14 of file.
+That's the line in file, which is useful, but not as good.
 
 1. Support different BASIC dialects. 
    
