@@ -1,0 +1,9 @@
+10 E = LOG(2.718)
+20 D = E - 1
+30 A = ABS(D)
+40 PRINT "E ="; E
+50 PRINT "E - 1 ="; D
+60 PRINT "ABS(E - 1) ="; A
+70 IF A > 0.001 THEN PRINT "FAIL: ABS(E-1) > 0.001": STOP
+80 PRINT "PASS: ABS(E-1) <= 0.001"
+90 END 

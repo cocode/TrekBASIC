@@ -80,7 +80,6 @@ class LLVMCodeGenerator:
         self.array_info = {}  # Track array dimensions and storage
         self.line_blocks = {}
         self.loop_stack = []  # Track nested FOR loops
-        self.if_condition = None  # Track current IF condition
         self.return_stack = []  # Track GOSUB return addresses
         self.current_line_index = 0
         
@@ -157,11 +156,20 @@ class LLVMCodeGenerator:
         # Generate code for each line
         for i, line in enumerate(self.program):
             self.builder.position_at_end(self.line_blocks[line.line])
-            self.if_condition = None  # Reset IF condition for each line
             self.current_line_index = i  # Track current line index for GOSUB
             
-            for stmt in line.stmts:
-                self._generate_statement_ir(stmt)
+            j = 0
+            while j < len(line.stmts):
+                stmt = line.stmts[j]
+                
+                # Check if this is an IF statement - it will handle remaining statements
+                if isinstance(stmt, ParsedStatementIf):
+                    self._generate_statement_ir(stmt, line_stmts=line.stmts, stmt_index=j)
+                    # IF statement handles all remaining statements on the line
+                    break
+                else:
+                    self._generate_statement_ir(stmt, line_stmts=line.stmts, stmt_index=j)
+                    j += 1
             
             # Branch to next line if not a branching statement
             if not self.builder.block.is_terminated:
@@ -232,7 +240,7 @@ class LLVMCodeGenerator:
         
         # Arrays will be allocated in DIM statements, not here
 
-    def _generate_statement_ir(self, stmt):
+    def _generate_statement_ir(self, stmt, line_stmts=None, stmt_index=None):
         if isinstance(stmt, ParsedStatementLet):
             self._codegen_let(stmt)
         elif isinstance(stmt, ParsedStatementPrint):
@@ -244,7 +252,7 @@ class LLVMCodeGenerator:
         elif isinstance(stmt, ParsedStatementNext):
              self._codegen_next(stmt)
         elif isinstance(stmt, ParsedStatementIf):
-             self._codegen_if(stmt)
+             self._codegen_if(stmt, line_stmts, stmt_index)
         elif isinstance(stmt, ParsedStatementDim):
              self._codegen_dim(stmt)
         elif stmt.keyword.name == "END":
@@ -393,27 +401,8 @@ class LLVMCodeGenerator:
             # Store the value
             value = self._codegen_expr(stmt._tokens)
             
-            # If we're in an IF context, make this a conditional assignment
-            if self.if_condition is not None:
-                # Create blocks for then and after
-                func = self.builder.block.function
-                then_block = func.append_basic_block(name=f"if_then_{self.builder.block.name}")
-                after_block = func.append_basic_block(name=f"if_after_{self.builder.block.name}")
-                
-                # Branch based on condition
-                self.builder.cbranch(self.if_condition, then_block, after_block)
-                
-                # THEN block: do the assignment
-                self.builder.position_at_end(then_block)
-                self.builder.store(value, element_ptr)
-                self.builder.branch(after_block)
-                
-                # AFTER block: continue normally
-                self.builder.position_at_end(after_block)
-                self.if_condition = None  # Clear the condition
-            else:
-                # Normal assignment
-                self.builder.store(value, element_ptr)
+            # Normal assignment
+            self.builder.store(value, element_ptr)
         else:
             # Regular variable assignment
             var_ptr = self.symbol_table.get(var_name)
@@ -440,52 +429,14 @@ class LLVMCodeGenerator:
             
             value = self._codegen_expr(stmt._tokens)
             
-            # If we're in an IF context, make this a conditional assignment
-            if self.if_condition is not None:
-                # Create blocks for then and after
-                func = self.builder.block.function
-                then_block = func.append_basic_block(name=f"if_then_{self.builder.block.name}")
-                after_block = func.append_basic_block(name=f"if_after_{self.builder.block.name}")
-                
-                # Branch based on condition
-                self.builder.cbranch(self.if_condition, then_block, after_block)
-                
-                # THEN block: do the assignment
-                self.builder.position_at_end(then_block)
-                self.builder.store(value, var_ptr)
-                self.builder.branch(after_block)
-                
-                # AFTER block: continue normally
-                self.builder.position_at_end(after_block)
-                self.if_condition = None  # Clear the condition
-            else:
-                # Normal assignment
-                self.builder.store(value, var_ptr)
+            # Normal assignment
+            self.builder.store(value, var_ptr)
 
     def _codegen_print(self, stmt: ParsedStatementPrint):
         lexer = get_lexer()
         
-        # If we're in an IF context, make this a conditional print
-        if self.if_condition is not None:
-            # Create blocks for then and after
-            func = self.builder.block.function
-            then_block = func.append_basic_block(name=f"if_then_{self.builder.block.name}")
-            after_block = func.append_basic_block(name=f"if_after_{self.builder.block.name}")
-            
-            # Branch based on condition
-            self.builder.cbranch(self.if_condition, then_block, after_block)
-            
-            # THEN block: do the printing
-            self.builder.position_at_end(then_block)
-            self._do_print(stmt, lexer)
-            self.builder.branch(after_block)
-            
-            # AFTER block: continue normally
-            self.builder.position_at_end(after_block)
-            self.if_condition = None  # Clear the condition
-        else:
-            # Normal print
-            self._do_print(stmt, lexer)
+        # Normal print
+        self._do_print(stmt, lexer)
 
     def _do_print(self, stmt, lexer):
         """Helper method to do the actual printing"""
@@ -497,12 +448,16 @@ class LLVMCodeGenerator:
                 str_val = str_val.encode('utf-8').decode('unicode_escape')
                 # Create a global string constant with newline for printing
                 fmt = str_val + "\n\0"
-                c_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(fmt)),
-                                    bytearray(fmt.encode("utf8")))
-                global_fmt = ir.GlobalVariable(self.module, c_fmt.type, name=f"str_{hash(fmt)}")
-                global_fmt.linkage = 'internal'
-                global_fmt.global_constant = True
-                global_fmt.initializer = c_fmt
+                name = f"str_{hash(fmt)}"
+                if name in self.module.globals:
+                    global_fmt = self.module.get_global(name)
+                else:
+                    c_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(fmt)),
+                                        bytearray(fmt.encode("utf8")))
+                    global_fmt = ir.GlobalVariable(self.module, c_fmt.type, name=name)
+                    global_fmt.linkage = 'internal'
+                    global_fmt.global_constant = True
+                    global_fmt.initializer = c_fmt
                 fmt_ptr = self.builder.bitcast(global_fmt, ir.IntType(8).as_pointer())
                 self.builder.call(self.printf, [fmt_ptr])
             else:
@@ -516,13 +471,17 @@ class LLVMCodeGenerator:
                     self.builder.call(self.printf, [val])
                     # Add newline after string
                     newline_fmt = "\n\0"
-                    c_newline = ir.Constant(ir.ArrayType(ir.IntType(8), len(newline_fmt)),
-                                            bytearray(newline_fmt.encode("utf8")))
-                    global_newline = ir.GlobalVariable(self.module, c_newline.type, name=f"newline_{self.newline_counter}")
-                    self.newline_counter += 1
-                    global_newline.linkage = 'internal'
-                    global_newline.global_constant = True
-                    global_newline.initializer = c_newline
+                    name = f"newline_{self.newline_counter}"
+                    if name in self.module.globals:
+                        global_newline = self.module.get_global(name)
+                    else:
+                        c_newline = ir.Constant(ir.ArrayType(ir.IntType(8), len(newline_fmt)),
+                                                bytearray(newline_fmt.encode("utf8")))
+                        global_newline = ir.GlobalVariable(self.module, c_newline.type, name=name)
+                        self.newline_counter += 1
+                        global_newline.linkage = 'internal'
+                        global_newline.global_constant = True
+                        global_newline.initializer = c_newline
                     newline_ptr = self.builder.bitcast(global_newline, ir.IntType(8).as_pointer())
                     self.builder.call(self.printf, [newline_ptr])
                 else:
@@ -793,6 +752,7 @@ class LLVMCodeGenerator:
             builder = self.builder
 
         op = op_stack.pop()
+        print(f"DEBUG: Processing operator: {op.token}")
         
         if op.token == '@':  # ARRAY_ACCESS operator
             # Array access: pop array name and indices, return element value
@@ -842,57 +802,136 @@ class LLVMCodeGenerator:
             elif op.token == '=':
                 # Equal comparison
                 cmp_result = builder.fcmp_ordered("==", left, right, name="cmptmp")
-                result = builder.uitofp(cmp_result, ir.DoubleType(), name="booltmp")
+                result = builder.uitofp(cmp_result, ir.DoubleType())  # Convert to double
             elif op.token == '<>':
                 # Not equal comparison
                 cmp_result = builder.fcmp_ordered("!=", left, right, name="cmptmp")
-                result = builder.uitofp(cmp_result, ir.DoubleType(), name="booltmp")
+                result = builder.uitofp(cmp_result, ir.DoubleType())  # Convert to double
             elif op.token == '<':
                 # Less than comparison
                 cmp_result = builder.fcmp_ordered("<", left, right, name="cmptmp")
-                result = builder.uitofp(cmp_result, ir.DoubleType(), name="booltmp")
+                result = builder.uitofp(cmp_result, ir.DoubleType())  # Convert to double
             elif op.token == '>':
                 # Greater than comparison
                 cmp_result = builder.fcmp_ordered(">", left, right, name="cmptmp")
-                result = builder.uitofp(cmp_result, ir.DoubleType(), name="booltmp")
+                result = builder.uitofp(cmp_result, ir.DoubleType())  # Convert to double
             elif op.token == '<=':
                 # Less than or equal comparison
                 cmp_result = builder.fcmp_ordered("<=", left, right, name="cmptmp")
-                result = builder.uitofp(cmp_result, ir.DoubleType(), name="booltmp")
+                result = builder.uitofp(cmp_result, ir.DoubleType())  # Convert to double
             elif op.token == '>=':
                 # Greater than or equal comparison
                 cmp_result = builder.fcmp_ordered(">=", left, right, name="cmptmp")
-                result = builder.uitofp(cmp_result, ir.DoubleType(), name="booltmp")
+                result = builder.uitofp(cmp_result, ir.DoubleType())  # Convert to double
             elif op.token == 'AND':
                 # Logical AND: (left != 0) and (right != 0)
                 left_nonzero = builder.fcmp_ordered('!=', left, ir.Constant(ir.DoubleType(), 0.0))
                 right_nonzero = builder.fcmp_ordered('!=', right, ir.Constant(ir.DoubleType(), 0.0))
                 and_result = builder.and_(left_nonzero, right_nonzero)
-                # Convert i1 to double
+                # Convert i1 to double: true -> 1.0, false -> 0.0
                 result = builder.uitofp(and_result, ir.DoubleType())
             elif op.token == 'OR':
                 # Logical OR: (left != 0) or (right != 0)
                 left_nonzero = builder.fcmp_ordered('!=', left, ir.Constant(ir.DoubleType(), 0.0))
                 right_nonzero = builder.fcmp_ordered('!=', right, ir.Constant(ir.DoubleType(), 0.0))
                 or_result = builder.or_(left_nonzero, right_nonzero)
-                # Convert i1 to double
+                # Convert i1 to double: true -> 1.0, false -> 0.0
                 result = builder.uitofp(or_result, ir.DoubleType())
             else:
                 raise NotImplementedError(f"Operator {op.token} not implemented")
             
             data_stack.append(result)
 
-    def _codegen_if(self, stmt):
-        """Generate LLVM IR for an IF/THEN statement"""
+    def _codegen_if(self, stmt, line_stmts=None, stmt_index=None):
+        """Generate LLVM IR for an IF/THEN statement with proper BASIC line semantics"""
         # Evaluate the condition
         condition_val = self._codegen_expr(stmt._tokens)
         
-        # Convert to boolean (non-zero is true)
+        # Compare to zero to get boolean condition
         zero = ir.Constant(ir.DoubleType(), 0.0)
         condition = self.builder.fcmp_ordered("!=", condition_val, zero, name="if_condition")
         
-        # Store the condition for this line
-        self.if_condition = condition
+        # Create blocks for then and else (next line)
+        func = self.builder.block.function
+        then_block = func.append_basic_block(name=f"if_then_{self.builder.block.name}")
+        
+        # For false condition: either continue to next statement on same line, or go to next line
+        if line_stmts and stmt_index is not None and stmt_index + 1 < len(line_stmts):
+            # There are more statements on this line - continue with them
+            else_block = func.append_basic_block(name=f"if_continue_{self.builder.block.name}")
+        else:
+            # No more statements on this line - go to next line
+            # We'll determine the next line block later
+            else_block = func.append_basic_block(name=f"if_next_line_{self.builder.block.name}")
+        
+        # Branch based on condition
+        self.builder.cbranch(condition, then_block, else_block)
+        
+        # THEN block: execute all remaining statements on this line
+        self.builder.position_at_end(then_block)
+        
+        # First, execute the immediate THEN clause
+        additional = stmt.get_additional()
+        if additional:
+            from basic_utils import smart_split
+            from basic_statements import Keywords
+            from basic_parsing import ParsedStatement, ParsedStatementLet
+            stmts = smart_split(additional)
+            for s in stmts:
+                s = s.strip()
+                if not s:
+                    continue
+                # Handle bare line number as GOTO
+                if s.isdigit():
+                    s = f"GOTO {s}"
+                # Find the keyword
+                for kw in Keywords.__members__.values():
+                    if s.startswith(kw.name):
+                        parser = kw.value.get_parser_class()
+                        parsed = parser(kw, s[len(kw.name):])
+                        break
+                else:
+                    # Default to LET
+                    kw = Keywords.LET
+                    parser = kw.value.get_parser_class()
+                    parsed = parser(kw, s)
+                self._generate_statement_ir(parsed)
+                
+                # Check if the block was terminated (e.g., by GOTO, RETURN, END, STOP)
+                if self.builder.block.is_terminated:
+                    break
+        
+        # Then execute all remaining statements on this line (if any)
+        if not self.builder.block.is_terminated and line_stmts and stmt_index is not None:
+            for i in range(stmt_index + 1, len(line_stmts)):
+                remaining_stmt = line_stmts[i]
+                self._generate_statement_ir(remaining_stmt)
+                
+                # Check if the block was terminated
+                if self.builder.block.is_terminated:
+                    break
+        
+        # Branch to next line (or return if this terminates)
+        if not self.builder.block.is_terminated:
+            # Find next line
+            if self.current_line_index + 1 < len(self.program):
+                next_line_num = self.program[self.current_line_index + 1].line
+                self.builder.branch(self.line_blocks[next_line_num])
+            else:
+                self.builder.ret(ir.Constant(ir.IntType(32), 0))
+        
+        # ELSE block: handle false condition
+        self.builder.position_at_end(else_block)
+        if line_stmts and stmt_index is not None and stmt_index + 1 < len(line_stmts):
+            # Continue with next statement on same line
+            pass  # The main loop will handle the remaining statements
+        else:
+            # Go to next line
+            if self.current_line_index + 1 < len(self.program):
+                next_line_num = self.program[self.current_line_index + 1].line
+                self.builder.branch(self.line_blocks[next_line_num])
+            else:
+                self.builder.ret(ir.Constant(ir.IntType(32), 0))
 
     def _codegen_goto(self, stmt):
         target_line = int(stmt.destination)
@@ -900,46 +939,19 @@ class LLVMCodeGenerator:
             # Check if this is GOSUB or GOTO
             is_gosub = stmt.keyword.name == "GOSUB"
             
-            # If we're in an IF context, make this a conditional GOTO/GOSUB
-            if self.if_condition is not None:
-                # Create blocks for then and after
-                func = self.builder.block.function
-                then_block = func.append_basic_block(name=f"if_then_{self.builder.block.name}")
-                after_block = func.append_basic_block(name=f"if_after_{self.builder.block.name}")
+            # Normal unconditional GOTO/GOSUB
+            if is_gosub:
+                # For GOSUB, push return address and branch
+                # Find the next line to return to using tracked index
+                if self.current_line_index + 1 < len(self.program):
+                    next_line = self.program[self.current_line_index + 1].line
+                    self._push_return_address(next_line)
+                    print(f"DEBUG: GOSUB from line {self.program[self.current_line_index].line} to {target_line}, return to {next_line}")
                 
-                # Branch based on condition
-                self.builder.cbranch(self.if_condition, then_block, after_block)
-                
-                # THEN block: do the GOTO/GOSUB
-                self.builder.position_at_end(then_block)
-                if is_gosub:
-                    # For GOSUB, push return address and branch
-                    if self.current_line_index + 1 < len(self.program):
-                        next_line = self.program[self.current_line_index + 1].line
-                        self._push_return_address(next_line)
-                        print(f"DEBUG: GOSUB from line {self.program[self.current_line_index].line} to {target_line}, return to {next_line}")
-                    self.builder.branch(self.line_blocks[target_line])
-                else:
-                    # Normal GOTO
-                    self.builder.branch(self.line_blocks[target_line])
-                
-                # AFTER block: continue normally
-                self.builder.position_at_end(after_block)
-                self.if_condition = None  # Clear the condition
+                self.builder.branch(self.line_blocks[target_line])
             else:
-                # Normal unconditional GOTO/GOSUB
-                if is_gosub:
-                    # For GOSUB, push return address and branch
-                    # Find the next line to return to using tracked index
-                    if self.current_line_index + 1 < len(self.program):
-                        next_line = self.program[self.current_line_index + 1].line
-                        self._push_return_address(next_line)
-                        print(f"DEBUG: GOSUB from line {self.program[self.current_line_index].line} to {target_line}, return to {next_line}")
-                    
-                    self.builder.branch(self.line_blocks[target_line])
-                else:
-                    # Normal GOTO
-                    self.builder.branch(self.line_blocks[target_line])
+                # Normal GOTO
+                self.builder.branch(self.line_blocks[target_line])
         else:
             raise Exception(f"GOTO/GOSUB target line not found: {target_line}")
 
