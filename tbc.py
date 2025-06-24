@@ -22,6 +22,8 @@ def main():
                        help='Only generate LLVM IR, do not compile or run')
     parser.add_argument('--time', action='store_true',
                        help='Time the execution only (excluding compilation)')
+    parser.add_argument('--debug', action='store_true',
+                       help='Enable debug output during LLVM IR generation')
     args = parser.parse_args()
 
     # Load and parse the BASIC program
@@ -46,7 +48,7 @@ def main():
     try:
         # Step 1: Generate LLVM IR
         print(f"Generating LLVM IR...")
-        ir_code = generate_llvm_ir(program)
+        ir_code = generate_llvm_ir(program, debug=args.debug)
         with open(ll_file, "w") as f:
             f.write(ir_code)
         print(f"LLVM IR saved to {ll_file}")

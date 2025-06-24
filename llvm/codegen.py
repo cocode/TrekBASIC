@@ -12,8 +12,9 @@ from basic_operators import get_op_def, get_precedence
 
 
 class LLVMCodeGenerator:
-    def __init__(self, program):
+    def __init__(self, program, debug=False):
         self.program = program
+        self.debug = debug
         self.module = ir.Module(name="basic_program")
         self.module.triple = binding.get_default_triple()
 
@@ -128,17 +129,20 @@ class LLVMCodeGenerator:
         # First pass: scan for user-defined functions and create declarations only
         for program_line in self.program:
             for stmt in program_line.stmts:
-                print(f"DEBUG: Statement type: {type(stmt).__name__}, keyword: {getattr(stmt, 'keyword', None)}")
+                if self.debug:
+                    print(f"DEBUG: Statement type: {type(stmt).__name__}, keyword: {getattr(stmt, 'keyword', None)}")
                 if hasattr(stmt, 'keyword') and getattr(stmt.keyword, 'name', None) == 'DEF':
                     fn_name = stmt._variable  # e.g., FNA
-                    print(f"DEBUG: Found DEF statement for function {fn_name}")
+                    if self.debug:
+                        print(f"DEBUG: Found DEF statement for function {fn_name}")
                     # Create LLVM function declaration: double fn(double)
                     fn_type = ir.FunctionType(ir.DoubleType(), [ir.DoubleType()])
                     llvm_fn = ir.Function(self.module, fn_type, name=fn_name)
                     self.user_functions[fn_name] = llvm_fn
                     self.user_function_defs.append(stmt)
         
-        print(f"DEBUG: Created {len(self.user_functions)} user functions: {list(self.user_functions.keys())}")
+        if self.debug:
+            print(f"DEBUG: Created {len(self.user_functions)} user functions: {list(self.user_functions.keys())}")
         
         # Note: Function bodies will be generated later in generate_ir() after variables are allocated
 
@@ -317,7 +321,8 @@ class LLVMCodeGenerator:
                 
                 # Generate the GOSUB
                 target_line = int(stmt.destination)
-                print(f"DEBUG: GOSUB from line {self.program[self.current_line_index].line} to {target_line}, return to continuation {continuation_line_num}")
+                if self.debug:
+                    print(f"DEBUG: GOSUB from line {self.program[self.current_line_index].line} to {target_line}, return to continuation {continuation_line_num}")
                 self.builder.branch(self.line_blocks[target_line])
                 
                 # Switch to continuation block for remaining statements
@@ -684,7 +689,8 @@ class LLVMCodeGenerator:
         
         # Pop return address from stack
         line_number = self._pop_return_address()
-        print(f"DEBUG: RETURN to line {line_number}")
+        if self.debug:
+            print(f"DEBUG: RETURN to line {line_number}")
         
         # Use a switch statement to branch to the correct block
         default_block = func.append_basic_block(name="return_invalid")
@@ -865,11 +871,13 @@ class LLVMCodeGenerator:
         is_unary_context = True
         i = 0
 
-        print(f"DEBUG: Processing tokens: {tokens}")  # Debug output
+        if self.debug:
+            print(f"DEBUG: Processing tokens: {tokens}")  # Debug output
 
         while i < len(tokens):
             token = tokens[i]
-            print(f"DEBUG: Token: {token.type} = '{token.token}'")  # Debug output
+            if self.debug:
+                print(f"DEBUG: Token: {token.type} = '{token.token}'")  # Debug output
             
             if token.type == 'num':
                 data_stack.append(ir.Constant(ir.DoubleType(), float(token.token)))
@@ -881,7 +889,8 @@ class LLVMCodeGenerator:
                 data_stack.append(fmt_ptr)
                 is_unary_context = False
             elif token.type == 'id':
-                print(f"DEBUG: id token encountered: '{token.token}' at index {i}")
+                if self.debug:
+                    print(f"DEBUG: id token encountered: '{token.token}' at index {i}")
                 # Check if this is followed by parentheses
                 if i + 1 < len(tokens) and tokens[i + 1].token == '(':
                     # This could be function call or array access
@@ -889,7 +898,8 @@ class LLVMCodeGenerator:
                     known_functions = ["SIN", "COS", "SQR", "EXP", "LOG", "ABS", "ASC", "CHR$", "SPACE$", "STR$", "LEN", "LEFT$", "RIGHT$", "MID$", "INT", "RND", "TAB"]
                     if identifier in known_functions or identifier in self.user_functions:
                         # This is a function call
-                        print(f"DEBUG: Found function call to {identifier}")
+                        if self.debug:
+                            print(f"DEBUG: Found function call to {identifier}")
                         # Find the closing parenthesis and extract arguments
                         args = []
                         i += 2  # Skip the opening parenthesis
@@ -1034,8 +1044,8 @@ class LLVMCodeGenerator:
 
         while op_stack:
             self._one_op(op_stack, data_stack, builder)
-
-        print(f"DEBUG: Final data_stack size: {len(data_stack)}")  # Debug output
+        if self.debug:
+            print(f"DEBUG: Final data_stack size: {len(data_stack)}")  # Debug output
         if len(data_stack) == 1:
             return data_stack[0]
         else:
@@ -1299,7 +1309,8 @@ class LLVMCodeGenerator:
             builder = self.builder
 
         op = op_stack.pop()
-        print(f"DEBUG: Processing operator: {op.token}")
+        if self.debug:
+            print(f"DEBUG: Processing operator: {op.token}")
         
         if op.token == '@':  # ARRAY_ACCESS operator
             # Array access: pop array name and indices, return element value
@@ -1557,7 +1568,8 @@ class LLVMCodeGenerator:
                     if self.current_line_index + 1 < len(self.program):
                         next_line = self.program[self.current_line_index + 1].line
                         self._push_return_address(next_line)
-                        print(f"DEBUG: GOSUB from line {self.program[self.current_line_index].line} to {target_line}, return to {next_line}")
+                        if self.debug:
+                            print(f"DEBUG: GOSUB from line {self.program[self.current_line_index].line} to {target_line}, return to {next_line}")
                     
                     self.builder.branch(self.line_blocks[target_line])
                 else:
@@ -1686,6 +1698,6 @@ class LLVMCodeGenerator:
         return element_ptr
 
 
-def generate_llvm_ir(program):
-    codegen = LLVMCodeGenerator(program)
+def generate_llvm_ir(program, debug=False):
+    codegen = LLVMCodeGenerator(program, debug=debug)
     return codegen.generate_ir()
