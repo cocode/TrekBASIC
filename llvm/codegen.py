@@ -446,8 +446,8 @@ class LLVMCodeGenerator:
                 str_val = output[1:-1]
                 # Process escape sequences
                 str_val = str_val.encode('utf-8').decode('unicode_escape')
-                # Create a global string constant with newline for printing
-                fmt = str_val + "\n\0"
+                # Create a global string constant without newline
+                fmt = str_val + "\0"
                 name = f"str_{hash(fmt)}"
                 if name in self.module.globals:
                     global_fmt = self.module.get_global(name)
@@ -467,28 +467,38 @@ class LLVMCodeGenerator:
 
                 # Check if this is a string value (pointer to char)
                 if hasattr(val, 'type') and val.type == ir.IntType(8).as_pointer():
-                    # String value - print with newline
+                    # String value - print without newline
                     self.builder.call(self.printf, [val])
-                    # Add newline after string
-                    newline_fmt = "\n\0"
-                    name = f"newline_{self.newline_counter}"
-                    if name in self.module.globals:
-                        global_newline = self.module.get_global(name)
-                    else:
-                        c_newline = ir.Constant(ir.ArrayType(ir.IntType(8), len(newline_fmt)),
-                                                bytearray(newline_fmt.encode("utf8")))
-                        global_newline = ir.GlobalVariable(self.module, c_newline.type, name=name)
-                        self.newline_counter += 1
-                        global_newline.linkage = 'internal'
-                        global_newline.global_constant = True
-                        global_newline.initializer = c_newline
-                    newline_ptr = self.builder.bitcast(global_newline, ir.IntType(8).as_pointer())
-                    self.builder.call(self.printf, [newline_ptr])
                 else:
-                    # Numeric value - print as float
-                    fmt_ptr = self.builder.bitcast(self.global_fmt_float, ir.IntType(8).as_pointer())
-
+                    # Numeric value - print as float without newline
+                    # Create format string for numeric values without newline
+                    fmt = "%g\0"
+                    c_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(fmt)), bytearray(fmt.encode("utf8")))
+                    if "fmt_num" not in self.module.globals:
+                        global_fmt_num = ir.GlobalVariable(self.module, c_fmt.type, name="fmt_num")
+                        global_fmt_num.linkage = 'internal'
+                        global_fmt_num.global_constant = True
+                        global_fmt_num.initializer = c_fmt
+                    else:
+                        global_fmt_num = self.module.get_global("fmt_num")
+                    fmt_ptr = self.builder.bitcast(global_fmt_num, ir.IntType(8).as_pointer())
                     self.builder.call(self.printf, [fmt_ptr, val])
+        
+        # Add newline at the end of the PRINT statement (unless it ends with semicolon)
+        if not stmt._no_cr:
+            newline_fmt = "\n\0"
+            name = "global_newline"
+            if name in self.module.globals:
+                global_newline = self.module.get_global(name)
+            else:
+                c_newline = ir.Constant(ir.ArrayType(ir.IntType(8), len(newline_fmt)),
+                                        bytearray(newline_fmt.encode("utf8")))
+                global_newline = ir.GlobalVariable(self.module, c_newline.type, name=name)
+                global_newline.linkage = 'internal'
+                global_newline.global_constant = True
+                global_newline.initializer = c_newline
+            newline_ptr = self.builder.bitcast(global_newline, ir.IntType(8).as_pointer())
+            self.builder.call(self.printf, [newline_ptr])
 
     def _codegen_expr(self, tokens, local_vars=None, builder=None):
         """
