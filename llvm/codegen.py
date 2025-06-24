@@ -150,6 +150,9 @@ class LLVMCodeGenerator:
 
         # Allocate variables
         self._allocate_variables()
+        
+        # Initialize string variables at runtime
+        self._initialize_string_variables()
 
         # Generate user-defined function bodies (now that variables/arrays are allocated)
         self._generate_user_function_bodies()
@@ -213,26 +216,54 @@ class LLVMCodeGenerator:
         string_var_names = set()
         array_names = set()
         
-        for line in self.program:
-            for stmt in line.stmts:
-                if isinstance(stmt, ParsedStatementLet):
-                    var_name = stmt._variable
+        def extract_vars_from_tokens(tokens):
+            """Extract variable names from a list of tokens"""
+            if not tokens:
+                return
+            for token in tokens:
+                if hasattr(token, 'type') and token.type == 'id':
+                    var_name = token.token
                     if var_name.endswith('$'):
                         string_var_names.add(var_name)
                     else:
                         var_names.add(var_name)
+        
+        for line in self.program:
+            for stmt in line.stmts:
+                if isinstance(stmt, ParsedStatementLet):
+                    var_name = stmt._variable
+                    # Extract base variable name (without array indices)
+                    if '(' in var_name:
+                        base_var = var_name[:var_name.find('(')].strip()
+                    else:
+                        base_var = var_name
+                    
+                    if base_var.endswith('$'):
+                        string_var_names.add(base_var)
+                    else:
+                        var_names.add(base_var)
+                    
+                    # Also extract variables from the expression tokens
+                    extract_vars_from_tokens(stmt._tokens)
                 elif isinstance(stmt, ParsedStatementFor):
                     var_names.add(stmt._index_clause)
                 elif isinstance(stmt, ParsedStatementDim):
                     for name, dimensions in stmt._dimensions:
                         array_names.add(name)
+                
+                # Extract variables from any statement that has tokens
+                if hasattr(stmt, '_tokens') and stmt._tokens:
+                    extract_vars_from_tokens(stmt._tokens)
         
-        # Allocate regular variables (numeric)
+        # Allocate regular variables (numeric) - ALL as global variables (BASIC semantics)
         for var_name in var_names:
-            var_ptr = self.builder.alloca(ir.DoubleType(), name=var_name)
-            self.symbol_table[var_name] = var_ptr
+            global_var = ir.GlobalVariable(self.module, ir.DoubleType(), name=f"global_{var_name}")
+            global_var.linkage = 'internal'
+            global_var.global_constant = False
+            global_var.initializer = ir.Constant(ir.DoubleType(), 0.0)
+            self.symbol_table[var_name] = global_var
         
-        # Allocate string variables (pointers to strings)
+        # Allocate string variables (pointers to strings) - ALL as global variables (BASIC semantics)
         for var_name in string_var_names:
             # Initialize with empty string
             empty_str = "\0"
@@ -243,18 +274,30 @@ class LLVMCodeGenerator:
             global_empty.global_constant = True
             global_empty.initializer = c_empty
             
-            # Allocate pointer to store string address
-            var_ptr = self.builder.alloca(ir.IntType(8).as_pointer(), name=var_name)
-            # Initialize with empty string
-            empty_ptr = self.builder.bitcast(global_empty, ir.IntType(8).as_pointer())
-            self.builder.store(empty_ptr, var_ptr)
-            self.symbol_table[var_name] = var_ptr
+            # Allocate global pointer to store string address
+            global_var = ir.GlobalVariable(self.module, ir.IntType(8).as_pointer(), name=f"global_{var_name}")
+            global_var.linkage = 'internal'
+            global_var.global_constant = False
+            # Initialize with constant null pointer (will be set to empty string at runtime)
+            global_var.initializer = ir.Constant(ir.IntType(8).as_pointer(), None)
+            self.symbol_table[var_name] = global_var
         
         # Process all DIM statements to allocate arrays
         for line in self.program:
             for stmt in line.stmts:
                 if isinstance(stmt, ParsedStatementDim):
                     self._codegen_dim(stmt)
+
+    def _initialize_string_variables(self):
+        """Initialize global string variables with empty strings at runtime"""
+        for var_name, var_ptr in self.symbol_table.items():
+            if var_name.endswith('$') and var_name not in self.array_info:
+                # Get the empty string for this variable
+                empty_name = f"empty_{var_name}"
+                if empty_name in self.module.globals:
+                    global_empty = self.module.get_global(empty_name)
+                    empty_ptr = self.builder.bitcast(global_empty, ir.IntType(8).as_pointer())
+                    self.builder.store(empty_ptr, var_ptr)
 
     def _generate_user_function_bodies(self):
         """Generate bodies for user-defined functions after variables are allocated"""
@@ -268,11 +311,11 @@ class LLVMCodeGenerator:
             entry_block = llvm_fn.append_basic_block('entry')
             builder = ir.IRBuilder(entry_block)
             
-            # Set up a local symbol table for the argument
-            local_vars = {}
+            # Set up a local symbol table that includes both argument and global variables
+            local_vars = dict(self.symbol_table)  # Copy global symbol table
             arg_ptr = builder.alloca(ir.DoubleType(), name=arg_name)
             builder.store(llvm_fn.args[0], arg_ptr)
-            local_vars[arg_name] = arg_ptr
+            local_vars[arg_name] = arg_ptr  # Override with local argument
             
             # Evaluate the body expression
             result = self._codegen_expr(body_tokens, local_vars=local_vars, builder=builder)
@@ -310,8 +353,13 @@ class LLVMCodeGenerator:
         loop_var = stmt._index_clause
         var_ptr = self.symbol_table.get(loop_var)
         if not var_ptr:
-            var_ptr = self.builder.alloca(ir.DoubleType(), name=loop_var)
-            self.symbol_table[loop_var] = var_ptr
+            # Create global variable for loop variable (BASIC semantics)
+            global_var = ir.GlobalVariable(self.module, ir.DoubleType(), name=f"global_{loop_var}")
+            global_var.linkage = 'internal'
+            global_var.global_constant = False
+            global_var.initializer = ir.Constant(ir.DoubleType(), 0.0)
+            self.symbol_table[loop_var] = global_var
+            var_ptr = global_var
         
         # Parse and evaluate start, end, and step expressions
         lexer = get_lexer()
@@ -474,7 +522,7 @@ class LLVMCodeGenerator:
             # Regular variable assignment
             var_ptr = self.symbol_table.get(var_name)
             if not var_ptr:
-                # Variable not pre-allocated, allocate it now
+                # Variable not pre-allocated, allocate it now as global (BASIC semantics)
                 if var_name.endswith('$'):
                     # String variable
                     empty_str = "\0"
@@ -485,14 +533,23 @@ class LLVMCodeGenerator:
                     global_empty.global_constant = True
                     global_empty.initializer = c_empty
                     
-                    var_ptr = self.builder.alloca(ir.IntType(8).as_pointer(), name=var_name)
+                    global_var = ir.GlobalVariable(self.module, ir.IntType(8).as_pointer(), name=f"global_{var_name}")
+                    global_var.linkage = 'internal'
+                    global_var.global_constant = False
+                    # Initialize with null pointer and set at runtime
+                    global_var.initializer = ir.Constant(ir.IntType(8).as_pointer(), None)
                     empty_ptr = self.builder.bitcast(global_empty, ir.IntType(8).as_pointer())
-                    self.builder.store(empty_ptr, var_ptr)
-                    self.symbol_table[var_name] = var_ptr
+                    self.builder.store(empty_ptr, global_var)
+                    self.symbol_table[var_name] = global_var
+                    var_ptr = global_var
                 else:
                     # Numeric variable
-                    var_ptr = self.builder.alloca(ir.DoubleType(), name=var_name)
-                    self.symbol_table[var_name] = var_ptr
+                    global_var = ir.GlobalVariable(self.module, ir.DoubleType(), name=f"global_{var_name}")
+                    global_var.linkage = 'internal'
+                    global_var.global_constant = False
+                    global_var.initializer = ir.Constant(ir.DoubleType(), 0.0)
+                    self.symbol_table[var_name] = global_var
+                    var_ptr = global_var
             
             value = self._codegen_expr(stmt._tokens)
             
@@ -679,7 +736,7 @@ class LLVMCodeGenerator:
                             indices.append(index_value)
                         # Get array element
                         element_ptr = self._codegen_array_access(array_name, indices)
-                        data_stack.append(self.builder.load(element_ptr, name=f"load_{array_name}_element"))
+                        data_stack.append(builder.load(element_ptr, name=f"load_{array_name}_element"))
                 else:
                     # Regular variable
                     if token.token in self.array_info:
@@ -1309,7 +1366,7 @@ class LLVMCodeGenerator:
         return line_number
 
     def _codegen_dim(self, stmt):
-        """Generate LLVM IR for a DIM statement"""
+        """Generate LLVM IR for a DIM statement - create global arrays (BASIC semantics)"""
         for name, dimensions in stmt._dimensions:
             # Calculate total size needed
             total_size = 1
@@ -1320,36 +1377,48 @@ class LLVMCodeGenerator:
             is_string_array = name.endswith("$")
             if is_string_array:
                 element_type = ir.IntType(8).as_pointer()
-                # Initialize with empty strings
+                # Initialize with null pointers (will be set to empty strings at runtime)
+                default_value = ir.Constant(element_type, None)
+            else:
+                element_type = ir.DoubleType()
+                default_value = ir.Constant(element_type, 0.0)
+
+            array_type = ir.ArrayType(element_type, total_size)
+            
+            # Create global array (BASIC semantics - all arrays are global)
+            array_init = ir.Constant(array_type, [default_value] * total_size)
+            
+            global_array = ir.GlobalVariable(self.module, array_type, name=f"global_array_{name}")
+            global_array.linkage = 'internal'
+            global_array.global_constant = False
+            global_array.initializer = array_init
+            
+            # For string arrays, we need to initialize at runtime
+            if is_string_array:
+                # Create empty string constant
                 empty_str_val = "\0"
                 c_empty_str = ir.Constant(ir.ArrayType(ir.IntType(8), len(empty_str_val)), bytearray(empty_str_val.encode("utf8")))
                 global_empty_str = ir.GlobalVariable(self.module, c_empty_str.type, name=f"empty_str_{name}")
                 global_empty_str.linkage = 'internal'
                 global_empty_str.global_constant = True
                 global_empty_str.initializer = c_empty_str
-                default_value = self.builder.bitcast(global_empty_str, element_type)
-            else:
-                element_type = ir.DoubleType()
-                default_value = ir.Constant(element_type, 0.0)
-
-            array_type = ir.ArrayType(element_type, total_size)
-            array_storage = self.builder.alloca(array_type, name=f"{name}_storage")
-            
-            # Initialize all elements
-            for i in range(total_size):
-                element_ptr = self.builder.gep(array_storage, [ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), i)])
-                self.builder.store(default_value, element_ptr)
+                
+                # Initialize array elements to point to empty string at runtime
+                empty_ptr = self.builder.bitcast(global_empty_str, element_type)
+                for i in range(total_size):
+                    element_ptr = self.builder.gep(global_array, [ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), i)])
+                    self.builder.store(empty_ptr, element_ptr)
             
             # Store array info for access
             self.array_info[name] = {
-                'storage': array_storage,
+                'storage': global_array,
                 'dimensions': dimensions,
                 'total_size': total_size,
                 'is_string': is_string_array
             }
             
             # Store the array storage directly in symbol table
-            self.symbol_table[name] = array_storage
+            self.symbol_table[name] = global_array
 
     def _codegen_array_access(self, array_name, indices):
         """Generate LLVM IR for array access"""
