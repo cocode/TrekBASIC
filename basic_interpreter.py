@@ -205,12 +205,13 @@ class Executor:
     def at_end(self):
         return self._location.index is None
 
-    def do_for(self, var, start, stop, step, stmt):
+    def do_for(self, var, stop, step, stmt):
         """
         Begin a FOR loop.
 
-        :param var: The index of the FOR loop
-        :param start: The starting value
+        The start index is set by the caller of this function.
+
+        :param var: The index of the "FOR" loop
         :param stop: The upper limit. In BASIC, it is inclusive.
         :param step: The amount to increment the index after each loop.
         :param stmt:
@@ -219,6 +220,23 @@ class Executor:
         # Note that var and start are evaluated before beginning, but stop and step
         # get re-evaluated at each loop
         assert_syntax(len(self._for_stack) < 1000, "FORs nested too deeply")
+
+        # Some programs GOTO out of the middle of a FOR loop, and later come back into the start
+        # of the "FOR" loop. This really isn't correct BASIC, I think, and results in the
+        # "FOR" stack growing without bound.
+        #
+        # To deal with it, if the top record on the stack has
+        # the same loop index, we will pop the old record and add the new one.
+        # We are adding a new one, in case the loop parameters have changed.
+        # It might be more correct to only allow one for loop per variable, so we'd
+        # scan the stack and remove the previous one. But that gets complicated - do we
+        # remove everything above the duplicated for loop? So, for now, we only touch the top entry
+        new_for = ForRecord(var, stop, step, stmt)
+        if self._for_stack:
+            top = self._for_stack[-1]
+            if top.var == new_for.var:
+                self._for_stack.pop()
+
         self._for_stack.append(ForRecord(var, stop, step, stmt))
 
     def do_next_peek(self, var):

@@ -76,7 +76,7 @@ def stmt_for(executor, stmt: ParsedStatementFor):
     start = eval_expression(executor, start)
     is_valid_identifier(var)
     executor.put_symbol(var, start, SymbolType.VARIABLE, None)
-    executor.do_for(var, start, stmt._to_clause, stmt._step_clause, executor.get_next_stmt())
+    executor.do_for(var, stmt._to_clause, stmt._step_clause, executor.get_next_stmt())
 
 
 def stmt_next(executor, stmt:ParsedStatementNext):
