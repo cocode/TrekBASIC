@@ -20,6 +20,10 @@ class LLVMCodeGenerator:
         # External functions
         printf_type = ir.FunctionType(ir.IntType(32), [ir.IntType(8).as_pointer()], var_arg=True)
         self.printf = ir.Function(self.module, printf_type, name="printf")
+        
+        # Declare scanf function for input
+        scanf_type = ir.FunctionType(ir.IntType(32), [ir.IntType(8).as_pointer()], var_arg=True)
+        self.scanf = ir.Function(self.module, scanf_type, name="scanf")
 
         # Declare strcat for string concatenation
         strcat_type = ir.FunctionType(ir.IntType(8).as_pointer(), 
@@ -503,13 +507,33 @@ class LLVMCodeGenerator:
         self.builder.position_at_end(loop_context['after_block'])
 
     def _codegen_input(self, stmt):
-        """Generate LLVM IR for an INPUT statement (placeholder implementation)"""
-        # For now, just assign default values to input variables
-        # This is a simplified implementation for compilation purposes
+        """Generate LLVM IR for an INPUT statement"""
+        # Print the prompt if there is one
+        if hasattr(stmt, '_prompt') and stmt._prompt:
+            # Remove quotes from prompt if present
+            prompt = stmt._prompt.strip()
+            if prompt.startswith('"') and prompt.endswith('"'):
+                prompt = prompt[1:-1]
+            
+            # Create format string for prompt (no newline)
+            prompt_fmt = prompt + "\0"
+            c_prompt_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(prompt_fmt)), 
+                                     bytearray(prompt_fmt.encode("utf8")))
+            prompt_fmt_name = f"input_prompt_{hash(prompt)}"
+            if prompt_fmt_name not in self.module.globals:
+                global_prompt_fmt = ir.GlobalVariable(self.module, c_prompt_fmt.type, name=prompt_fmt_name)
+                global_prompt_fmt.linkage = 'internal'
+                global_prompt_fmt.global_constant = True
+                global_prompt_fmt.initializer = c_prompt_fmt
+            else:
+                global_prompt_fmt = self.module.get_global(prompt_fmt_name)
+            
+            prompt_fmt_ptr = self.builder.bitcast(global_prompt_fmt, ir.IntType(8).as_pointer())
+            self.builder.call(self.printf, [prompt_fmt_ptr])
+        
         for var_name in stmt._input_vars:
             if var_name.endswith('$'):
-                # String variable - assign empty string
-                empty_str = self._create_string_constant("")
+                # String variable - read string input
                 if var_name not in self.symbol_table:
                     # Create the variable if it doesn't exist
                     global_var = ir.GlobalVariable(self.module, ir.IntType(8).as_pointer(), name=f"global_{var_name}")
@@ -517,9 +541,33 @@ class LLVMCodeGenerator:
                     global_var.global_constant = False
                     global_var.initializer = ir.Constant(ir.IntType(8).as_pointer(), None)
                     self.symbol_table[var_name] = global_var
-                self.builder.store(empty_str, self.symbol_table[var_name])
+                
+                # Allocate buffer for string input (256 characters max)
+                buffer_size = ir.Constant(ir.IntType(64), 256)
+                input_buffer = self.builder.call(self.malloc, [buffer_size], name=f"input_buffer_{var_name}")
+                
+                # Create format string for string input ("%255s" to prevent buffer overflow)
+                string_fmt = "%255s\0"
+                c_string_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(string_fmt)), 
+                                         bytearray(string_fmt.encode("utf8")))
+                string_fmt_name = f"string_input_fmt_{var_name}"
+                if string_fmt_name not in self.module.globals:
+                    global_string_fmt = ir.GlobalVariable(self.module, c_string_fmt.type, name=string_fmt_name)
+                    global_string_fmt.linkage = 'internal'
+                    global_string_fmt.global_constant = True
+                    global_string_fmt.initializer = c_string_fmt
+                else:
+                    global_string_fmt = self.module.get_global(string_fmt_name)
+                
+                string_fmt_ptr = self.builder.bitcast(global_string_fmt, ir.IntType(8).as_pointer())
+                
+                # Call scanf to read the string
+                self.builder.call(self.scanf, [string_fmt_ptr, input_buffer])
+                
+                # Store the buffer pointer in the variable
+                self.builder.store(input_buffer, self.symbol_table[var_name])
             else:
-                # Numeric variable - assign 0
+                # Numeric variable - read double input
                 if var_name not in self.symbol_table:
                     # Create the variable if it doesn't exist
                     global_var = ir.GlobalVariable(self.module, ir.DoubleType(), name=f"global_{var_name}")
@@ -527,7 +575,25 @@ class LLVMCodeGenerator:
                     global_var.global_constant = False
                     global_var.initializer = ir.Constant(ir.DoubleType(), 0.0)
                     self.symbol_table[var_name] = global_var
-                self.builder.store(ir.Constant(ir.DoubleType(), 0.0), self.symbol_table[var_name])
+                
+                # Create format string for double input
+                double_fmt = "%lf\0"
+                c_double_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(double_fmt)), 
+                                         bytearray(double_fmt.encode("utf8")))
+                double_fmt_name = f"double_input_fmt_{var_name}"
+                if double_fmt_name not in self.module.globals:
+                    global_double_fmt = ir.GlobalVariable(self.module, c_double_fmt.type, name=double_fmt_name)
+                    global_double_fmt.linkage = 'internal'
+                    global_double_fmt.global_constant = True
+                    global_double_fmt.initializer = c_double_fmt
+                else:
+                    global_double_fmt = self.module.get_global(double_fmt_name)
+                
+                double_fmt_ptr = self.builder.bitcast(global_double_fmt, ir.IntType(8).as_pointer())
+                
+                # Call scanf to read the double directly into the variable
+                var_ptr = self.symbol_table[var_name]
+                self.builder.call(self.scanf, [double_fmt_ptr, var_ptr])
 
     def _codegen_on_goto(self, stmt):
         """Generate LLVM IR for an ON...GOTO statement (placeholder implementation)"""
@@ -1009,8 +1075,12 @@ class LLVMCodeGenerator:
             return self._create_string_constant("42")
         elif func_name == "LEN":
             # LEN(string) - return length of string
-            # For now, return a reasonable default
-            return ir.Constant(ir.DoubleType(), 5.0)
+            if len(args) != 1:
+                raise Exception("LEN requires exactly 1 argument")
+            string_ptr = args[0]
+            str_len = builder.call(self.strlen, [string_ptr], name="str_length")
+            # Convert to double for BASIC compatibility
+            return builder.uitofp(str_len, ir.DoubleType(), name="len_result")
         elif func_name == "LEFT$":
             # LEFT$(string, n) - return left n characters
             if len(args) != 2:
