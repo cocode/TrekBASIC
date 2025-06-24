@@ -596,13 +596,69 @@ class LLVMCodeGenerator:
                 self.builder.call(self.scanf, [double_fmt_ptr, var_ptr])
 
     def _codegen_on_goto(self, stmt):
-        """Generate LLVM IR for an ON...GOTO statement (placeholder implementation)"""
-        # This is a simplified implementation - just go to the first target
-        if stmt._target_lines and len(stmt._target_lines) > 0:
-            first_target = int(stmt._target_lines[0])
-            if first_target in self.line_blocks:
-                if not self.builder.block.is_terminated:
-                    self.builder.branch(self.line_blocks[first_target])
+        """Generate LLVM IR for an ON...GOTO or ON...GOSUB statement"""
+        if not stmt._target_lines or len(stmt._target_lines) == 0:
+            return
+            
+        # Evaluate the expression to get the index
+        lexer = get_lexer()
+        expr_tokens = lexer.lex(stmt._expression)
+        index_value = self._codegen_expr(expr_tokens)
+        
+        # Convert to integer index (1-based in BASIC)
+        index_int = self.builder.fptosi(index_value, ir.IntType(32), name="on_index")
+        
+        # Create blocks for each target and a default block
+        func = self.builder.block.function
+        target_blocks = []
+        for i, target_line in enumerate(stmt._target_lines):
+            block_name = f"on_{stmt._op.lower()}_{i+1}_{target_line}"
+            target_blocks.append(func.append_basic_block(name=block_name))
+        
+        # Create default block (for index <= 0 or index > number of targets)
+        default_block = func.append_basic_block(name=f"on_{stmt._op.lower()}_default")
+        
+        # Create switch statement
+        switch_inst = self.builder.switch(index_int, default_block)
+        
+        # Add cases for each target (1-based indexing)
+        for i, target_line in enumerate(stmt._target_lines):
+            case_value = ir.Constant(ir.IntType(32), i + 1)
+            switch_inst.add_case(case_value, target_blocks[i])
+        
+        # Generate code for each target block
+        for i, target_line in enumerate(stmt._target_lines):
+            self.builder.position_at_end(target_blocks[i])
+            target_line_num = int(target_line)
+            
+            if stmt._op == "GOTO":
+                # Simple GOTO
+                if target_line_num in self.line_blocks:
+                    self.builder.branch(self.line_blocks[target_line_num])
+                else:
+                    # Target not found, go to default
+                    self.builder.branch(default_block)
+            elif stmt._op == "GOSUB":
+                # GOSUB - need to push return address and branch
+                # Find the next line to return to
+                if self.current_line_index + 1 < len(self.program):
+                    next_line = self.program[self.current_line_index + 1].line
+                    self._push_return_address(next_line)
+                
+                if target_line_num in self.line_blocks:
+                    self.builder.branch(self.line_blocks[target_line_num])
+                else:
+                    # Target not found, go to default
+                    self.builder.branch(default_block)
+        
+        # Default block - generate runtime error for out-of-range index
+        self.builder.position_at_end(default_block)
+        # Create error message for out-of-range ON...GOTO/GOSUB
+        error_msg = f"ON {stmt._op} index out of range (1-{len(stmt._target_lines)})\n\0"
+        error_fmt = self._create_string_constant(error_msg)
+        self.builder.call(self.printf, [error_fmt])
+        # Exit with error code
+        self.builder.ret(ir.Constant(ir.IntType(32), 1))
 
     def _codegen_return(self, stmt):
         """Generate LLVM IR for a RETURN statement"""
