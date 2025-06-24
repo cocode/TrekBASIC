@@ -22,7 +22,6 @@ if __name__ == "__main__":
         program = load_program(args.program)
     except BasicSyntaxError as bse:
         print(F"{bse.message} in line {bse.line_number} of file.")
-        # traceback.print_exc()
         sys.exit(1)
     except FileNotFoundError as f:
         print(F"File not found {f}")
@@ -42,7 +41,13 @@ if __name__ == "__main__":
         executor = Executor(program)
         if args.time:
             start_time = time.time()
-        rc = executor.run_program()
+
+        try:
+            rc = executor.run_program()
+        except BasicSyntaxError as rte:
+            print(F"{rte.message} in line {rte.line_number} of file.")
+            sys.exit(1)
+
         if args.time:
             end_time = time.time()
             execution_time = end_time - start_time
