@@ -561,17 +561,7 @@ class LLVMCodeGenerator:
             elif token.type == 'str':
                 # String literal - create a global string constant
                 str_val = token.token
-                # Process escape sequences
-                str_val = str_val.encode('utf-8').decode('unicode_escape')
-                # Create a global string constant without newline (newlines added by PRINT)
-                fmt = str_val + "\0"
-                c_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(fmt)),
-                                    bytearray(fmt.encode("utf8")))
-                global_fmt = ir.GlobalVariable(self.module, c_fmt.type, name=f"str_{hash(fmt)}")
-                global_fmt.linkage = 'internal'
-                global_fmt.global_constant = True
-                global_fmt.initializer = c_fmt
-                fmt_ptr = self.builder.bitcast(global_fmt, ir.IntType(8).as_pointer())
+                fmt_ptr = self._create_string_constant(str_val)
                 data_stack.append(fmt_ptr)
                 is_unary_context = False
             elif token.type == 'id':
