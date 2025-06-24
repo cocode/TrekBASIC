@@ -5,8 +5,6 @@ import sys
 import os
 import argparse
 import subprocess
-import tempfile
-import traceback
 import time
 
 from basic_loading import load_program
@@ -125,7 +123,6 @@ def main():
         
     except Exception as e:
         print(f"Compilation error: {e}")
-        traceback.print_exc()
         sys.exit(1)
 
 if __name__ == "__main__":
