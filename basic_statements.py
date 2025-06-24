@@ -88,8 +88,10 @@ def stmt_next(executor, stmt:ParsedStatementNext):
     value = value + step_value
     executor.put_symbol(var, value, SymbolType.VARIABLE, None)
     if value <= to_value:
+        # Loop continues - goto loop top without popping
         executor._goto_location(loop_top)
     else:
+        # Loop is done - pop the FOR record and continue to next statement
         executor.do_next_pop(var)
 
 
