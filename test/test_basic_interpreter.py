@@ -1,12 +1,16 @@
+"""
+Some basic tests. It's not ideal, we have some test of loading, and some tests of executing
+"""
+
 from io import StringIO
 from unittest import TestCase
 import sys
 from math import e
 
 from basic_dialect import ARRAY_OFFSET
-from basic_interpreter import Executor, BasicSyntaxError
+from basic_interpreter import Executor
 from basic_statements import is_valid_identifier
-from basic_types import SymbolType, RunStatus, lexer_token
+from basic_types import SymbolType, RunStatus, lexer_token, BasicSyntaxError
 from basic_loading import tokenize
 
 
@@ -414,7 +418,7 @@ class Test(TestCase):
         is_valid_identifier("B1")
         is_valid_identifier("B1$")
         with self.assertRaises(BasicSyntaxError):
-            executor = is_valid_identifier("LONG")
+            is_valid_identifier("LONG")
         with self.assertRaises(BasicSyntaxError):
             executor = is_valid_identifier("1A")
         with self.assertRaises(BasicSyntaxError):
