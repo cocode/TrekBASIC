@@ -64,7 +64,7 @@ class ParsedStatementNoArgs(ParsedStatement):
 
 class ParsedStatementIf(ParsedStatement):
     """
-    Class for a IF statement that has been processed.
+    Class for an "IF" statement that has been processed.
     """
     # TODO superstartrek3.bas uses an ELSE
     # Notes for ELSE. IF...THEN current works be branching to the next line, if the condition is False.
@@ -81,7 +81,6 @@ class ParsedStatementIf(ParsedStatement):
         lexer = get_lexer()
         left_over = args[:then]
         self._tokens = lexer.lex(left_over)
-        super().__init__(keyword, "")
 
     def get_additional(self):
         return self._additional
