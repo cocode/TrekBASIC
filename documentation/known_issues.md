@@ -53,7 +53,8 @@ See also future.md
 1. Compiler issues (LLVM)
    2. Much harder to do dynamic array dimensions in a compiler. 
    3. For now, do all arrays and functions statically.Can we throw an error on redefintions?
-   4. 
+   4. this may be a problem, it's a workaround for dynamic reuse of variable names
+      5. Scalar/Array variable separation: Arrays can now have both array elements N(1), N(2), N(3) and a scalar variable N simultaneously
 2. Debugging Improvements
     1. Desperately need "step over" vs "step into" for debugging.
     1. Add "trace on" and "trace off" statements to the language, to control writing of the trace file.
