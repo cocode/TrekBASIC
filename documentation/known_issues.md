@@ -56,7 +56,7 @@ See also future.md
    4. this may be a problem, it's a workaround for dynamic reuse of variable names
       5. Scalar/Array variable separation: Arrays can now have both array elements N(1), N(2), N(3) and a scalar variable N simultaneously
 6. Runtime issues
-   7. At runtime, i should be getting runtime errors, not basicsyntaxerrors
+   7. At runtime, I should be getting runtime errors, not basicsyntaxerrors
 2. Debugging Improvements
     1. Desperately need "step over" vs "step into" for debugging.
     1. Add "trace on" and "trace off" statements to the language, to control writing of the trace file.
