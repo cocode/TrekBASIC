@@ -57,8 +57,8 @@ class ParsedStatementNoArgs(ParsedStatement):
     """
     def __init__(self, keyword, args):
         super().__init__(keyword, "")
-        self.keyword = keyword
-        assert_syntax(len(args.strip())==0, "Command does not take any arguments.")
+        self.keyword = keyword  # TODO Do we need this, it's in the base class?
+        assert_syntax(len(args.strip())== 0, "Command does not take any arguments.")
         self.args = ""
 
 
