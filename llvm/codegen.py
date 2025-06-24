@@ -406,7 +406,8 @@ class LLVMCodeGenerator:
              self._codegen_on_goto(stmt)
         # Add other statements here
         else:
-            print(f"Warning: Codegen for statement '{type(stmt).__name__}' not implemented.")
+            if stmt.keyword.name != "REM":
+                print(f"Warning: Codegen for statement '{type(stmt).__name__}' not implemented.", stmt.keyword)
             # Generate a simple no-op to avoid broken control flow
             # Create a global noop variable if it doesn't exist
             if "noop_var" not in self.module.globals:
