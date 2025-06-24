@@ -34,6 +34,18 @@ class LLVMCodeGenerator:
         strlen_type = ir.FunctionType(ir.IntType(64), [ir.IntType(8).as_pointer()])
         self.strlen = ir.Function(self.module, strlen_type, name="strlen")
         
+        # Declare strcmp for string comparison
+        strcmp_type = ir.FunctionType(ir.IntType(32), [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer()])
+        self.strcmp = ir.Function(self.module, strcmp_type, name="strcmp")
+        
+        # Declare strncpy for copying strings with length limit
+        strncpy_type = ir.FunctionType(ir.IntType(8).as_pointer(), [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer(), ir.IntType(64)])
+        self.strncpy = ir.Function(self.module, strncpy_type, name="strncpy")
+        
+        # Declare strcpy for copying strings
+        strcpy_type = ir.FunctionType(ir.IntType(8).as_pointer(), [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer()])
+        self.strcpy = ir.Function(self.module, strcpy_type, name="strcpy")
+        
         # Declare math functions
         sin_type = ir.FunctionType(ir.DoubleType(), [ir.DoubleType()])
         self.sin = ir.Function(self.module, sin_type, name="sin")
@@ -844,16 +856,143 @@ class LLVMCodeGenerator:
             return ir.Constant(ir.DoubleType(), 5.0)
         elif func_name == "LEFT$":
             # LEFT$(string, n) - return left n characters
-            # For now, return a reasonable default
-            return self._create_string_constant("HELLO")
+            if len(args) != 2:
+                raise Exception("LEFT$ requires exactly 2 arguments")
+            string_ptr = args[0]
+            length = args[1]
+            
+            # Convert length from double to integer
+            length_int = builder.fptosi(length, ir.IntType(64), name="left_length")
+            
+            # Get string length
+            str_len = builder.call(self.strlen, [string_ptr], name="str_length")
+            
+            # Clamp length to string length (use min of requested length and actual length)
+            actual_length = builder.select(
+                builder.icmp_unsigned("<", length_int, str_len),
+                length_int,
+                str_len,
+                name="actual_left_length"
+            )
+            
+            # Allocate memory for result (length + 1 for null terminator)
+            one = ir.Constant(ir.IntType(64), 1)
+            alloc_size = builder.add(actual_length, one, name="left_alloc_size")
+            result_ptr = builder.call(self.malloc, [alloc_size], name="left_result")
+            
+            # Copy the left portion of the string
+            builder.call(self.strncpy, [result_ptr, string_ptr, actual_length])
+            
+            # Add null terminator
+            null_pos = builder.gep(result_ptr, [actual_length], name="null_pos")
+            null_char = ir.Constant(ir.IntType(8), 0)
+            builder.store(null_char, null_pos)
+            
+            return result_ptr
+            
         elif func_name == "RIGHT$":
-            # RIGHT$(string, n) - return right n characters
-            # For now, return a reasonable default
-            return self._create_string_constant("WORLD")
+            # RIGHT$(string, n) - return right n characters  
+            if len(args) != 2:
+                raise Exception("RIGHT$ requires exactly 2 arguments")
+            string_ptr = args[0]
+            length = args[1]
+            
+            # Convert length from double to integer
+            length_int = builder.fptosi(length, ir.IntType(64), name="right_length")
+            
+            # Get string length
+            str_len = builder.call(self.strlen, [string_ptr], name="str_length")
+            
+            # Clamp length to string length
+            actual_length = builder.select(
+                builder.icmp_unsigned("<", length_int, str_len),
+                length_int,
+                str_len,
+                name="actual_right_length"
+            )
+            
+            # Calculate start position (str_len - actual_length)
+            start_pos = builder.sub(str_len, actual_length, name="right_start_pos")
+            start_ptr = builder.gep(string_ptr, [start_pos], name="right_start_ptr")
+            
+            # Allocate memory for result
+            one = ir.Constant(ir.IntType(64), 1)
+            alloc_size = builder.add(actual_length, one, name="right_alloc_size")
+            result_ptr = builder.call(self.malloc, [alloc_size], name="right_result")
+            
+            # Copy the right portion of the string
+            builder.call(self.strncpy, [result_ptr, start_ptr, actual_length])
+            
+            # Add null terminator
+            null_pos = builder.gep(result_ptr, [actual_length], name="null_pos")
+            null_char = ir.Constant(ir.IntType(8), 0)
+            builder.store(null_char, null_pos)
+            
+            return result_ptr
+            
         elif func_name == "MID$":
-            # MID$(string, start, length) - return substring
-            # For now, return a reasonable default
-            return self._create_string_constant("MID")
+            # MID$(string, start, length) - return substring starting at position start with given length
+            if len(args) != 3:
+                raise Exception("MID$ requires exactly 3 arguments")
+            string_ptr = args[0]
+            start = args[1]
+            length = args[2]
+            
+            # Convert arguments from double to integer (BASIC uses 1-based indexing)
+            start_int = builder.fptosi(start, ir.IntType(64), name="mid_start")
+            length_int = builder.fptosi(length, ir.IntType(64), name="mid_length")
+            
+            # Convert to 0-based indexing
+            one = ir.Constant(ir.IntType(64), 1)
+            zero = ir.Constant(ir.IntType(64), 0)
+            start_zero_based = builder.sub(start_int, one, name="mid_start_zero")
+            
+            # Clamp start to be >= 0
+            actual_start = builder.select(
+                builder.icmp_signed("<", start_zero_based, zero),
+                zero,
+                start_zero_based,
+                name="actual_mid_start"
+            )
+            
+            # Get string length
+            str_len = builder.call(self.strlen, [string_ptr], name="str_length")
+            
+            # Check if start is beyond string length
+            start_ptr = builder.gep(string_ptr, [actual_start], name="mid_start_ptr")
+            
+            # Calculate remaining length from start position
+            remaining_len = builder.sub(str_len, actual_start, name="remaining_length")
+            
+            # Clamp length to remaining length
+            actual_length = builder.select(
+                builder.icmp_unsigned("<", length_int, remaining_len),
+                length_int,
+                remaining_len,
+                name="actual_mid_length"
+            )
+            
+            # Handle case where start is beyond string (return empty string)
+            actual_length = builder.select(
+                builder.icmp_unsigned(">=", actual_start, str_len),
+                zero,
+                actual_length,
+                name="final_mid_length"
+            )
+            
+            # Allocate memory for result
+            alloc_size = builder.add(actual_length, one, name="mid_alloc_size")
+            result_ptr = builder.call(self.malloc, [alloc_size], name="mid_result")
+            
+            # Copy the substring
+            builder.call(self.strncpy, [result_ptr, start_ptr, actual_length])
+            
+            # Add null terminator
+            null_pos = builder.gep(result_ptr, [actual_length], name="null_pos")
+            null_char = ir.Constant(ir.IntType(8), 0)
+            builder.store(null_char, null_pos)
+            
+            return result_ptr
         elif func_name == "TAB":
             # TAB(n) - return string with n spaces for print formatting
             # For now, return a reasonable default (some spaces)
@@ -925,29 +1064,83 @@ class LLVMCodeGenerator:
             elif op.token == '/':
                 result = builder.fdiv(left, right, name="divtmp")
             elif op.token == '=':
-                # Equal comparison
-                cmp_result = builder.fcmp_ordered("==", left, right, name="cmptmp")
-                result = builder.uitofp(cmp_result, ir.DoubleType())  # Convert to double
+                # Equal comparison - check if comparing strings or numbers
+                if left.type == ir.IntType(8).as_pointer() and right.type == ir.IntType(8).as_pointer():
+                    # String comparison using strcmp
+                    cmp_result = builder.call(self.strcmp, [left, right], name="strcmp_result")
+                    # strcmp returns 0 for equal strings
+                    zero = ir.Constant(ir.IntType(32), 0)
+                    is_equal = builder.icmp_signed("==", cmp_result, zero, name="cmptmp")
+                    result = builder.uitofp(is_equal, ir.DoubleType())
+                else:
+                    # Numeric comparison
+                    cmp_result = builder.fcmp_ordered("==", left, right, name="cmptmp")
+                    result = builder.uitofp(cmp_result, ir.DoubleType())  # Convert to double
             elif op.token == '<>':
                 # Not equal comparison
-                cmp_result = builder.fcmp_ordered("!=", left, right, name="cmptmp")
-                result = builder.uitofp(cmp_result, ir.DoubleType())  # Convert to double
+                if left.type == ir.IntType(8).as_pointer() and right.type == ir.IntType(8).as_pointer():
+                    # String comparison using strcmp
+                    cmp_result = builder.call(self.strcmp, [left, right], name="strcmp_result")
+                    # strcmp returns 0 for equal strings, so != 0 means not equal
+                    zero = ir.Constant(ir.IntType(32), 0)
+                    is_not_equal = builder.icmp_signed("!=", cmp_result, zero, name="cmptmp")
+                    result = builder.uitofp(is_not_equal, ir.DoubleType())
+                else:
+                    # Numeric comparison
+                    cmp_result = builder.fcmp_ordered("!=", left, right, name="cmptmp")
+                    result = builder.uitofp(cmp_result, ir.DoubleType())  # Convert to double
             elif op.token == '<':
                 # Less than comparison
-                cmp_result = builder.fcmp_ordered("<", left, right, name="cmptmp")
-                result = builder.uitofp(cmp_result, ir.DoubleType())  # Convert to double
+                if left.type == ir.IntType(8).as_pointer() and right.type == ir.IntType(8).as_pointer():
+                    # String comparison using strcmp
+                    cmp_result = builder.call(self.strcmp, [left, right], name="strcmp_result")
+                    # strcmp returns < 0 if left < right
+                    zero = ir.Constant(ir.IntType(32), 0)
+                    is_less = builder.icmp_signed("<", cmp_result, zero, name="cmptmp")
+                    result = builder.uitofp(is_less, ir.DoubleType())
+                else:
+                    # Numeric comparison
+                    cmp_result = builder.fcmp_ordered("<", left, right, name="cmptmp")
+                    result = builder.uitofp(cmp_result, ir.DoubleType())  # Convert to double
             elif op.token == '>':
                 # Greater than comparison
-                cmp_result = builder.fcmp_ordered(">", left, right, name="cmptmp")
-                result = builder.uitofp(cmp_result, ir.DoubleType())  # Convert to double
+                if left.type == ir.IntType(8).as_pointer() and right.type == ir.IntType(8).as_pointer():
+                    # String comparison using strcmp
+                    cmp_result = builder.call(self.strcmp, [left, right], name="strcmp_result")
+                    # strcmp returns > 0 if left > right
+                    zero = ir.Constant(ir.IntType(32), 0)
+                    is_greater = builder.icmp_signed(">", cmp_result, zero, name="cmptmp")
+                    result = builder.uitofp(is_greater, ir.DoubleType())
+                else:
+                    # Numeric comparison
+                    cmp_result = builder.fcmp_ordered(">", left, right, name="cmptmp")
+                    result = builder.uitofp(cmp_result, ir.DoubleType())  # Convert to double
             elif op.token == '<=':
                 # Less than or equal comparison
-                cmp_result = builder.fcmp_ordered("<=", left, right, name="cmptmp")
-                result = builder.uitofp(cmp_result, ir.DoubleType())  # Convert to double
+                if left.type == ir.IntType(8).as_pointer() and right.type == ir.IntType(8).as_pointer():
+                    # String comparison using strcmp
+                    cmp_result = builder.call(self.strcmp, [left, right], name="strcmp_result")
+                    # strcmp returns <= 0 if left <= right
+                    zero = ir.Constant(ir.IntType(32), 0)
+                    is_less_equal = builder.icmp_signed("<=", cmp_result, zero, name="cmptmp")
+                    result = builder.uitofp(is_less_equal, ir.DoubleType())
+                else:
+                    # Numeric comparison
+                    cmp_result = builder.fcmp_ordered("<=", left, right, name="cmptmp")
+                    result = builder.uitofp(cmp_result, ir.DoubleType())  # Convert to double
             elif op.token == '>=':
                 # Greater than or equal comparison
-                cmp_result = builder.fcmp_ordered(">=", left, right, name="cmptmp")
-                result = builder.uitofp(cmp_result, ir.DoubleType())  # Convert to double
+                if left.type == ir.IntType(8).as_pointer() and right.type == ir.IntType(8).as_pointer():
+                    # String comparison using strcmp
+                    cmp_result = builder.call(self.strcmp, [left, right], name="strcmp_result")
+                    # strcmp returns >= 0 if left >= right
+                    zero = ir.Constant(ir.IntType(32), 0)
+                    is_greater_equal = builder.icmp_signed(">=", cmp_result, zero, name="cmptmp")
+                    result = builder.uitofp(is_greater_equal, ir.DoubleType())
+                else:
+                    # Numeric comparison
+                    cmp_result = builder.fcmp_ordered(">=", left, right, name="cmptmp")
+                    result = builder.uitofp(cmp_result, ir.DoubleType())  # Convert to double
             elif op.token == 'AND':
                 # Logical AND: (left != 0) and (right != 0)
                 left_nonzero = builder.fcmp_ordered('!=', left, ir.Constant(ir.DoubleType(), 0.0))
