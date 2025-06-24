@@ -13,7 +13,6 @@ import sys
 import pprint
 import argparse
 import time
-import traceback
 
 from basic_types import UndefinedSymbol, BasicSyntaxError, SymbolType, ProgramLine
 
