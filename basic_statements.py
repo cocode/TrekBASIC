@@ -222,15 +222,14 @@ def stmt_on(executor, stmt):
     var = stmt._expression
     op = stmt._op
     result = eval_expression(executor._symbols, var)
-    assert_syntax(type(result) == int or type(result) == float, "Expression not numeric in ON GOTO/GOSUB")
-    result = int(result) - 1 # Basic is 1-based.
-    # According to this: https://hwiegman.home.xs4all.nl/gw-man/ONGOSUB.html
-    # on gosub does NOT generate an error in the value is out of range,
-    # It just goes on to the next line.
-    #assert_syntax(result < len(stmt._target_lines), "No target for value of {result} in ON GOTO/GOSUB")
-    if result >= len(stmt._target_lines):
-        # No line matching the index, just go on.
-        return
+    if not (type(result) == int or type(result) == float):
+        raise BasicSyntaxError(f"Expression not numeric in ON GOTO/GOSUB")  # TODO We should catch this at load time.
+
+    original_result = int(result)
+    result = original_result - 1 # Basic is 1-based.
+    # ON...GOTO/GOSUB should generate an error if the index is out of range
+    if result < 0 or result >= len(stmt._target_lines):
+        raise BasicSyntaxError(f"ON {op} index {original_result} is out of range (1-{len(stmt._target_lines)})")
     if op == "GOTO":
         executor.goto_line(stmt._target_lines[result])
     elif op == "GOSUB":
