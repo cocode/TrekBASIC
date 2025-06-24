@@ -93,7 +93,7 @@ class LLVMCodeGenerator:
         self.user_functions = {}
         self.user_function_defs = []  # Store DEF statements for later processing
         
-        # First pass: scan for user-defined functions and create declarations
+        # First pass: scan for user-defined functions and create declarations only
         for program_line in self.program:
             for stmt in program_line.stmts:
                 print(f"DEBUG: Statement type: {type(stmt).__name__}, keyword: {getattr(stmt, 'keyword', None)}")
@@ -108,26 +108,7 @@ class LLVMCodeGenerator:
         
         print(f"DEBUG: Created {len(self.user_functions)} user functions: {list(self.user_functions.keys())}")
         
-        # Second pass: generate function bodies
-        for stmt in self.user_function_defs:
-            fn_name = stmt._variable
-            arg_name = stmt._function_arg
-            body_tokens = stmt._tokens
-            llvm_fn = self.user_functions[fn_name]
-            
-            # Create function body
-            entry_block = llvm_fn.append_basic_block('entry')
-            builder = ir.IRBuilder(entry_block)
-            
-            # Set up a local symbol table for the argument
-            local_vars = {}
-            arg_ptr = builder.alloca(ir.DoubleType(), name=arg_name)
-            builder.store(llvm_fn.args[0], arg_ptr)
-            local_vars[arg_name] = arg_ptr
-            
-            # Evaluate the body expression
-            result = self._codegen_expr(body_tokens, local_vars=local_vars, builder=builder)
-            builder.ret(result)
+        # Note: Function bodies will be generated later in generate_ir() after variables are allocated
 
     def generate_ir(self):
         main_func_type = ir.FunctionType(ir.IntType(32), [])
@@ -141,6 +122,9 @@ class LLVMCodeGenerator:
 
         # Allocate variables
         self._allocate_variables()
+
+        # Generate user-defined function bodies (now that variables/arrays are allocated)
+        self._generate_user_function_bodies()
 
         # Create blocks for each line
         for line in self.program:
@@ -238,7 +222,33 @@ class LLVMCodeGenerator:
             self.builder.store(empty_ptr, var_ptr)
             self.symbol_table[var_name] = var_ptr
         
-        # Arrays will be allocated in DIM statements, not here
+        # Process all DIM statements to allocate arrays
+        for line in self.program:
+            for stmt in line.stmts:
+                if isinstance(stmt, ParsedStatementDim):
+                    self._codegen_dim(stmt)
+
+    def _generate_user_function_bodies(self):
+        """Generate bodies for user-defined functions after variables are allocated"""
+        for stmt in self.user_function_defs:
+            fn_name = stmt._variable
+            arg_name = stmt._function_arg
+            body_tokens = stmt._tokens
+            llvm_fn = self.user_functions[fn_name]
+            
+            # Create function body
+            entry_block = llvm_fn.append_basic_block('entry')
+            builder = ir.IRBuilder(entry_block)
+            
+            # Set up a local symbol table for the argument
+            local_vars = {}
+            arg_ptr = builder.alloca(ir.DoubleType(), name=arg_name)
+            builder.store(llvm_fn.args[0], arg_ptr)
+            local_vars[arg_name] = arg_ptr
+            
+            # Evaluate the body expression
+            result = self._codegen_expr(body_tokens, local_vars=local_vars, builder=builder)
+            builder.ret(result)
 
     def _generate_statement_ir(self, stmt, line_stmts=None, stmt_index=None):
         if isinstance(stmt, ParsedStatementLet):
@@ -254,7 +264,8 @@ class LLVMCodeGenerator:
         elif isinstance(stmt, ParsedStatementIf):
              self._codegen_if(stmt, line_stmts, stmt_index)
         elif isinstance(stmt, ParsedStatementDim):
-             self._codegen_dim(stmt)
+             # DIM statements are already processed during variable allocation
+             pass
         elif stmt.keyword.name == "END":
              self.builder.ret(ir.Constant(ir.IntType(32), 0))
         elif stmt.keyword.name == "STOP":
