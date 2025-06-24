@@ -1,12 +1,11 @@
 """
-This module contains the class, Executor, that loads BASIC programs
+This module contains the class, Executor, that runs BASIC programs
 """
-import traceback
 from collections import namedtuple, defaultdict
 import random
 
 import basic_functions
-from basic_types import ProgramLine, BasicSyntaxError, BasicInternalError, assert_syntax
+from basic_types import ProgramLine, BasicInternalError, assert_syntax, BasicSyntaxError
 from basic_types import SymbolType, RunStatus
 from basic_symbols import SymbolTable
 
@@ -139,9 +138,8 @@ class Executor:
                 # TODO and don't need the print statement. The user just needs the message printed.
                 self._run = RunStatus.END_ERROR_SYNTAX
                 raise BasicSyntaxError(bse.message, current.line)
-                # TODO what is current.source?  print(F"Syntax Error in line {current.line}: {bse.message}: {current.source}")
+                # TODO what is current.source?  previous had: print(F"Syntax Error in line {current.line}: {bse.message}: {current.source}")
             except Exception as e:
-                traceback.print_exc()
                 self._run = RunStatus.END_ERROR_INTERNAL
                 raise BasicInternalError(F"Internal error in line {current.line}: {e}")
 
@@ -393,8 +391,7 @@ class Executor:
 
     def do_input(self):
         """
-        This function exists so we can do redirection of output conveniently, for testing.
-        :param msg:
+        This function exists so that we can do redirection of output conveniently, for testing.
         :return:
         """
         response = input()
