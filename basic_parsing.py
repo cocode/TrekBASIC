@@ -21,7 +21,7 @@ class ParsedStatement:
     """
     def __init__(self, keyword, args):
         """
-        Represents a (partially, optianally) pre-processed form of a statement.
+        Represents a (partially, optionally) pre-processed form of a statement.
 
         We should be doing more processing on program load, so as to do less when executing.
         For example, we should tokenize expressions here, so we don't have to do it every
@@ -42,7 +42,7 @@ class ParsedStatement:
 
     def __str__(self):
         """
-        This generates syntaxtically valid, nicely formatted versions of the statement.
+        This generates syntactically valid, nicely formatted versions of the statement.
         :return:
         """
         if self.args:
@@ -84,6 +84,9 @@ class ParsedStatementIf(ParsedStatement):
 
     def get_additional(self):
         return self._additional
+
+    def clear_additional(self):
+        self._additional = ""
 
     def __str__(self):
         clause = tokens_to_str(self._tokens)
