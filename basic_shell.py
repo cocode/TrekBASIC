@@ -316,6 +316,7 @@ class BasicShell:
         coverage = False
         if args is not None and args=="coverage":
             coverage = True
+        print("TODO: Should not relaod file from disk on run. I guess it doesn't matter, since we don't edit in the shell")
         self.load_from_file(coverage=coverage)
         self.cmd_continue(None)
 
