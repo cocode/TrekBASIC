@@ -99,8 +99,17 @@ class BasicShell:
             return
 
         print("Loading ", self._program_file)
-        program = load_program(self._program_file)
-        executor = Executor(program, coverage=coverage)
+        try:
+            program = load_program(self._program_file)
+        except BasicSyntaxError as e:
+            print(F"Syntax error: {e}")
+            return
+
+        try:
+            executor = Executor(program, coverage=coverage)
+        except BasicSyntaxError as e:
+            print(F"Syntax error: {e}")
+            return
         self.executor = executor
         self.load_status = True
         return
