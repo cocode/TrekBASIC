@@ -17,7 +17,41 @@ lexer_token = namedtuple("Token", "token type")
 # next: This is an int that DOES NOT represent the line, it represents an index into the list of lines, or -1
 #       for the last line.
 # source: The original line as a str
-ProgramLine = namedtuple("ProgramLine", "line stmts next source") # TODO Change "next" to "next_offset" for clarity.
+ProgramLineBase = namedtuple("ProgramLineBase", "line stmts next source")
+
+class ProgramLine(ProgramLineBase):
+    """Represents one line in a BASIC program"""
+    
+    def __eq__(self, other):
+        """Compare two ProgramLine objects for equality"""
+        if not isinstance(other, ProgramLine):
+            return False
+        
+        # Compare line numbers
+        if self.line != other.line:
+            return False
+        
+        # Compare statements - convert to strings for comparison since 
+        # statement objects might not have proper __eq__ methods
+        if len(self.stmts) != len(other.stmts):
+            return False
+        
+        for stmt1, stmt2 in zip(self.stmts, other.stmts):
+            if str(stmt1) != str(stmt2):
+                return False
+        
+        # We don't compare 'next' since it's an internal index that can change
+        # We don't compare 'source' since it's just the original text representation
+        
+        return True
+    
+    def __repr__(self):
+        """String representation for debugging"""
+        return f"ProgramLine(line={self.line}, stmts={len(self.stmts)} statements, next={self.next})"
+    
+    def __str__(self):
+        """Human-readable string representation"""
+        return self.source if self.source else f"{self.line} {':'.join(str(stmt) for stmt in self.stmts)}"
 
 # Symbol table entry
 # Value - Value of the variable
