@@ -172,7 +172,7 @@ def stmt_dim(executor, stmt:ParsedStatementDim):
 
 def stmt_if(executor, stmt):
     """
-    An if statement works by skipping to the next line, if the THEN clause is false, otherwise
+    An "IF" statement works by skipping to the next line, if the THEN clause is false, otherwise
     it continues to execute the clauses after the THEN.
     :param executor:
     :param stmt:
