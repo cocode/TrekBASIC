@@ -101,7 +101,7 @@ class Executor:
             breaklist: list[tuple] = []
         if data_breakpoints is None:
             data_breakpoints:list[str] = []
-        self._run = RunStatus.RUN
+        self._run = RunStatus.RUN  # TODO Try finally on RunStatus?
         self._data_breakpoints = data_breakpoints
 
         while True:
@@ -121,7 +121,7 @@ class Executor:
             if self._run != RunStatus.RUN:
                 return self._run
 
-            if self._trace_file and self._location.offset==0:
+            if self._trace_file and self._location.offset == 0:
                 print(F">{current.source}", file=self._trace_file)
 
             s = self.get_current_stmt()
