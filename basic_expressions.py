@@ -27,6 +27,53 @@ class Expression:
         if result is not None:
             data_stack.append(result)
 
+    def one_op_syntax_only(self, op_stack, data_stack):
+        """
+        Perform syntax checking for one operation without actual computation.
+        :param op_stack: The operation stack, for example '*'
+        :param data_stack: The operand stack.
+        :return: None, it pushes a dummy result back onto the data stack.
+        """
+        from basic_operators import get_op, get_precedence
+
+        current_op = op_stack.pop()
+        
+        # Validate that the operator exists and get its properties
+        eval_class = get_op(current_op)
+        
+        # Check if we have enough operands for this operator
+        if current_op.token in ['+', '-', '*', '/', '^', '=', '<>', '<', '>', '<=', '>=', 'AND', 'OR']:
+            # Binary operators need 2 operands
+            if len(data_stack) < 2:
+                raise BasicSyntaxError(f"Not enough operands for operator '{current_op.token}'")
+            # Pop two operands and push a dummy result
+            data_stack.pop()
+            data_stack.pop()
+            data_stack.append(lexer_token(0.0, "num"))  # Dummy numeric result
+        elif current_op.token in [UNARY_MINUS, 'NOT']:
+            # Unary operators need 1 operand
+            if len(data_stack) < 1:
+                raise BasicSyntaxError(f"Not enough operands for operator '{current_op.token}'")
+            # Pop one operand and push a dummy result
+            data_stack.pop()
+            data_stack.append(lexer_token(0.0, "num"))  # Dummy numeric result
+        elif current_op.token == '(':
+            # Left paren - shouldn't be processed here in normal cases
+            raise BasicSyntaxError("Unmatched left parenthesis")
+        elif current_op.type == SymbolType.FUNCTION or current_op.token == ARRAY_ACCESS:
+            # Functions and array access - for syntax checking, just validate they exist
+            # and push a dummy result
+            if current_op.token == ARRAY_ACCESS:
+                # Array access - should have indices on stack, but for syntax checking just pop them
+                if len(data_stack) < 1:
+                    raise BasicSyntaxError("Array access without indices")
+                data_stack.pop()  # Pop the indices
+                data_stack.append(lexer_token(0.0, "num"))  # Dummy result
+            else:
+                # Function call - for syntax checking, assume it's valid
+                data_stack.append(lexer_token(0.0, "num"))  # Dummy result
+        # Note: Some operators like parentheses don't push results, so we handle those cases
+
     def get_type_from_name(self, current: lexer_token, tokens: list[lexer_token], token_index: int) -> SymbolType:
         if len(current.token) <= 2 or (current.token.endswith('$') and len(current.token) <= 3):
             if token_index + 1 < len(tokens) and tokens[token_index + 1].token == '(':
@@ -37,12 +84,13 @@ class Expression:
             symbol_type = SymbolType.FUNCTION
         return symbol_type
 
-    def eval(self, tokens:list[lexer_token], *, symbols=None) -> lexer_token:
+    def eval(self, tokens:list[lexer_token], *, symbols=None, syntax_only=False) -> lexer_token:
         """
-        Evaluates an expression, like "2+3*5-A+RND()"
+        Evaluates an expression, like "2+3*5-A+RND()", or just checks syntax if syntax_only=True
         :param symbols: Symbols (BASIC variables) to use when evaluating the expression
         :param tokens: the incoming list[lexer_token]
-        :return: A lexer token with the result and the type.
+        :param syntax_only: If True, only validate syntax without looking up variables or computing values
+        :return: A lexer token with the result and the type (or dummy value if syntax_only)
         """
         from basic_operators import get_op, get_precedence # Import it in two places, so the IDE knows it's there.
         # "-" is ambiguous. It can mean subtraction or unary minus.
@@ -75,7 +123,10 @@ class Expression:
                     # This shows left associative exponentiation: (they use **, not ^)
                     # http://www.quitebasic.com/
                     if top.token != "(" and get_precedence(top) >= get_precedence(current): # Check operator precedence
-                        self.one_op(op_stack, data_stack)
+                        if syntax_only:
+                            self.one_op_syntax_only(op_stack, data_stack)
+                        else:
+                            self.one_op(op_stack, data_stack)
                     else:
                         break
                 if current.token != ")":
@@ -89,32 +140,39 @@ class Expression:
                     is_unary_context = True
             else:
                 if current.type == "id":
-                    # TODO Problem: We now need to know the SymbolType of a variable to retrieve it
-                    # but we don't know it here. Maybe we can defer referencing it, until it is
-                    # used? At that point, we would know array vs function. I think.
-                    # I think this works:
-                    symbol_type = self.get_type_from_name(current, tokens, token_index)
-
-                    if not symbols.is_symbol_defined(current.token, symbol_type):
-                        raise UndefinedSymbol(F"Undefined variable: '{current.token}'")
-                    symbol_value = symbols.get_symbol(current.token, symbol_type)
-                    symbol_type2 = symbols.get_symbol_type(current.token, symbol_type)
-                    # Changed the way that symbols tables work. Check that we are still consistent.
-                    assert(symbol_type == symbol_type2)
-                    if symbol_type == SymbolType.VARIABLE:
-                        if current.token.endswith("$"):
-                            data_stack.append(lexer_token(symbol_value, "str"))
-                        else:
-                            data_stack.append(lexer_token(symbol_value, "num"))
-                    elif symbol_type == SymbolType.FUNCTION:
-                        # Handle function as operators. Lower priority than "(", but higher than everything else.
-                        # So don't append this to the data stack, append it to the op stack as a function.
-                        arg = symbols.get_symbol_arg(current.token, SymbolType.FUNCTION)
-                        op_stack.append(OP_TOKEN(current.token, SymbolType.FUNCTION, arg, symbol_value, symbols=symbols))
+                    if syntax_only:
+                        # For syntax checking, just validate the identifier format and push a dummy value
+                        from basic_types import is_valid_identifier
+                        # Don't validate identifier here since functions/arrays have different rules
+                        # Just push a dummy numeric value for syntax checking
+                        data_stack.append(lexer_token(0.0, "num"))
                     else:
-                        # Array access
-                        arg = current.token
-                        op_stack.append(OP_TOKEN(ARRAY_ACCESS, "array_access", arg, None, symbols=symbols))
+                        # TODO Problem: We now need to know the SymbolType of a variable to retrieve it
+                        # but we don't know it here. Maybe we can defer referencing it, until it is
+                        # used? At that point, we would know array vs function. I think.
+                        # I think this works:
+                        symbol_type = self.get_type_from_name(current, tokens, token_index)
+
+                        if not symbols.is_symbol_defined(current.token, symbol_type):
+                            raise UndefinedSymbol(F"Undefined variable: '{current.token}'")
+                        symbol_value = symbols.get_symbol(current.token, symbol_type)
+                        symbol_type2 = symbols.get_symbol_type(current.token, symbol_type)
+                        # Changed the way that symbols tables work. Check that we are still consistent.
+                        assert(symbol_type == symbol_type2)
+                        if symbol_type == SymbolType.VARIABLE:
+                            if current.token.endswith("$"):
+                                data_stack.append(lexer_token(symbol_value, "str"))
+                            else:
+                                data_stack.append(lexer_token(symbol_value, "num"))
+                        elif symbol_type == SymbolType.FUNCTION:
+                            # Handle function as operators. Lower priority than "(", but higher than everything else.
+                            # So don't append this to the data stack, append it to the op stack as a function.
+                            arg = symbols.get_symbol_arg(current.token, SymbolType.FUNCTION)
+                            op_stack.append(OP_TOKEN(current.token, SymbolType.FUNCTION, arg, symbol_value, symbols=symbols))
+                        else:
+                            # Array access
+                            arg = current.token
+                            op_stack.append(OP_TOKEN(ARRAY_ACCESS, "array_access", arg, None, symbols=symbols))
                 else:
                     data_stack.append(current)
                 is_unary_context = False
@@ -122,10 +180,41 @@ class Expression:
 
         # Do anything left on the stack
         while len(op_stack):
-            self.one_op(op_stack, data_stack)
+            if syntax_only:
+                self.one_op_syntax_only(op_stack, data_stack)
+            else:
+                self.one_op(op_stack, data_stack)
 
         assert_syntax(len(op_stack) == 0, F"Expression not completed.")
         assert_syntax(len(data_stack) == 1, F"Data not consumed.")
 
         return data_stack[0].token
+
+    def check_syntax(self, tokens: list[lexer_token]) -> bool:
+        """
+        Convenience method to check if an expression has valid syntax.
+        :param tokens: the incoming list[lexer_token] 
+        :return: True if syntax is valid, raises BasicSyntaxError if not
+        """
+        try:
+            self.eval(tokens, syntax_only=True)
+            return True
+        except BasicSyntaxError:
+            raise  # Re-raise syntax errors
+        except Exception as e:
+            # Convert other errors to syntax errors for consistency
+            raise BasicSyntaxError(f"Expression syntax error: {str(e)}")
+
+
+def check_expression_syntax(expression_text: str) -> bool:
+    """
+    Check if an expression string has valid syntax.
+    :param expression_text: The expression as a string (e.g., "A + B * 2")
+    :return: True if syntax is valid, raises BasicSyntaxError if not
+    """
+    from basic_lexer import get_lexer
+    lexer = get_lexer()
+    tokens = lexer.lex(expression_text)
+    e = Expression()
+    return e.check_syntax(tokens)
 
