@@ -217,6 +217,8 @@ class ParsedStatementLet(ParsedStatement):
         except Exception as e:
             raise BasicSyntaxError(F"Error in expression. No '='.")
 
+        assert_syntax(is_valid_identifier(variable), F"Invalid variable name '{variable}'")
+
         lexer = get_lexer()
         self._tokens = lexer.lex(value)
         self._expression = Expression()
