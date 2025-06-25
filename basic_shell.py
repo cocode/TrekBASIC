@@ -14,6 +14,7 @@ import pprint
 import argparse
 import time
 
+from basic_parsing import ParsedStatement, ParsedStatementIf
 from basic_types import UndefinedSymbol, BasicSyntaxError, SymbolType, ProgramLine
 
 from basic_interpreter import Executor
@@ -340,20 +341,43 @@ class BasicShell:
                 st_count += 1
         return line_map, st_count
 
-    def renumber(self, old_program, line_map, start_line, increment):
-        new_program:ProgramLine = []
+    def smart_join(self, stmts: list[ParsedStatement]) -> str:
+        """
+        Joins statements back together, so we can reconstitute the source after renumbering.
+        Note this produces canonically formatted code, not the original code. For example,
+        100 A = 3 becomes 100 LET A=3
+        """
+        source = ""
+        last_was_if = False
+        for stmt in stmts:
+            if not last_was_if and source:
+                source += ":"
+            source += str(stmt)
+            last_was_if = isinstance(stmt, ParsedStatementIf)
+        return source
+
+    def renumber(self, old_program: list[ProgramLine], line_map: dict[int:int], start_line: int, increment: int):
+        new_program: list[ProgramLine] = []
         cur_line = start_line
-        for line in old_program:
+        for index, line in enumerate(old_program):
+            stmts: list[ParsedStatement] = []
             for statement in line.stmts:
                 ps = statement.renumber(line_map)
-                ps = ProgramLine(cur_line, [ps], len(new_program), str(cur_line)+" " + str(ps))
-                new_program.append(ps)
-                cur_line += increment
+                stmts.append(ps)
+            if index + 1 == len(old_program):
+                next_line = None
+            else:
+                next_line = len(new_program)
+            source = self.smart_join(stmts)
+            pl = ProgramLine(cur_line, stmts, next_line, str(cur_line)+" " + source)
+            new_program.append(pl)
+            cur_line += increment
+
         return new_program
 
     def format(self, old_program):
         """
-        Parses the program, and returns the new program. this should standardize formatting, spacing.
+        Parses the program, and returns the new program. This should standardize formatting, spacing.
         :param old_program:
         :return:
         """
@@ -386,18 +410,19 @@ class BasicShell:
         self.load_program(new_program)
         print(F"Formatted {len(old_program)} lines to {len(new_program)} lines")
 
-
-
-    def cmd_renum(self, args):
+    def cmd_renum(self, args, verbose: bool = True):
         """
         Renumber the program.
-        Basic algorithm:
-            1. Split lines to single statement lines
-            2. Walk through once to build a map of old line numbers to new
-            3. Create a new program from the old statements
-            4. Renumber the statements, in place.
+        See cmd_format
 
-        :param args:
+        Basic algorithm:
+            1. Walk through once to build a map of old line numbers to new
+            2. Copy the program
+            3. Walk the new program, calling renum, and passing the map.
+            4. Each statement has a renum method that knows what to do for that statement.
+
+        :param: args:
+        :param: verbose: Normally true, off for testing.
         :return:
         """
         # renum start_line, increment.
@@ -415,14 +440,15 @@ class BasicShell:
         else:
             increment = 10
 
-        print(F"Renumber starting with line {start_line}, with increment {increment}")
+        if verbose:
+            print(F"Renumber starting with line {start_line}, with increment {increment}")
         old_program = self.executor._program
-
         new_program = []
         line_map, st_count = self.build_line_map(old_program, start_line, increment)
         new_program = self.renumber(old_program, line_map, start_line, increment)
         self.load_program(new_program)
-        print(F"Renumbered {len(old_program)} lines, and {st_count} statements to {len(new_program)} lines")
+        if verbose:
+            print(F"Renumbered {len(old_program)} lines, and {st_count} statements to {len(new_program)} lines")
 
     def cmd_llvm(self, args):
         """
