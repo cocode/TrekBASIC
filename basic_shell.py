@@ -102,13 +102,13 @@ class BasicShell:
         try:
             program = load_program(self._program_file)
         except BasicSyntaxError as e:
-            print(F"Syntax error: {e}")
+            print(F"{e} in line {e.line_number}")
             return
 
         try:
             executor = Executor(program, coverage=coverage)
         except BasicSyntaxError as e:
-            print(F"Syntax error: {e}")
+            print(F"{e} in line {e.line_number}")
             return
         self.executor = executor
         self.load_status = True
