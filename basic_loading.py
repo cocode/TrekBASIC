@@ -47,6 +47,7 @@ def tokenize_statements(commands_text:list[str]):
                     commands_array[i] = "GOTO "+commands_array[i]
             additional = tokenize_statements(commands_array)
             list_of_statements.extend(additional)
+            parsed_statement.clear_additional()
 
     return list_of_statements
 
