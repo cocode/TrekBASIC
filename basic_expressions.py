@@ -185,8 +185,8 @@ class Expression:
             else:
                 self.one_op(op_stack, data_stack)
 
-        assert_syntax(len(op_stack) == 0, F"Expression not completed.")
-        assert_syntax(len(data_stack) == 1, F"Data not consumed.")
+        assert_syntax(len(op_stack) == 0, F"Invalid Expression. Expression not completed.")
+        assert_syntax(len(data_stack) == 1, F"Invalid Expression. Data not consumed.")
 
         return data_stack[0].token
 
