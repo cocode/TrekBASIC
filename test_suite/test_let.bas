@@ -1,4 +1,4 @@
-110 REM test LET statement
+100 REM test LET statement
 110 A=6
 120 IF A <> 6 THEN STOP
 130 LET B=7
@@ -7,5 +7,5 @@
 170 C(2) = -77
 180 IF C(2) <> -77 THEN STOP
 190  D = A * B + C(2)
-200 IF D <> -45 THEN STOP
+200 IF D <> -35 THEN STOP
 210 END
