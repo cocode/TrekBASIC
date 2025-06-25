@@ -45,7 +45,7 @@ class Expression:
         if current_op.token in ['+', '-', '*', '/', '^', '=', '<>', '<', '>', '<=', '>=', 'AND', 'OR']:
             # Binary operators need 2 operands
             if len(data_stack) < 2:
-                raise BasicSyntaxError(f"Not enough operands for operator '{current_op.token}'")
+                raise BasicSyntaxError(f"Syntax Error: Not enough operands for operator '{current_op.token}'")
             # Pop two operands and push a dummy result
             data_stack.pop()
             data_stack.pop()
