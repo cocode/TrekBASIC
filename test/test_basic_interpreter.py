@@ -78,6 +78,7 @@ class Test(TestCase):
             executor = self.runit_capture(listing)
 
     def test_assignment(self):
+        # Also verifies strings do not have their case changed,
         executor = self.runit(['100 Z$="Fred"'])
         self.assertEqual(1, executor.get_symbol_count())
         self.assertEqual('Fred', executor.get_symbol("Z$"))
