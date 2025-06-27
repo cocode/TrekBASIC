@@ -25,8 +25,10 @@ def tokenize_statements(commands_text:list[str]):
     options = [cmd for cmd in Keywords.__members__.values()]
     for command in commands_text:
         command = command.lstrip()
+        command_upper = command.upper()
         for cmd in options:         # Can't just use a dict, because of lines like "100 FORX=1TO10"
-            if command.startswith(cmd.name):
+            # Only use the uppercase version for lookup. Don't uppercase the whole statement.
+            if command_upper.startswith(cmd.name):
                 parser_for_keyword = cmd.value.get_parser_class()
                 parsed_statement = parser_for_keyword(cmd, command[len(cmd.name):])
                 break
@@ -75,7 +77,7 @@ def tokenize_line(program_line: str) -> ProgramLine:
     number = int(number)
 
     # Rem commands don't split on colons, other lines do.
-    if partial.startswith(Keywords.REM.name):
+    if partial.upper().startswith(Keywords.REM.name):
         commands_text = [partial]
     else:
         commands_text = smart_split(partial)
@@ -129,6 +131,5 @@ def load_program(program_filename) -> list[ProgramLine]:
         lines = f.readlines()
 
     lines = [line.strip() for line in lines]
-    lines = [line.upper() for line in lines]
     program = tokenize(lines)
     return program
