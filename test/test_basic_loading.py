@@ -1,11 +1,8 @@
-from io import StringIO
 from unittest import TestCase
-import sys
 
 from basic_statements import Keywords
 from basic_types import ProgramLine, lexer_token
 from basic_loading import tokenize_line, load_program, tokenize
-from basic_utils import format_program
 from basic_parsing import ParsedStatementIf
 from basic_interpreter import Executor
 
@@ -52,7 +49,6 @@ class Test(TestCase):
 
         self.assertEqual([lexer_token(3000, "num")], results.stmts[4]._tokens)
 
-
     def test_tokenize_if(self):
         clause = "IF3<>2THENX=3"
         line = f"370 {clause}"
@@ -61,6 +57,14 @@ class Test(TestCase):
         self.assertEqual(370, results.line)
         self.assertEqual(2, len(results.stmts))
 
+
+    def test_case(self):
+        clause = 'if3<>2tHEnA$="WoRkS"'
+        line = f"370 {clause}"
+        results = tokenize_line(line)
+        self.assertTrue(isinstance(results, ProgramLine))
+        self.assertEqual(370, results.line)
+        self.assertEqual(2, len(results.stmts))
 
     def test_multiple(self):
         """
