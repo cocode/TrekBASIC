@@ -204,17 +204,3 @@ class Expression:
         except Exception as e:
             # Convert other errors to syntax errors for consistency
             raise BasicSyntaxError(f"Expression syntax error: {str(e)}")
-
-
-def check_expression_syntax(expression_text: str) -> bool:
-    """
-    Check if an expression string has valid syntax.
-    :param expression_text: The expression as a string (e.g., "A + B * 2")
-    :return: True if syntax is valid, raises BasicSyntaxError if not
-    """
-    from basic_lexer import get_lexer
-    lexer = get_lexer()
-    tokens = lexer.lex(expression_text)
-    e = Expression()
-    return e.check_syntax(tokens)
-
