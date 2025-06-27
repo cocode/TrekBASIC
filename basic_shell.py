@@ -545,7 +545,7 @@ class BasicShell:
         "benchmark": (cmd_benchmark, "Usage: becnhmark\n\t\tRuns the program from the beginning, and shows timing."),
         "break": (cmd_break, "Usage: break LINE or break SYMBOL or break list break clear"+
                   "\n\t\tSets a breakpoint on a line, or on writes to a variable"+
-                  "\n\t\tNote that if you have an array and a scale with the same"+
+                  "\n\t\tNote that if you have an array and a symbol with the same"+
                   "\n\t\tname, it will break on writes to either one."),
         "continue": (cmd_continue, "Usage: continue\n\t\tContinues, after a breakpoint."),
         "coverage": (cmd_koverage, "Usage: coverage\n\t\tPrint code coverage report."+
