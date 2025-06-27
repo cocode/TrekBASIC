@@ -540,33 +540,32 @@ class BasicShell:
         "c": "continue",
     }
     commands = {
+        "?": (cmd_print, "Usage: ? expression\n\t\tEvaluates and prints an expression."
+              "\n\t\tNote: You can't print single array variables. Use 'sym'"),
+        "benchmark": (cmd_benchmark, "Usage: becnhmark\n\t\tRuns the program from the beginning, and shows timing."),
         "break": (cmd_break, "Usage: break LINE or break SYMBOL or break list break clear"+
                   "\n\t\tSets a breakpoint on a line, or on writes to a variable"+
                   "\n\t\tNote that if you have an array and a scale with the same"+
                   "\n\t\tname, it will break on writes to either one."),
         "continue": (cmd_continue, "Usage: continue\n\t\tContinues, after a breakpoint."),
-        "forstack": (cmd_for_stack, "Usage: fors\n\t\tPrints the FOR stack."),
-        "format": (cmd_format, "Usage: format\n\t\tFormats the program. Does not save it."),
-        "gosubs": (cmd_gosub_stack, "Usage: gosubs\n\t\tPrints the FOR stack."),
-        "help": (cmd_help, "Usage: help"),
-        "load": (cmd_load, "Usage: load <program>\n\t\tRunning load clears coverage data."),
         "coverage": (cmd_koverage, "Usage: coverage\n\t\tPrint code coverage report."+
                      "\n\t\tkoverage on\n\t\tkoverage off\n\t\tkoverage clear\n\t\tkoverage report <save|load|list>"),
+        "format": (cmd_format, "Usage: format\n\t\tFormats the program. Does not save it."),
+        "forstack": (cmd_for_stack, "Usage: fors\n\t\tPrints the FOR stack."),
+        "gosubs": (cmd_gosub_stack, "Usage: gosubs\n\t\tPrints the FOR stack."),
+        "help": (cmd_help, "Usage: help"),
         "list": (cmd_list, "Usage: list start count"),
+        "llvm": (cmd_llvm, "llvm [file]: generate LLVM IR and print to console or save to file"),
+        "load": (cmd_load, "Usage: load <program>\n\t\tRunning load clears coverage data."),
+        "next": (cmd_next, "Usage: next"),
         "quit": (cmd_quit, "Usage: quit"),
         "renumber": (cmd_renum, "Usage: renum <start <increment>>\n\t\tRenumbers the program."),
         "run": (cmd_run, "Usage: run <coverage>\n\t\tRuns the program from the beginning."),
-        "benchmark": (cmd_benchmark, "Usage: becnhmark\n\t\tRuns the program from the beginning, and shows timing."),
-        "next": (cmd_next, "Usage: next"),
+        "save": (cmd_save, "Usage: save FILE"+
+                "\n\t\tSaves the current program to a new file."),
         "sym": (cmd_symbols, "Usage: sym <symbol> <type>"+
                 "\n\t\tPrints the symbol table, or one entry."+
                 "\n\t\tType is 'variable', 'array' or 'function'. Defaults to 'variable'."),
-        "save": (cmd_save, "Usage: save FILE"+
-                "\n\t\tSaves the current program to a new file."),
-        "?": (cmd_print, "Usage: ? expression\n\t\tEvaluates and prints an expression."
-              "\n\t\tNote: You can't print single array variables. Use 'sym'"),
-        "llvm": (cmd_llvm, "llvm [file]: generate LLVM IR and print to console or save to file"),
-
     }
 
     def find_command(self, prefix):
