@@ -13,14 +13,16 @@ def _find_initial_command(statement: str) -> tuple[str, bool]:
     while index < len(statement) and statement[index].isspace():
         index += 1
     statement = statement[index:]
+    # Might get A=1::B=2
+    if len(statement) == 0:
+        return None, False
     for keyword in Keywords:
         if statement.startswith(keyword.name):
             return keyword, False
     else:
         # This line either starts with a variable or is a syntax error.
         # Technically, we don't have to validate the variable here.
-        assert_syntax(statement[0] in LETTERS)
-        assert_syntax(statement[0] in LETTERS)
+        assert_syntax(statement[0] in LETTERS, "Lines must start with a letter.")
         if len(statement) < 2:
             # The statement is only one character. BASIC isn't C, "A" isn't a valid statement.
             raise BasicSyntaxError(F"Statement too short: '{statement}'")
