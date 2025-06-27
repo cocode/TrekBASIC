@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Run all tests for TrekBasic - stop at first error
+Run all tests for TrekBasic - stop at first error unless --continue-on-failure is specified
 """
+import argparse
 import subprocess
 import sys
 import re
@@ -46,10 +47,20 @@ def check_unit_test_status(output):
         return False, "❓ Unit test status unclear"
 
 def main():
+    parser = argparse.ArgumentParser(description='Run all TrekBasic tests')
+    parser.add_argument('--continue-on-failure', '-c', action='store_true',
+                       help='Continue running tests even if some fail')
+    args = parser.parse_args()
+    
     print("Running TrekBasic Test Suite")
     print("============================")
+    if args.continue_on_failure:
+        print("Mode: Continue on failure")
+    else:
+        print("Mode: Stop on first failure")
     
     total_tests = 0
+    all_passed = True
     
     # 1. Run unit tests
     success, output = run_command(
@@ -64,7 +75,9 @@ def main():
     print(status_msg + f" ({unit_tests} tests)")
     
     if not passed:
-        sys.exit(1)
+        all_passed = False
+        if not args.continue_on_failure:
+            sys.exit(1)
     
     # 2. Run BASIC interpreter test suite
     success, output = run_command(
@@ -80,13 +93,17 @@ def main():
     failed_count = int(failed_match.group(1)) if failed_match else 0
     
     if not success or failed_count > 0:
+        all_passed = False
         print(f"❌ Interpreter tests FAILED ({failed_count} failures)")
-        sys.exit(1)
+        if not args.continue_on_failure:
+            sys.exit(1)
     elif interpreter_tests > 0:
         print(f"✅ Interpreter tests passed ({interpreter_tests} tests)")
     else:
+        all_passed = False
         print("❓ Interpreter test status unclear")
-        sys.exit(1)
+        if not args.continue_on_failure:
+            sys.exit(1)
     
     # 3. Run LLVM compiler test suite
     success, output = run_command(
@@ -102,13 +119,17 @@ def main():
     failed_count = int(failed_match.group(1)) if failed_match else 0
     
     if not success or failed_count > 0:
+        all_passed = False
         print(f"❌ LLVM tests FAILED ({failed_count} failures)")
-        sys.exit(1)
+        if not args.continue_on_failure:
+            sys.exit(1)
     elif llvm_tests > 0:
         print(f"✅ LLVM tests passed ({llvm_tests} tests)")
     else:
+        all_passed = False
         print("❓ LLVM test status unclear")
-        sys.exit(1)
+        if not args.continue_on_failure:
+            sys.exit(1)
     
     # Summary
     print("\n" + "=" * 40)
@@ -118,7 +139,13 @@ def main():
     print(f"  LLVM tests:        {llvm_tests}")
     print(f"  {'─' * 25}")
     print(f"  Total tests:       {total_tests}")
-    print("\nAll tests passed! ✅")
+    
+    if all_passed:
+        print("\nAll tests passed! ✅")
+        sys.exit(0)
+    else:
+        print("\nSome tests failed! ❌")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main() 
