@@ -40,7 +40,7 @@ class SymbolTable:
         A symbol is first returned from the inner scope. If it is not found in the inner scope,
         the outer (enclosing) scope is returned.
 
-        :return: A new symbol table, that points to the current symbols table as an enclosing scope.
+        :return: A new symbol table that points to the current symbols table as an enclosing scope.
         """
         return SymbolTable(self)
 
@@ -55,9 +55,11 @@ class SymbolTable:
     def put_symbol(self, symbol:str, value, symbol_type:SymbolType, arg:str):
         assert SymbolType == type(symbol_type)
         symbol_table = self.get_table(symbol_type)
+        symbol = symbol.upper()
         symbol_table[symbol] = ste(value, symbol_type, arg)
 
     def _is_local(self, symbol, symbol_type:SymbolType):
+        symbol = symbol.upper()
         symbol_table = self.get_table(symbol_type)
         return symbol in symbol_table
 
@@ -66,6 +68,8 @@ class SymbolTable:
         :param symbol:
         :return:
         """
+        symbol = symbol.upper()
+
         if self._is_local(symbol, symbol_type):
             return True
         if self._enclosing_scope is not None:
@@ -79,6 +83,7 @@ class SymbolTable:
         :param symbol_type: The type of the symbol
         :return: The Symbol Table Entry for this variable.
         """
+        symbol = symbol.upper()
         # TODO We are looking this up three times.
         if not self.is_symbol_defined(symbol, symbol_type):
             raise UndefinedSymbol(F"Variable {symbol} does not exist.")
@@ -103,6 +108,7 @@ class SymbolTable:
         :param symbol:
         :return:
         """
+        symbol = symbol.upper()
         entry = self._get_symbol_entry(symbol, symbol_type)
         return entry.value
 
@@ -111,6 +117,7 @@ class SymbolTable:
         :param symbol:
         :return:
         """
+        symbol = symbol.upper()
         entry = self._get_symbol_entry(symbol, symbol_type)
         return entry.type
 
@@ -119,6 +126,7 @@ class SymbolTable:
         :param symbol:
         :return:
         """
+        symbol = symbol.upper()
         entry = self._get_symbol_entry(symbol, symbol_type)
         return entry.arg
 

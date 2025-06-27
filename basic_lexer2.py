@@ -89,7 +89,7 @@ class Lexer:
             if state == ST_ANY:
                 if c == ' ':
                     consume()
-                elif c in LETTERS:
+                elif c.upper() in LETTERS:
                     token = consume()
                     state = ST_REF
                 elif c in NUMBERS:
@@ -128,7 +128,7 @@ class Lexer:
                     yield lexer_token(token, "id")
                     token = ""
                     state = ST_ANY
-                elif c in LETTERS:
+                elif c.upper() in LETTERS:
                     token += consume()
                 else:
                     if token in BOOLEAN_OPERATORS:

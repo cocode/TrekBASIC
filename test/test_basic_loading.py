@@ -58,7 +58,8 @@ class Test(TestCase):
         self.assertEqual(2, len(results.stmts))
 
 
-    def test_case(self):
+    def test_case_insensitive_keywords(self):
+        # TODO Need "Else" as soon as I implement it.
         clause = 'if3<>2tHEnA$="WoRkS"'
         line = f"370 {clause}"
         results = tokenize_line(line)

@@ -92,7 +92,7 @@ def is_valid_identifier(variable:str) -> None:
     """
     assert_syntax(len(variable) >= 1, F"Zero length variable name.")
     assert_syntax(len(variable) <= 3, F"Variable {variable} too long.")
-    assert_syntax(variable[0] in LETTERS, F"Variable {variable} must start with a letters.")
+    assert_syntax(variable[0].upper() in LETTERS, F"Variable {variable} must start with a letter.")
     if len(variable) == 1:
         return
     if len(variable) == 2 and variable[1] == '$':

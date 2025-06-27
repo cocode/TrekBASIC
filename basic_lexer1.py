@@ -78,11 +78,11 @@ class Lexer:
 
         while (c := cur()) is not None:
             if state is None:
-                if c in LETTERS:
+                if c.upper() in LETTERS:
                     token = ""
                     if peek() is not None and peek() in NUMBERS or peek() == '$':
                         # Only consume if on identifier path.
-                        token += consume()
+                        token += consume().upper()
                         if cur() in NUMBERS:
                             token += consume()
                         if cur() == '$':
@@ -90,7 +90,7 @@ class Lexer:
                         yield lexer_token(token, "id")
                         continue
 
-                    if peek() is None or peek() not in LETTERS:
+                    if peek() is None or peek().upper() not in LETTERS:
                         yield lexer_token(consume(), "id")
                         continue
 
