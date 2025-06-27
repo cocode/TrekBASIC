@@ -28,7 +28,8 @@ Renumbered 11 lines, and 14 statements to 14 lines
 180 PRINT S, J
 190 NEXT J
 
-
+in the middle of adding case insensitivty. Need to handle THEN and ELSE. Can't handle case of ELSE, 
+because we don't yet support else. also need to be case-insensitive on variable names
 Syntax errors should have program line number, when available 
 SyntaxError: No TO found for FOR in line 14 of file.
 That's the line in file, which is useful, but not as good.
