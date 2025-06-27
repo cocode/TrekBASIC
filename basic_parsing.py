@@ -6,7 +6,7 @@ from basic_types import tokens_to_str, NUMBERS
 
 from basic_types import is_valid_identifier
 from basic_types import assert_syntax, BasicSyntaxError
-from basic_expressions import Expression, check_expression_syntax
+from basic_expressions import Expression
 from basic_utils import smart_split
 import copy
 
@@ -218,7 +218,6 @@ class ParsedStatementLet(ParsedStatement):
             raise BasicSyntaxError(F"Error in expression. No '='.")
 
         variable = variable.strip()
-        check_expression_syntax(variable)
 
         lexer = get_lexer()
         self._tokens = lexer.lex(value)
