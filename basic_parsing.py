@@ -65,16 +65,34 @@ class ParsedStatementNoArgs(ParsedStatement):
 class ParsedStatementIf(ParsedStatement):
     """
     Class for an "IF" statement that has been processed.
+    Cases:
+        IF a=b THEN c=d
+        IF a=b THEN c=d ELSE d=f
+        if A=B THEN c=d IF f=g ELSE d=f         # Else binds to closest
+        IF a=b THEN c=d IF q=p ELSE d=f ELSE y=z
+        IF a=b THEN c=d:j=x:q=p ELSE d=f:PRINT "ELSE":x=f ELSE y=z
+
+    And negative cases like
+        IF a=b ELSE c=d
+        IF a=b THEN c=d ELSE d=f ELSE y=z
+
+    Each simple expression above (like "a") can be any expression
+
+    An IF statement runs until it hits the end of a line, or it hits an else statement.
+
     """
     # TODO superstartrek3.bas uses an ELSE
-    # Notes for ELSE. IF...THEN current works be branching to the next line, if the condition is False.
+    # Notes for ELSE.
+    # IF a=b THEN y=z ELSE y=a
+    # If a T
+    # IF...THEN current works be branching to the next line, if the condition is False.
     # For else, it would branch to after the ELSE clause, if the condition is false, on the same line.
     # superstartrek3.bas only uses the ELSE on the same line as the THEN.
     # We need to parse the clauses after then ELSE, and add them to the line, like we now do with _additional
     # and we need to know the offset of the statements after the else.
     def __init__(self, keyword, args):
         super().__init__(keyword, "")
-        then = args.find("THEN")
+        then = args.upper().find("THEN") # TODO watch for quotes
         assert_syntax(then != -1, "No THEN found for IF")
         then_clause = args[then+len("THEN"):]
         self._additional = then_clause.strip()
