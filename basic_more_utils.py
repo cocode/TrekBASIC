@@ -17,7 +17,7 @@ def _find_initial_command(statement: str) -> tuple[str, bool]:
     if len(statement) == 0:
         return None, False
     for keyword in Keywords:
-        if statement.startswith(keyword.name):
+        if statement.upper().startswith(keyword.name):
             return keyword, False
     else:
         # This line either starts with a variable or is a syntax error.
