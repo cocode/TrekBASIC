@@ -10,7 +10,7 @@ def tokenize_statements(commands_text:list[str]):
     """
     Parses individual statements. A line of the program may have multiple statements in it.
 
-    This line has three statements.
+    This line has three statements, separated by colons
 
     100 A=3:PRINT"A is equal to";A:X=6
 
@@ -129,5 +129,6 @@ def load_program(program_filename) -> list[ProgramLine]:
         lines = f.readlines()
 
     lines = [line.strip() for line in lines]
+    lines = [line.upper() for line in lines]
     program = tokenize(lines)
     return program
