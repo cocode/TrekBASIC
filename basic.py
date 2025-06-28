@@ -27,6 +27,9 @@ if __name__ == "__main__":
     except FileNotFoundError as f:
         print(F"File not found {f}")
         sys.exit(1)
+    except ValueError as f:
+        print(F"XXXXXX Value Error {f}")
+        sys.exit(1)
 
     if args.trace:
         with open(TRACE_FILE_NAME, "w") as f:
