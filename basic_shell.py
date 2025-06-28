@@ -810,9 +810,9 @@ class BasicShell:
                          "\t\tAdding the string 'coverage' will cause code coverage data to be recorded from this run"),
         "save": (cmd_save, "Usage: save FILE"+
                 "\n\t\tSaves the current program to a new file."),
-        "stmts": (cmd_stmts, "Usage: stmt <line>\n\t\tPrints the tokenized version of the program." +
+        "statements": (cmd_stmts, "Usage: stmt <line>\n\t\tPrints the tokenized version of the program." +
                  "\n\t\tThis is used for debugging TrekBasic."),
-        "sym": (cmd_symbols, "Usage: sym <symbol> <type>"+
+        "symbols": (cmd_symbols, "Usage: sym <symbol> <type>"+
                 "\n\t\tPrints the symbol table, or one entry."+
                 "\n\t\tType is 'variable', 'array' or 'function'. Defaults to 'variable'."+
                 "\n\t\tThis is used for debugging TrekBask."),
