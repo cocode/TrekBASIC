@@ -13,12 +13,13 @@ import sys
 import pprint
 import argparse
 import time
+import re
 
 from basic_parsing import ParsedStatement, ParsedStatementIf
 from basic_types import UndefinedSymbol, BasicSyntaxError, SymbolType, ProgramLine
 
 from basic_interpreter import Executor
-from basic_loading import load_program, tokenize
+from basic_loading import load_program, tokenize, tokenize_line
 from basic_statements import eval_expression
 from basic_types import RunStatus
 from llvm.codegen import generate_llvm_ir
@@ -325,8 +326,9 @@ class BasicShell:
         coverage = False
         if args is not None and args=="coverage":
             coverage = True
-        print("TODO: Should not relaod file from disk on run. I guess it doesn't matter, since we don't edit in the shell")
-        self.load_from_file(coverage=coverage)
+        # print("TODO: Should not relaod file from disk on run. I guess it doesn't matter, since we don't edit in the shell")
+        # I just added in shell editing.
+        # self.load_from_file(coverage=coverage)
         self.cmd_continue(None)
 
     def cmd_benchmark(self, args):
@@ -533,6 +535,15 @@ class BasicShell:
             print(F"\t{key}: {tup[1]}")
         print("Commands can be abbreviated to shortest unique prefix.")
         print("For convenience, 'r' works for 'run', and 'c' for 'continue'")
+        print()
+        print("BASIC Line Entry:")
+        print("\t<number> <statements> - Insert/replace program line")
+        print("\t<number>              - Delete program line")
+        print("\tExamples:")
+        print("\t\t100 PRINT \"HELLO\"")
+        print("\t\t200 FOR I=1 TO 10: PRINT I: NEXT I")
+        print("\t\t100                  (deletes line 100)")
+        print("\tLine numbers must be 1-65536")
 
     def cmd_stmts(self, args):
 
@@ -548,6 +559,131 @@ class BasicShell:
             for statement in line.stmts:
                 print(F"\t{statement}", end="|")
             print()
+
+    def handle_line_entry(self, line_input: str):
+        """
+        Handle entry of BASIC program lines (e.g., "100 PRINT A" or "100" to delete)
+        :param line_input: The full line input (e.g., "100 PRINT A")
+        """
+        try:
+            # Parse the line number and content
+            parts = line_input.split(" ", 1)
+            line_number = int(parts[0])
+            
+            # Validate line number range
+            if line_number < 1 or line_number > 65536:
+                print(f"Line number {line_number} out of range (1-65536)")
+                return
+                
+            # Check if this is a delete operation (just line number, no content)
+            if len(parts) == 1 or (len(parts) == 2 and parts[1].strip() == ""):
+                self.delete_line(line_number)
+                return
+                
+            # Parse the line using existing tokenizer
+            try:
+                new_program_line = tokenize_line(line_input)
+            except BasicSyntaxError as e:
+                print(f"Syntax error: {e.message}")
+                return
+                
+            # Insert or replace the line in the program
+            self.insert_or_replace_line(new_program_line)
+            
+        except ValueError:
+            print("Invalid line number")
+        except Exception as e:
+            print(f"Error processing line: {e}")
+
+    def delete_line(self, line_number: int):
+        """
+        Delete a line from the program
+        :param line_number: Line number to delete
+        """
+        if not self.executor or not self.executor._program:
+            print("No program loaded")
+            return
+            
+        # Find and remove the line
+        program = self.executor._program
+        original_count = len(program)
+        program = [line for line in program if line.line != line_number]
+        
+        if len(program) == original_count:
+            print(f"Line {line_number} not found")
+            return
+            
+        # Rebuild program with correct next pointers and reload
+        self.rebuild_and_reload_program(program)
+        print(f"Line {line_number} deleted")
+
+    def insert_or_replace_line(self, new_line: ProgramLine):
+        """
+        Insert a new line or replace an existing line in the program
+        :param new_line: The new ProgramLine to insert
+        """
+        if not self.executor:
+            # Create empty program if none exists
+            program = []
+        else:
+            program = self.executor._program.copy()
+            
+        # Find insertion point or replacement
+        insertion_index = 0
+        replaced = False
+        
+        for i, existing_line in enumerate(program):
+            if existing_line.line == new_line.line:
+                # Replace existing line
+                program[i] = new_line
+                replaced = True
+                break
+            elif existing_line.line > new_line.line:
+                # Insert before this line
+                insertion_index = i
+                break
+            insertion_index = i + 1
+            
+        if not replaced:
+            # Insert new line at correct position
+            program.insert(insertion_index, new_line)
+            
+        # Rebuild program with correct next pointers and reload
+        self.rebuild_and_reload_program(program)
+        
+        action = "replaced" if replaced else "inserted"
+        print(f"Line {new_line.line} {action}")
+
+    def rebuild_and_reload_program(self, program_lines: list[ProgramLine]):
+        """
+        Rebuild a program with correct next pointers and reload the executor
+        :param program_lines: List of ProgramLine objects in correct order
+        """
+        # Set up next pointers correctly
+        rebuilt_program = []
+        for i, line in enumerate(program_lines):
+            if i == len(program_lines) - 1:
+                next_index = None  # Last line points to None
+            else:
+                next_index = i + 1
+                
+            rebuilt_line = ProgramLine(
+                line.line,
+                line.stmts,
+                next_index,
+                line.source
+            )
+            rebuilt_program.append(rebuilt_line)
+            
+        # Create new executor with the updated program  
+        # This resets execution state as requested
+        try:
+            self.executor = Executor(rebuilt_program)
+            # Mark as successfully loaded
+            self.load_status = True
+        except BasicSyntaxError as e:
+            print(f"Error loading modified program: {e.message}")
+            self.load_status = False
 
 
     cmd_abrev = {
@@ -566,6 +702,7 @@ class BasicShell:
         "continue": (cmd_continue, "Usage: continue\n\t\tContinues, after a breakpoint."),
         "coverage": (cmd_koverage, "Usage: coverage\n\t\tPrint code coverage report."+
                      "\n\t\tkoverage on\n\t\tkoverage off\n\t\tkoverage clear\n\t\tkoverage report <save|load|list>"),
+        "exit": (cmd_quit, "Usage: quit. Synonym for 'quit'"),
         "format": (cmd_format, "Usage: format\n\t\tFormats the program. Does not save it."),
         "forstack": (cmd_for_stack, "Usage: fors\n\t\tPrints the FOR stack."),
         "gosubs": (cmd_gosub_stack, "Usage: gosubs\n\t\tPrints the FOR stack."),
@@ -574,13 +711,13 @@ class BasicShell:
         "llvm": (cmd_llvm, "llvm [file]: generate LLVM IR and print to console or save to file"),
         "load": (cmd_load, "Usage: load <program>\n\t\tRunning load clears coverage data."),
         "next": (cmd_next, "Usage: next"),
-        "quit": (cmd_quit, "Usage: quit"),
+        "quit": (cmd_quit, "Usage: quit. Synonym for 'exit'"),
         "renumber": (cmd_renum, "Usage: renum <start <increment>>\n\t\tRenumbers the program."),
         "run": (cmd_run, "Usage: run <coverage>\n\t\tRuns the program from the beginning."),
         "save": (cmd_save, "Usage: save FILE"+
                 "\n\t\tSaves the current program to a new file."),
         "stmts": (cmd_stmts, "Usage: stmt <line>\n\t\tPrints the tokenized version of the program." +
-                 "\n\t\thelp\This is used for debugging TrekBasic."),
+                 "\n\t\tThis is used for debugging TrekBasic."),
         "sym": (cmd_symbols, "Usage: sym <symbol> <type>"+
                 "\n\t\tPrints the symbol table, or one entry."+
                 "\n\t\tType is 'variable', 'array' or 'function'. Defaults to 'variable'."+
@@ -603,6 +740,11 @@ class BasicShell:
                 cmd_line = input()
             except EOFError as e:
                 sys.exit(0)
+
+            # Check if this is a BASIC line entry (starts with digits followed by space)
+            if re.match(r'^\d+(\s|$)', cmd_line):
+                self.handle_line_entry(cmd_line)
+                continue
 
             # Make ?A$ work, not just ? A$
             if cmd_line.startswith("?") and len(cmd_line) > 1 and cmd_line[1] != ' ':
