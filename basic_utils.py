@@ -16,21 +16,38 @@ def smart_split(line:str, *, enquote:str = '"', dequote:str = '"', split_char:st
     """
 
     stuff = []
-    quoted = False
     start = 0
-    for x in range(len(line)):
-        c = line[x]
-        if not quoted and c == enquote:
-            quoted = True
-            continue
-        if quoted and c == dequote:
-            quoted = False
-            continue
-        if not quoted and c == split_char:
-            stuff.append(line[start:x])
-            start = x + 1
+    
+    if enquote == dequote:
+        # Simple case: quotes are the same (like "" for strings)
+        # Use boolean flag
+        quoted = False
+        for x in range(len(line)):
+            c = line[x]
+            if c == enquote:
+                quoted = not quoted
+                continue
+            if not quoted and c == split_char:
+                stuff.append(line[start:x])
+                start = x + 1
+    else:
+        # Complex case: quotes are different (like () for parentheses)
+        # Use counter for nesting
+        quote_depth = 0
+        for x in range(len(line)):
+            c = line[x]
+            if c == enquote:
+                quote_depth += 1
+                continue
+            if c == dequote:
+                quote_depth -= 1
+                continue
+            if quote_depth == 0 and c == split_char:
+                stuff.append(line[start:x])
+                start = x + 1
+    
     if start < len(line):
-        stuff.append(line[start:x+1])
+        stuff.append(line[start:len(line)])
     return stuff
 
 
