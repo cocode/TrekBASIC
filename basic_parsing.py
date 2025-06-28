@@ -332,6 +332,7 @@ class ParsedStatementDim(ParsedStatement):
             assert_syntax(dimensions[-1] == ')', "Missing )")
             dimensions = dimensions[1:-1]  # Remove parens
             dimensions = dimensions.split(",")
+            # TODO need to handle expressions here
             dimensions = [int(dimension) for dimension in dimensions]
             self._dimensions.append((name, dimensions))
 
