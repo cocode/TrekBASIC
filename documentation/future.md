@@ -19,7 +19,7 @@ conflict. Ideally, you would just plug in a grammar,
 and it would work. This only works if it's only
 a syntactic different, not a semantic.
 
-### Dialocts
+### Dialects
 Support different BASIC dialects. 
    
    Currently, TrekBasic only supports one dialect, the one that runs 
@@ -47,3 +47,6 @@ Support different BASIC dialects.
    7. obviouslyl, if a=b then 200: k=4
    8. should never execute the statement k=4
 
+### Features
+Add a watch commmand, so someone can edit in the editor of their choice, and TrekBasic will reload it automatically.
+recommended:  watchdog library 
