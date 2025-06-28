@@ -2,6 +2,7 @@
 This file contains the classes used to represent parsed statements.
 """
 from basic_lexer import get_lexer
+from basic_find_str_quotes import find_next_str_not_quoted
 from basic_types import tokens_to_str, NUMBERS
 
 from basic_types import is_valid_identifier
@@ -61,7 +62,6 @@ class ParsedStatementNoArgs(ParsedStatement):
         assert_syntax(len(args.strip())== 0, "Command does not take any arguments.")
         self.args = ""
 
-
 class ParsedStatementIf(ParsedStatement):
     """
     Class for an "IF" statement that has been processed.
@@ -92,8 +92,10 @@ class ParsedStatementIf(ParsedStatement):
     # and we need to know the offset of the statements after the else.
     def __init__(self, keyword, args):
         super().__init__(keyword, "")
-        then = args.upper().find("THEN") # TODO watch for quotes
-        assert_syntax(then != -1, "No THEN found for IF")
+        # then = args.upper().find("THEN") # TODO watch for quotes
+        # assert_syntax(then != -1, "No THEN found for IF")
+        then, then_end = find_next_str_not_quoted(args.upper(), "THEN")
+        assert_syntax(then is not None, "No THEN found for IF")
         then_clause = args[then+len("THEN"):]
         self._additional = then_clause.strip()
         lexer = get_lexer()
