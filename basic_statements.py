@@ -40,7 +40,7 @@ def stmt_print(executor, stmt:ParsedStatementPrint):
         else: # Expression
             v = eval_expression(executor._symbols, arg)
             #v = executor.get_symbol(arg)
-            if type(v) == float:
+            if type(v) in (int, float):
                 executor.do_print(F" {v:g} ", end='') # I'm trying to figure out BASIC's rules for spacing.
                                           # NO spaces is wrong (see initial print out)
                                           # Spaces around everything is wrong.
@@ -193,7 +193,10 @@ def stmt_input(executor, stmt):
         # TODO If we add semicolon an an op that behaves like comma, multi-element prompts should work.
         prompt = eval_expression(executor._symbols, prompt)
     while True:
-        executor.do_print(prompt, end='')
+        if prompt:
+            executor.do_print(prompt + " ", end='')
+        else:
+            executor.do_print("? ", end='')
         result = executor.do_input()
         if result is None:
             print("Bad response from trekbot")
