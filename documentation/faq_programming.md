@@ -18,16 +18,19 @@ A new dialect of basic would consist of
 * ParsedStatements
 * Tests for the above
 
+The above are changes that don't alter the structure
+of the language too much. 
+
 Supporting a BASIC dialect with fundamental structural
-differences would be much harder.
-Differences like not having line numbners, or 
-differences in associativity (Exponenetiation, below)
-would be much more work.
-   
+differences like the following would be harder.
+
+* Not having line numbers
+* Multicharacter variable names
+* Differences in associativity (such as Exponentiation, below)
+
 ### Exponentiation.
-Why is exponentiation right associative? It's currently left associative, as older dialects of basic had it that way, and currently
-we are emulating older version, that inlclude lines numbers amoung
-other things
+Exponentiation is currently left associative, as opposed to the more standard right association. We do this because 
+older dialects of basic had it that way, and we are currently emulating older versions.
 
 ## Is there more information available?
 We built this off information I found on the web, so, yes.

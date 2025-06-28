@@ -13,7 +13,9 @@
 1. BASIC and BNF
     1. https://rosettacode.org/wiki/BNF_Grammar#BASIC
 1. Full GW-BASIC implementation / PC emulator
-    1. https://robhagemans.github.io/pcbasic/
+   1. https://robhagemans.github.io/pcbasic/
+2. Full Star Trek game in a browser. (rewrite in Javascript, I think)
+   3. https://coding-horror.github.io/basic-computer-games/84_Super_Star_Trek/javascript/index.html
 ## Super Startrek rules
 https://github.com/beejjorgensen/Super-Star-Trek-Info/blob/main/doc/sst_spec.md
 source
@@ -21,8 +23,8 @@ https://github.com/beejjorgensen/Super-Star-Trek-Info/blob/main/sources/sst.bas
 
 ### Tek 4051 Basic
 https://forum.vcfed.org/index.php?threads/tektronix-4051-basic-compiler-concept2.1248495/
-Why? Because I used to play star trek on it, in school. Cool, modern (then) vector display with a storage tube.
-state of the art. and a great tape drive! :-)
+Why? Because I used to play star trek on it, in school. Cool, modern (then) vector display with a state 
+of the art storage tube and a great tape drive! :-)
 
 ## LLVM Tutorial References
 1. Generating LLVM IR from Python: https://pypi.org/project/llvmlite/
