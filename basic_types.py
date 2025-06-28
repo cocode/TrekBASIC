@@ -41,7 +41,7 @@ class BasicRuntimeError(BasicError):
         super().__init__(message, line_number)
         self.line_number = line_number
 
-class UndefinedSymbol(BasicSyntaxError):
+class UndefinedSymbol(BasicRuntimeError):
     def __init__(self, message):
         super(UndefinedSymbol, self).__init__(message)
         self.message = message
