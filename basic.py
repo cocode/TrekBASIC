@@ -9,6 +9,7 @@ import time
 from basic_interpreter import Executor
 from basic_loading import load_program
 from basic_types import BasicSyntaxError, RunStatus
+from basic_utils import TRACE_FILE_NAME
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run BASIC programs.')
@@ -28,7 +29,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     if args.trace:
-        with open("tracefile.txt", "w") as f:
+        with open(TRACE_FILE_NAME, "w") as f:
             executor = Executor(program, trace_file=f)
             if args.time:
                 start_time = time.time()

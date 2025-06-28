@@ -5,7 +5,7 @@ import sys
 from basic_interpreter import Executor
 from basic_types import BasicSyntaxError
 from basic_loading import tokenize
-import basic
+from basic_utils import TRACE_FILE_NAME
 
 
 class Test(TestCase):
@@ -28,7 +28,7 @@ class Test(TestCase):
     def runit(self, listing, trace=False):
         program = tokenize(listing)
         self.assertEqual(len(listing), len(program))
-        executor = Executor(program, trace=trace, stack_trace=True)
+        executor = Executor(program, stack_trace=True)
         executor.run_program()
         return executor
 
@@ -62,7 +62,7 @@ class Test(TestCase):
         ]
         program = tokenize(listing)
         self.assertEqual(len(listing), len(program))
-        with open("tracefile.txt", "w") as f:
+        with open(TRACE_FILE_NAME, "w") as f:
             executor = Executor(program, trace_file=f)
             with mock.patch('sys.stdout', new=StringIO()):
                 executor.run_program()
