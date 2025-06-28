@@ -1,8 +1,12 @@
 # References
 
 ## BASIC
-1. Online implementation of a similar basic:
-   2. https://www.quitebasic.com/
+1. Basic's online
+   2. Quite Basic QuiteBasic
+      2. https://www.quitebasic.com/
+   3. 8bitworkshopo
+      4. https://8bitworkshop.com/docs/platforms/basic/index.html
+      5. Supports multiple dialects explicitly
 1. BASIC
     1. https://madexp.com/wp-content/uploads/2018/02/Microsoft_Basic_8086Xenix_Reference.pdf
     1. http://www.classiccmp.org/cini/pdf/Apple/AppleSoft%20II%20Basic%20Programming%20Manual.PDF

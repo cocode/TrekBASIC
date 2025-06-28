@@ -28,6 +28,9 @@ differences like the following would be harder.
 * Multicharacter variable names
 * Differences in associativity (such as Exponentiation, below)
 
+I've just downloaded the original "Hunt the Wumpus". It uses DATA and READ statements. I'll have to implement them.
+this won't conflict with anything in the current implementation.
+
 ### Exponentiation.
 Exponentiation is currently left associative, as opposed to the more standard right association. We do this because 
 older dialects of basic had it that way, and we are currently emulating older versions.
