@@ -6,7 +6,7 @@ import sys
 
 def smart_split(line:str, *, enquote:str = '"', dequote:str = '"', split_char:str = ":") -> list[str]:
     """
-    Colons split a line up into separate statements. But not if the colon is within quotes.
+    Colons split up a line into separate statements. But not if the colon is within quotes.
     Adding comma split, for DIM G(8,8),C(9,2),K(3,3),N(3),Z(8,8),D(8)
     :param line:
     :param enquote: The open quote character.
