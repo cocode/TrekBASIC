@@ -9,7 +9,9 @@ Renumber is not working correctly
 The 'stmts' command prints an extra : before the goto on something simple like "100 if x=1 then goto 100"
 ### READ vs INPUT
 Looks like Dartmouth basic uses READ instead of INPUT. We could add that without conflict. If the semantics are the
-same, we could just alias.  
+same, we could just alias.
+### Escaped quotes
+Should I support \" in Strings? I don't recall older basics doing that, but some do.
 
 ### TrekBot
    TrekBot is an automated program to play Star Trek, that was build to help with code coverage testing. It's not very
