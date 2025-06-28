@@ -534,6 +534,22 @@ class BasicShell:
         print("Commands can be abbreviated to shortest unique prefix.")
         print("For convenience, 'r' works for 'run', and 'c' for 'continue'")
 
+    def cmd_stmts(self, args):
+
+        if args:
+            line_number = int(args[0])
+        else:
+            line_number = None
+        for line in self.executor._program:
+            # If they give us a line number, only print that line's statements
+            if line_number is not None and line_number != line.line_number:
+                continue
+            print(F"{line.line} ", end="")
+            for statement in line.stmts:
+                print(F"\t{statement}", end="|")
+            print()
+
+
     cmd_abrev = {
         # Abbreviations for commands that get typed a lot.
         "r": "run",
@@ -563,9 +579,12 @@ class BasicShell:
         "run": (cmd_run, "Usage: run <coverage>\n\t\tRuns the program from the beginning."),
         "save": (cmd_save, "Usage: save FILE"+
                 "\n\t\tSaves the current program to a new file."),
+        "stmts": (cmd_stmts, "Usage: stmt <line>\n\t\tPrints the tokenized version of the program." +
+                 "\n\t\thelp\This is used for debugging TrekBasic."),
         "sym": (cmd_symbols, "Usage: sym <symbol> <type>"+
                 "\n\t\tPrints the symbol table, or one entry."+
-                "\n\t\tType is 'variable', 'array' or 'function'. Defaults to 'variable'."),
+                "\n\t\tType is 'variable', 'array' or 'function'. Defaults to 'variable'."+
+                "\n\t\tThis is used for debugging TrekBask."),
     }
 
     def find_command(self, prefix):
@@ -618,3 +637,4 @@ if __name__ == "__main__":
     cmd = None
     debugger = BasicShell(args.program)
     debugger.do_command()
+    print("TrekBasic: Done")
