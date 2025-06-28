@@ -26,10 +26,19 @@ ProgramLine = namedtuple("ProgramLine", "line stmts next source") # TODO Change 
 ste = namedtuple("Symbol", "value type arg")
 
 
-class BasicSyntaxError(Exception):
+class BasicError(Exception):
     def __init__(self, message, line_number=None):
         super().__init__(message)
         self.message = message
+
+class BasicSyntaxError(BasicError):
+    def __init__(self, message, line_number=None):
+        super().__init__(message, line_number)
+        self.line_number = line_number
+
+class BasicRuntimeError(BasicError):
+    def __init__(self, message, line_number=None):
+        super().__init__(message, line_number)
         self.line_number = line_number
 
 class UndefinedSymbol(BasicSyntaxError):
