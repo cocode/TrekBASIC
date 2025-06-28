@@ -2,7 +2,7 @@ from basic_statements import Keywords
 from basic_types import assert_syntax, LETTERS, BasicSyntaxError, NUMBERS
 
 
-def _find_initial_command(statement: str) -> tuple[str, bool]:
+def _find_next_command(statement: str) -> tuple[str, bool]:
     """
     Find the command at the beginning of a statement.
     lines/statements in BASIC must start with a keyword, or an assignment statement (an implied LET):
