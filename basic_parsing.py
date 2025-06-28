@@ -336,3 +336,19 @@ class ParsedStatementDim(ParsedStatement):
     def __str__(self):
         all = [name+"("+",".join([str(dim) for dim in dims])+")" for name, dims in self._dimensions]
         return F"{self.keyword.name} {','.join(all)}"
+
+class ParsedStatementTrace(ParsedStatement):
+    """
+    Handles Trace statments - this are not program statements, there evnironmental control options.
+    This turns on and off writing line number information to a trace file.
+    """
+    def __init__(self, keyword, args):
+        super().__init__(keyword, "")
+        args = args.strip()
+        valid = ["on", "off"]
+        if args not in valid:
+            raise BasicSyntaxError(F"Arguments to trace must be one of {valid}, but got {args}")
+        self.state = args
+
+    def __str__(self):
+        return F"{self.keyword.name} {self.state}"
