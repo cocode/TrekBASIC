@@ -86,6 +86,10 @@ def tokenize_line(program_line: str) -> ProgramLine:
     except BasicSyntaxError as bse:
         # Annotate it with the line number and rethrow
         raise BasicSyntaxError(bse.message, number)
+    except ValueError as ve:
+        # Annotate it with the line number and rethrow
+        error = BasicSyntaxError(ve, 99)
+        raise error from ve
     s = ProgramLine(number, list_of_statements, -1, source=program_line)
     return s
 
