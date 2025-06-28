@@ -399,12 +399,17 @@ class BasicShell:
 
 
     def cmd_run(self, args):
+        if not self.executor:
+            print("No program has been loaded yet.")
+            return
+
         coverage = False
-        if args is not None and args=="coverage":
+        if args is not None and args == "coverage":
             coverage = True
-        # print("TODO: Should not relaod file from disk on run. I guess it doesn't matter, since we don't edit in the shell")
-        # I just added in shell editing.
-        # self.load_from_file(coverage=coverage)
+
+        # Extract program from current executor, then create fresh executor
+        program = self.executor._program
+        self.executor = Executor(program, coverage=coverage)
         self.cmd_continue(None)
 
     def cmd_benchmark(self, args):
