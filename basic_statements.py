@@ -6,13 +6,14 @@ from enum import Enum
 
 from basic_dialect import UPPERCASE_INPUT
 from basic_types import BasicSyntaxError, assert_syntax, is_valid_identifier
-from basic_types import SymbolType, RunStatus
+from basic_types import SymbolType, RunStatus, BasicRuntimeError
 
 from basic_parsing import ParsedStatement, ParsedStatementIf, ParsedStatementFor, ParsedStatementOnGoto, \
     ParsedStatementTrace
 from basic_parsing import ParsedStatementLet, ParsedStatementNoArgs, ParsedStatementDef, ParsedStatementPrint
 from basic_parsing import ParsedStatementGo, ParsedStatementDim
 from basic_parsing import ParsedStatementInput, ParsedStatementNext
+from basic_parsing import ParsedStatementData, ParsedStatementRead, ParsedStatementRestore
 from basic_lexer import get_lexer
 from basic_expressions import Expression
 from basic_utils import TRACE_FILE_NAME
@@ -166,9 +167,15 @@ def stmt_dim(executor, stmt:ParsedStatementDim):
     :param stmt:
     :return:
     """
-    for name, value in stmt._dimensions:
-        initializer = init_array(value)
-        executor.put_symbol(name, initializer, SymbolType.ARRAY, arg=None) # Not right, but for now.
+    for name, dimension_expressions in stmt._dimensions:
+        # Evaluate each dimension expression at runtime
+        evaluated_dimensions = []
+        for dim_expr in dimension_expressions:
+            result = eval_expression(executor._symbols, dim_expr)
+            evaluated_dimensions.append(int(result))
+        
+        initializer = init_array(evaluated_dimensions)
+        executor.put_symbol(name, initializer, SymbolType.ARRAY, arg=None)
 
 
 def stmt_if(executor, stmt):
@@ -275,6 +282,68 @@ def stmt_return(executor, stmt):
     executor.do_return()
 
 
+def stmt_data(executor, stmt):
+    """
+    DATA statements are passive - they just hold data for READ statements.
+    No execution needed.
+    """
+    pass
+
+
+def stmt_read(executor, stmt):
+    """
+    Read data values from DATA statements and assign to variables.
+    """
+    from basic_parsing import ParsedStatementRead
+    
+    for var_name in stmt._variables:
+        # Get the next data value
+        try:
+            data_value = executor.read_data_value()
+        except BasicRuntimeError as e:
+            # Re-raise with current line context
+            raise BasicRuntimeError(str(e))
+        
+        # Determine if this is a string variable by checking the base variable name
+        var_clean = var_name.replace(" ", "")
+        i = var_clean.find("(")
+        if i != -1:
+            # Array element - check base variable name
+            base_var = var_clean[:i]
+            is_string_var = base_var.endswith("$")
+        else:
+            # Simple variable
+            is_string_var = is_string_variable(var_name)
+        
+        # Convert data value to appropriate type based on variable type
+        if is_string_var:
+            # String variable - remove quotes if present
+            if data_value.startswith('"') and data_value.endswith('"'):
+                value = data_value[1:-1]  # Remove quotes
+            else:
+                value = data_value
+        else:
+            # Numeric variable - convert to number
+            try:
+                if '.' in data_value or 'E' in data_value.upper():
+                    value = float(data_value)
+                else:
+                    value = int(data_value)
+            except ValueError:
+                raise BasicRuntimeError(f"I can't convert {data_value} to a number.")
+        
+        # Assign to variable (handles both simple variables and array elements)
+        assign_variable(executor, var_name, value)
+
+
+def stmt_restore(executor, stmt):
+    """
+    Reset the data pointer to beginning or to a specific line.
+    """
+    from basic_parsing import ParsedStatementRestore
+    executor.restore_data(stmt._line_number)
+
+
 def stmt_width(executor, stmt):
     """
     The WIDTH statement is only for compatibility with some versions of BASIC. It set the width of the screen.
@@ -301,6 +370,7 @@ class KB:
 
 class Keywords(Enum):
     CLEAR = KB(stmt_clear, ParsedStatement) # Some uses of clear take arguments, which we ignore.
+    DATA = KB(stmt_data, ParsedStatementData)
     DEF = KB(stmt_def, ParsedStatementDef) # User defined functions
     DIM = KB(stmt_dim, ParsedStatementDim)
     END = KB(stmt_end, ParsedStatementNoArgs)
@@ -314,7 +384,9 @@ class Keywords(Enum):
     NEXT = KB(stmt_next, ParsedStatementNext)
     ON = KB(stmt_on, ParsedStatementOnGoto) # Computed gotos, gosubs
     PRINT = KB(stmt_print, ParsedStatementPrint)
+    READ = KB(stmt_read, ParsedStatementRead)
     REM = KB(stmt_rem, ParsedStatement)
+    RESTORE = KB(stmt_restore, ParsedStatementRestore)
     RETURN = KB(stmt_return, ParsedStatementNoArgs)
     STOP = KB(stmt_stop, ParsedStatementNoArgs) # Variant of END
     TRACE = KB(stmt_trace, ParsedStatementTrace) # Trace program execution

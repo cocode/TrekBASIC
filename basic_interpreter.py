@@ -6,7 +6,7 @@ import random
 
 import basic_functions
 from basic_types import ProgramLine, BasicInternalError, assert_syntax, BasicSyntaxError
-from basic_types import SymbolType, RunStatus
+from basic_types import SymbolType, RunStatus, BasicRuntimeError
 from basic_symbols import SymbolTable
 from basic_utils import TRACE_FILE_NAME
 from typing import Optional, TextIO
@@ -36,6 +36,8 @@ class Executor:
         self._goto = None
         self._gosub_stack = []
         self._for_stack = []
+        # Reset DATA/READ state
+        self._data_position = None
 
     def __init__(self,
                  program:list[ProgramLine],
@@ -63,6 +65,8 @@ class Executor:
         self._internal_symbols = None
         self._symbols = None
         self._data_breakpoints = []
+        # DATA/READ/RESTORE state  
+        self._data_position = None  # Current position: (line_index, stmt_index, value_index) or None for start
         self._coverage = defaultdict(set) if coverage else None
         if self._coverage:
             print("Running with code coverage")
@@ -151,6 +155,9 @@ class Executor:
                 self._run = RunStatus.END_ERROR_SYNTAX
                 raise BasicSyntaxError(bse.message, current.line)
                 # TODO what is current.source?  previous had: print(F"Syntax Error in line {current.line}: {bse.message}: {current.source}")
+            except BasicRuntimeError as bre:
+                self._run = RunStatus.END_ERROR_RUNTIME
+                raise BasicRuntimeError(str(bre))
             except Exception as e:
                 self._run = RunStatus.END_ERROR_INTERNAL
                 raise BasicInternalError(F"Internal error in line {current.line}: {e}")
@@ -426,6 +433,80 @@ class Executor:
         """
         response = input()
         return response
+
+    def read_data_value(self):
+        """
+        Read the next DATA value from the program.
+        Scans the program for DATA statements and returns the next value.
+        """
+        # Start from current position or beginning if not set
+        if self._data_position is None:
+            line_index = 0
+            stmt_index = 0
+            value_index = 0
+        else:
+            line_index, stmt_index, value_index = self._data_position
+
+        # Scan through program starting from current position
+        while line_index < len(self._program):
+            program_line = self._program[line_index]
+            
+            # Start from stmt_index for current line, 0 for subsequent lines
+            start_stmt = stmt_index if line_index == (self._data_position[0] if self._data_position else 0) else 0
+            
+            for s_index in range(start_stmt, len(program_line.stmts)):
+                stmt = program_line.stmts[s_index]
+                
+                # Check if this is a DATA statement
+                if stmt.keyword.name == 'DATA':
+                    from basic_parsing import ParsedStatementData
+                    # Start from value_index for current statement, 0 for subsequent statements  
+                    start_value = value_index if (line_index == (self._data_position[0] if self._data_position else 0) and 
+                                                 s_index == (self._data_position[1] if self._data_position else 0)) else 0
+                    
+                    if start_value < len(stmt._values):
+                        # Found next data value
+                        data_value = stmt._values[start_value]
+                        # Update position to next value
+                        next_value_index = start_value + 1
+                        self._data_position = (line_index, s_index, next_value_index)
+                        return data_value
+            
+            # Move to next line
+            line_index += 1
+            stmt_index = 0
+            value_index = 0
+
+        # No more data found
+        raise BasicRuntimeError("I tried to READ, but ran out of data.")
+
+    def restore_data(self, line_number=None):
+        """
+        Reset the data pointer to the beginning of data or to a specific line.
+        """
+        if line_number is None:
+            # Reset to beginning
+            self._data_position = None
+        else:
+            # Find the specified line and verify it contains DATA
+            found_data = False
+            for line_index, program_line in enumerate(self._program):
+                if program_line.line == line_number:
+                    # Check if this line contains any DATA statements
+                    for stmt_index, stmt in enumerate(program_line.stmts):
+                        if stmt.keyword.name == 'DATA':
+                            found_data = True
+                            break
+                    
+                    if not found_data:
+                        raise BasicRuntimeError(f"RESTORE {line_number}: Line does not contain DATA")
+                    
+                    # Set position to start of this line
+                    self._data_position = (line_index, 0, 0)
+                    return
+            
+            # Line not found
+            raise BasicRuntimeError(f"RESTORE {line_number}: Line not found")
 
     # Is this needed?
     # def _get_current_line_number(self):

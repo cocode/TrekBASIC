@@ -10,7 +10,7 @@ from math import e
 from basic_dialect import ARRAY_OFFSET
 from basic_interpreter import Executor
 from basic_statements import is_valid_identifier
-from basic_types import SymbolType, RunStatus, lexer_token, BasicSyntaxError
+from basic_types import SymbolType, RunStatus, lexer_token, BasicSyntaxError, BasicRuntimeError
 from basic_loading import tokenize
 from test.test_case_base import TestCaseBase
 
@@ -300,7 +300,7 @@ class Test(TestCaseBase):
         listing = [
             '110 A(1,2,3)=1',
         ]
-        with self.assertRaises(BasicSyntaxError):
+        with self.assertRaises(BasicRuntimeError):
             executor = self.runit(listing)
 
     def test_array_assignment_error4(self):
@@ -308,7 +308,7 @@ class Test(TestCaseBase):
         listing = [
             '110 A(1)=1',
         ]
-        with self.assertRaises(BasicSyntaxError):
+        with self.assertRaises(BasicRuntimeError):
             executor = self.runit(listing)
 
     def test_array_assignment1(self):

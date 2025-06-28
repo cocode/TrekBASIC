@@ -88,9 +88,9 @@ class Test(TestCase):
         self.assertEqual(Keywords.DIM, p.keyword)
         self.assertEqual("", p.args)
         expected = [
-            ("A", [2]),
-            ("B", [3, 2]),
-            ("C", [4, 3, 2]),
+            ("A", ["2"]),
+            ("B", ["3", "2"]),
+            ("C", ["4", "3", "2"]),
         ]
         self.assertEqual(expected, p._dimensions)
         s = str(p)

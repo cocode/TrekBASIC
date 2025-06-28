@@ -162,18 +162,47 @@ class ParsedStatementInput(ParsedStatement):
         if len(split_args) == 1:
             # No prompt
             self._prompt = ""
-            input_vars = split_args[0]
+            input_vars_str = split_args[0]
         else:
             assert_syntax(len(split_args) == 2, "INPUT statment should only have one ;")
             self._prompt = split_args[0].strip()
-            input_vars = split_args[1]
-        input_vars = input_vars.split(",")
-        input_vars = [v.strip() for v in input_vars]
-        [is_valid_identifier(v) for v in input_vars]
+            input_vars_str = split_args[1]
+            
+        # Parse variables, handling array elements manually
+        input_vars = []
+        current_var = ""
+        paren_count = 0
+        
+        for char in input_vars_str + ",":  # Add comma to process last variable
+            if char == "," and paren_count == 0:
+                if current_var.strip():
+                    input_vars.append(current_var.strip())
+                current_var = ""
+            else:
+                current_var += char
+                if char == "(":
+                    paren_count += 1
+                elif char == ")":
+                    paren_count -= 1
+        
+        # Validate each variable (could be simple variable or array element)
+        for var in input_vars:
+            var_clean = var.replace(" ", "")
+            i = var_clean.find("(")
+            if i != -1:
+                # Array element - validate base variable name only
+                base_var = var_clean[:i]
+                is_valid_identifier(base_var)
+            else:
+                # Simple variable
+                is_valid_identifier(var)
         self._input_vars = input_vars
 
     def __str__(self):
-        return F'{self.keyword.name} {self._prompt};{",".join(self._input_vars)}'
+        if self._prompt:
+            return F'{self.keyword.name} {self._prompt};{",".join(self._input_vars)}'
+        else:
+            return F'{self.keyword.name} {",".join(self._input_vars)}'
 
 
 class ParsedStatementGo(ParsedStatement):
@@ -330,14 +359,18 @@ class ParsedStatementDim(ParsedStatement):
             dimensions = s[len(name):]
             assert_syntax(dimensions[0] == '(', "Missing (")
             assert_syntax(dimensions[-1] == ')', "Missing )")
-            dimensions = dimensions[1:-1]  # Remove parens
-            dimensions = dimensions.split(",")
-            # TODO need to handle expressions here
-            dimensions = [int(dimension) for dimension in dimensions]
-            self._dimensions.append((name, dimensions))
+            dimensions_str = dimensions[1:-1]  # Remove parens
+            
+            # Use smart_split to handle function calls with commas
+            dimension_list = smart_split(dimensions_str, enquote="(", dequote=")", split_char=",")
+            dimension_list = [d.strip() for d in dimension_list]
+            
+            # Store dimensions as expression strings for runtime evaluation
+            # They'll be evaluated in stmt_dim when the symbol table is available
+            self._dimensions.append((name, dimension_list))
 
     def __str__(self):
-        all = [name+"("+",".join([str(dim) for dim in dims])+")" for name, dims in self._dimensions]
+        all = [name+"("+",".join(dims)+")" for name, dims in self._dimensions]
         return F"{self.keyword.name} {','.join(all)}"
 
 class ParsedStatementTrace(ParsedStatement):
@@ -355,3 +388,87 @@ class ParsedStatementTrace(ParsedStatement):
 
     def __str__(self):
         return F"{self.keyword.name} {self.state}"
+
+class ParsedStatementData(ParsedStatement):
+    """
+    Handles DATA statements - stores values as strings for later type conversion
+    """
+    def __init__(self, keyword, args):
+        super().__init__(keyword, "")
+        args = args.strip()
+        if not args:
+            self._values = []
+        else:
+            # Split by commas, but preserve quoted strings
+            values = smart_split(args, split_char=",")
+            self._values = [v.strip() for v in values]
+
+    def __str__(self):
+        return F"{self.keyword.name} {','.join(self._values)}"
+
+
+class ParsedStatementRead(ParsedStatement):
+    """
+    Handles READ statements - stores list of variable names to read into
+    """
+    def __init__(self, keyword, args):
+        super().__init__(keyword, "")
+        args = args.strip()
+        if not args:
+            raise BasicSyntaxError("READ statement requires variable names")
+        
+        # Parse variables, handling array elements manually
+        variables = []
+        current_var = ""
+        paren_count = 0
+        
+        for char in args + ",":  # Add comma to process last variable
+            if char == "," and paren_count == 0:
+                if current_var.strip():
+                    variables.append(current_var.strip())
+                current_var = ""
+            else:
+                current_var += char
+                if char == "(":
+                    paren_count += 1
+                elif char == ")":
+                    paren_count -= 1
+        
+        self._variables = variables
+        
+        # Validate variable names (including array elements)
+        for var in self._variables:
+            var_clean = var.replace(" ", "")
+            i = var_clean.find("(")
+            if i != -1:
+                # Array element - validate base variable name only
+                base_var = var_clean[:i]
+                is_valid_identifier(base_var)
+            else:
+                # Simple variable
+                is_valid_identifier(var)
+
+    def __str__(self):
+        return F"{self.keyword.name} {','.join(self._variables)}"
+
+
+class ParsedStatementRestore(ParsedStatement):
+    """
+    Handles RESTORE statements - optionally takes a line number
+    """
+    def __init__(self, keyword, args):
+        super().__init__(keyword, "")
+        args = args.strip()
+        if not args:
+            self._line_number = None
+        else:
+            # Should be a line number
+            if not args.isdigit():
+                raise BasicSyntaxError(f"RESTORE requires a line number, got '{args}'")
+            self._line_number = int(args)
+
+    def __str__(self):
+        if self._line_number is None:
+            return self.keyword.name
+        else:
+            return F"{self.keyword.name} {self._line_number}"
