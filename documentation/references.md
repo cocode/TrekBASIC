@@ -19,6 +19,11 @@ https://github.com/beejjorgensen/Super-Star-Trek-Info/blob/main/doc/sst_spec.md
 source
 https://github.com/beejjorgensen/Super-Star-Trek-Info/blob/main/sources/sst.bas
 
+### Tek 4051 Basic
+https://forum.vcfed.org/index.php?threads/tektronix-4051-basic-compiler-concept2.1248495/
+Why? Because I used to play star trek on it, in school. Cool, modern (then) vector display with a storage tube.
+state of the art. and a great tape drive! :-)
+
 ## LLVM Tutorial References
 1. Generating LLVM IR from Python: https://pypi.org/project/llvmlite/
 1. Compiilers Tutorial LLVM
