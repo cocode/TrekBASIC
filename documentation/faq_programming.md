@@ -10,9 +10,22 @@
    means breaking support for another.
    Where we can increase support by adding features that don't conflict, like new functions,
    we should. 
+
+A new dialect of basic would consist of
+
+* Keywords
+* Statements
+* ParsedStatements
+* Tests for the above
+
+Supporting a BASIC dialect with fundamental structural
+differences would be much harder.
+Differences like not having line numbners, or 
+differences in associativity (Exponenetiation, below)
+would be much more work.
    
-## Why is exponentiation right associative? 
-It's currently left associative, as older dialects of basic had it that way, and currently
+### Exponentiation.
+Why is exponentiation right associative? It's currently left associative, as older dialects of basic had it that way, and currently
 we are emulating older version, that inlclude lines numbers amoung
 other things
 
