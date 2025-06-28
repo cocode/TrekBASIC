@@ -15,6 +15,12 @@ import argparse
 import time
 import re
 
+# Add readline for command history and line editing
+try:
+    import readline
+except ImportError:
+    readline = None  # Windows doesn't have readline by default
+
 from basic_parsing import ParsedStatement, ParsedStatementIf
 from basic_types import UndefinedSymbol, BasicSyntaxError, SymbolType, ProgramLine
 
@@ -68,6 +74,19 @@ class BasicShell:
         self._breakpoints = []
         self._data_breakpoints = []
         self._coverage = None
+        
+        # Set up command history
+        if readline:
+            self.history_file = os.path.expanduser("~/.trekbasic_history")
+            try:
+                readline.read_history_file(self.history_file)
+            except FileNotFoundError:
+                pass  # No history file yet, that's fine
+            except Exception:
+                pass  # Ignore other readline errors
+            
+            # Set reasonable history length
+            readline.set_history_length(1000)
 
     def load_from_string(self, listing):
         """
@@ -125,19 +144,28 @@ class BasicShell:
         usage = tup[1]
         print(usage)
 
-    def cmd_load(self, args):
-        if args is not None:
-            self._program_file = args
+    def cmd_load(self, filename):
+        if filename is not None:
+            if filename.startswith('"') and filename.endswith('"'):
+                filename = filename[1:-1]
+        if not os.path.exists(filename):
+            if os.path.exists(filename + ".bas"):
+                filename += ".bas"
+            else:
+                print("File not found: " + filename)
+                return
+
         try:
+            self._program_file = filename
             self.load_from_file()
         except BasicSyntaxError as bse:
             print(F"Syntax Error in line {bse.line_number}: {bse.message}")
-        except FileNotFoundError as f:
-            print(F"File not found in line {f.line_number}: {f.message}")
+            self._program_file = None
 
-    def cmd_koverage(self, args):
+
+    def cmd_coverage(self, args):
         """
-        Reports on code coverage.
+        Reports on code coverage. Code coverage is initiate by the "run coverage" command.
         Called coverage because we want "continue" to be a single character command.
         I'd name it "coverage", but I don't want to conflict with "continue"
 
@@ -145,7 +173,11 @@ class BasicShell:
         can get to 100% coverage.
         :return:
         """
-        cmds = ["on", "off", "save", "load", "lines"]
+        if not self.executor:
+            print("No program loaded.")
+            return
+            
+        cmds = ["save", "load", "lines"]
         if args is not None:
             if args not in cmds:
                 self.usage("coverage")
@@ -158,11 +190,17 @@ class BasicShell:
 
 
     def print_current(self, args):
+        if not self.executor:
+            print("No program has been loaded yet.")
+            return
         line = self.executor.get_current_line()
         print(line.source)
 
     def cmd_list(self, args):
         count = 10
+        if not self.executor or not self.executor._program:
+            print("No program has been loaded yet.")
+            return
         if args:
             args = args.split()
             args = [arg.strip() for arg in args]
@@ -174,7 +212,7 @@ class BasicShell:
             try:
                 cl = self.executor.find_line(start_line_number)
             except BasicSyntaxError as e:
-                print("Line number not found.")
+                cl = self.executor._program[0]
                 return
             index = cl.index
 
@@ -205,6 +243,9 @@ class BasicShell:
         :param args: Not used.
         :return:
         """
+        if not self.executor:
+            print("No program has been loaded yet.")
+            return
         count = 10
         print("For/next stack:")
         if len(self.executor._for_stack) == 0:
@@ -218,6 +259,9 @@ class BasicShell:
         :param args: Not used.
         :return:
         """
+        if not self.executor:
+            print("No program has been loaded yet.")
+            return
         print("GOSUB stack:")
         if len(self.executor._gosub_stack) == 0:
             print("\t<empty>")
@@ -225,9 +269,30 @@ class BasicShell:
             print("\t", self.format_cl(cl))
 
     def cmd_quit(self, args):
+        # Save command history
+        if readline:
+            try:
+                readline.write_history_file(self.history_file)
+            except Exception:
+                pass  # Ignore errors when saving history
         sys.exit(0)
 
+    def cmd_clear(self, args):
+        """
+        Clear the current program and all state (breakpoints, watchpoints, coverage, etc.)
+        """
+        self.executor = None
+        self._breakpoints = []
+        self._data_breakpoints = []
+        self._coverage = None
+        self.load_status = False
+        self._program_file = None
+        print("Program and all state cleared")
+
     def cmd_save(self, args):
+        if not self.executor:
+            print("No program has been loaded yet.")
+            return
         if args is None:
             print("Save needs a file name.")
             return
@@ -247,6 +312,9 @@ class BasicShell:
 
 
     def cmd_symbols(self, args):
+        if not self.executor:
+            print("No program has been loaded yet.")
+            return
 
         if args is None:
             pprint.pprint(self.executor._symbols.dump())
@@ -270,6 +338,9 @@ class BasicShell:
                 print(F"Types are 'variable', 'array' and 'function'. Default is 'variable'")
 
     def cmd_print(self, args):
+        if not self.executor:
+            print("No program has been loaded yet.")
+            return
         if not args:
             self.usage("?")
             return
@@ -305,6 +376,9 @@ class BasicShell:
         :param args: if "step", then single steps the program one step.
         :return: None
         """
+        if not self.executor:
+            print("No program has been loaded yet.")
+            return
         single_step = False
         if args=="step":
             single_step = True
@@ -416,6 +490,9 @@ class BasicShell:
         :param args: Nothing.
         :return:
         """
+        if not self.executor:
+            print("No program has been loaded yet.")
+            return
 
         old_program = self.executor._program
         new_program = self.format(old_program)
@@ -437,6 +514,9 @@ class BasicShell:
         :param: verbose: Normally true, off for testing.
         :return:
         """
+        if not self.executor:
+            print("No program has been loaded yet.")
+            return
         # renum start_line, increment.
         # TODO maybe add a "split lines with multiple statements", or just always do it.
         if args == None:
@@ -469,7 +549,7 @@ class BasicShell:
         :return:
         """
         if not self.executor or not self.executor._program:
-            print("No program loaded.")
+            print("No program has been loaded yet.")
             return
 
         ir_code = generate_llvm_ir(self.executor._program)
@@ -529,6 +609,12 @@ class BasicShell:
             print("Added data breakpoint at line ", args)
 
     def cmd_help(self, args):
+        if args is not None:
+            if args in self.commands:
+                key = args
+                tup = self.commands[args]
+                print(F"\t{key}: {tup[1]}")
+            return
         print("Commands are:")
         for key in self.commands:
             tup = self.commands[key]
@@ -546,6 +632,9 @@ class BasicShell:
         print("\tLine numbers must be 1-65536")
 
     def cmd_stmts(self, args):
+        if not self.executor:
+            print("No program has been loaded yet.")
+            return
 
         if args:
             line_number = int(args[0])
@@ -601,7 +690,7 @@ class BasicShell:
         :param line_number: Line number to delete
         """
         if not self.executor or not self.executor._program:
-            print("No program loaded")
+            print("No program has been loaded yet.")
             return
             
         # Find and remove the line
@@ -699,21 +788,24 @@ class BasicShell:
                   "\n\t\tSets a breakpoint on a line, or on writes to a variable"+
                   "\n\t\tNote that if you have an array and a symbol with the same"+
                   "\n\t\tname, it will break on writes to either one."),
+        "clear": (cmd_clear, "Usage: clear\n\t\tClears the current program and all state (breakpoints, watchpoints, coverage, etc.)"),
         "continue": (cmd_continue, "Usage: continue\n\t\tContinues, after a breakpoint."),
-        "coverage": (cmd_koverage, "Usage: coverage\n\t\tPrint code coverage report."+
+        "coverage": (cmd_coverage, "Usage: coverage\n\t\tPrint code coverage report."+
                      "\n\t\tkoverage on\n\t\tkoverage off\n\t\tkoverage clear\n\t\tkoverage report <save|load|list>"),
         "exit": (cmd_quit, "Usage: quit. Synonym for 'quit'"),
         "format": (cmd_format, "Usage: format\n\t\tFormats the program. Does not save it."),
         "forstack": (cmd_for_stack, "Usage: fors\n\t\tPrints the FOR stack."),
         "gosubs": (cmd_gosub_stack, "Usage: gosubs\n\t\tPrints the FOR stack."),
-        "help": (cmd_help, "Usage: help"),
-        "list": (cmd_list, "Usage: list start count"),
+        "help": (cmd_help, "Usage: help <command>"),
+        "list": (cmd_list, "Usage: list <start line number> <count>"),
         "llvm": (cmd_llvm, "llvm [file]: generate LLVM IR and print to console or save to file"),
         "load": (cmd_load, "Usage: load <program>\n\t\tRunning load clears coverage data."),
-        "next": (cmd_next, "Usage: next"),
+        "next": (cmd_next, "Usage: next.\n" +
+                 "\t\tExecutes the next line of the program."),
         "quit": (cmd_quit, "Usage: quit. Synonym for 'exit'"),
         "renumber": (cmd_renum, "Usage: renum <start <increment>>\n\t\tRenumbers the program."),
-        "run": (cmd_run, "Usage: run <coverage>\n\t\tRuns the program from the beginning."),
+        "run": (cmd_run, "Usage: run <coverage>\n\t\tRuns the program from the beginning.\n""+"
+                         "\t\tAdding the string 'coverage' will cause code coverage data to be recorded from this run"),
         "save": (cmd_save, "Usage: save FILE"+
                 "\n\t\tSaves the current program to a new file."),
         "stmts": (cmd_stmts, "Usage: stmt <line>\n\t\tPrints the tokenized version of the program." +
