@@ -587,7 +587,7 @@ class Test(TestCaseBase):
             '100 INPUT"ENTER YES:";A1$',
         ]
         executor, output = self.runit_capture(listing, input=StringIO("YES"))
-        self.assertEqual("ENTER YES:", output)
+        self.assertEqual("ENTER YES: ", output)
         self.assertEqual('YES', executor.get_symbol_value("A1$"))
 
     def test_input_2(self):
@@ -596,7 +596,7 @@ class Test(TestCaseBase):
             '110 INPUT "ENTER 59:";A'
         ]
         executor, output = self.runit_capture(listing, input=StringIO("59"))
-        self.assertEqual("ENTER 59:", output)
+        self.assertEqual("ENTER 59: ", output)
         self.assertEqual(59, executor.get_symbol_value("A"))
 
     def test_input_3(self):
@@ -604,7 +604,7 @@ class Test(TestCaseBase):
             '110 INPUTW1'
         ]
         executor, output = self.runit_capture(listing, input=StringIO("91"))
-        self.assertEqual("", output)
+        self.assertEqual("? ", output)
         self.assertEqual(91, executor.get_symbol_value("W1"))
 
     def test_input_4(self):
