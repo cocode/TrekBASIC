@@ -1,6 +1,7 @@
 # TrekBasic
 
 TrekBASIC is now both a full BASIC interpreter, written in Python, and a BASIC compiler, via LLVM.
+** ELSE is currently broken. I'll get to that shortly. **
 
 My goal was to be able to play the old Star Trek game, which was written in BASIC.
 
@@ -35,8 +36,7 @@ TrekBASIC currently runs only programs/superstartrek.bas
 
 It's not that we don't want to add support for other versions of Star Trek, it's that other versions of Star Trek
 require other, incompatible basic interpreters/compilers. It's not a matter of needing more features, it's a matter
-of need different versions of existing features. 
-
+of need different versions of existing features. (e.g. array indexes start at zero instead of one)
 
 ### Other Versions
 * startrek.bas: http://www.bobsoremweb.com/startrek.html

@@ -1,80 +1,12 @@
 # Known Issues
 See also future.md
 
-and if with a number (if x=1 then 100) is really two statements. if then GOTO. The GOTO gets renumbered.
-Renumber bug. Critical
-Loading  test_suite/test_for_limits.bas
-shorted version
-> list
-102 IF 3 <> 3 THEN 105
-103 STOP
-105 S = 0
-> renum
-Renumber starting with line 100, with increment 10
-Renumbered 3 lines, and 4 statements to 3 lines
-> list
-100 IF 3<>3 THEN GOTO 130
-110 STOP
-120 LET S=0
-> 
-> list
-100 REM check limits on for loops
-101 FOR J = 3 TO 3 STEP 1
-102 IF J <> 3 THEN STOP
-103 NEXT J
-105 S = 0
-110 FOR J = 17 TO 27 STEP 3
-120 S = S + J
-125 PRINT S, J
-130 NEXT J
-140 PRINT "S";17 + 19 + 21 + 23 + 25 + 27
-> renumber
-Renumber starting with line 100, with increment 10
-Renumbered 11 lines, and 14 statements to 14 lines
-> list
-100 REM check limits on for loops
-110 FOR J = 3 TO 3
-120 IF J<>3 THEN GOTO 150
-130 NEXT J
-140 LET S=0
-150 FOR J = 17 TO 27 step 3
-160 LET S=S+J
-170 PRINT S, J
-180 NEXT J
-190 PRINT "S";17 + 19 + 21 + 23 + 25 + 27
-if in 120 should point to 150, not 140 after renumber.
-in the middle of adding case insensitivty. Need to handle THEN and ELSE. Can't handle case of ELSE, 
-because we don't yet support else. also need to be case-insensitive on variable names
-Syntax errors should have program line number, when available 
-SyntaxError: No TO found for FOR in line 14 of file.
-That's the line in file, which is useful, but not as good.
-
-1. Support different BASIC dialects. 
-   
-   Currently, TrekBasic only supports one dialect, the one that runs 
-   programs/superstartrek.bas. 
-   
-   This document describes the compatibility issues between various versions of BASIC: 
-    https://files.eric.ed.gov/fulltext/ED083819.pdf
-   
-   basic_dialect.py has some configuration options,
-   but that approach limits you to supporting only one dialect without
-   making code changes. basic_dialects should probably be replaced with 
-   a config file (json? YAML?) that could be read at run time, so you could 
-   have a config file for each dialect.
-   
-   Auto-detecting versions of basic would be great, but might not be feasible.
-   1. Support more built-in functions: LOG10. Can now add more functions easily in basic_functions.py 
-   1. Need to support "ELSE" for superstartrek3.bas
-   1. Some versions of basic allowed a single quote for REM. Should add this.
-   2. I'm going to note here: on multi-statement lines, with an IF/THEN, if the condition is false, then 
-   we go to the next LINE, not the next statement on the IF / THEN line. 
-      3. 100 I = 0: J = 0: K = 0
-      4. 200 if 1 = 0 then I = 1: J = 2: K = 3
-      5. 300 PRINT K
-   6. will print 3
-   7. obviouslyl, if a=b then 200: k=4
-   8. should never execute the statement k=4
+### Else
+Else is not yet impleted.
+### Renumber 
+Renumber is not working correctly
+### stmts command
+The 'stmts' command prints an extra : before the goto on something simple like "100 if x=1 then goto 100"
 
 1. TrekBot Improvements
    
@@ -93,22 +25,22 @@ That's the line in file, which is useful, but not as good.
     python -m cProfile  -s tottime trek_bot.py 
     python venv/lib/python3.9/site-packages/gprof2dot.py -f pstats test.pstats
 
-\1. Compiler issues (LLVM)
+1. Compiler issues (LLVM)
    2. Much harder to do dynamic array dimensions in a compiler. 
    3. For now, do all arrays and functions statically.Can we throw an error on redefintions?
    4. this may be a problem, it's a workaround for dynamic reuse of variable names
       5. Scalar/Array variable separation: Arrays can now have both array elements N(1), N(2), N(3) and a scalar variable N simultaneously
 6. Runtime issues
    7. At runtime, I should be getting runtime errors, not basicsyntaxerrors
-   8. new type created. Needs to be used.
+      8. new type created. Needs to be used.
 2. Debugging Improvements
     1. Desperately need "step over" vs "step into" for debugging.
     1. Add "trace on" and "trace off" statements to the language, to control writing of the trace file.
+       2. or maybe trace filename and trace off
     1. Having trace_file as a parameter to the constructor, but not using it until run_program makes no sense.
     1. Need to flush the trace file periodically. maybe every line. Otherwise it gets lost when we crash.
     1. Should remove REM statements from code coverage, many of them are unreachable
-    1. Can I re-raise exceptions differently, so I don't lose
-stack information for the original exception?
+    1. Can I re-raise exceptions differently, so I don't lose  stack information for the original exception?
 1. Parsing/Lexing issues.
    1. BASIC is an ugly language, which is not designed for easy parsing.
       Newer dialects of BASIC are better, but TrekBASIC supports syntax like:
@@ -118,13 +50,10 @@ stack information for the original exception?
     1. All expressions should be lexed at parse time. Most are, but not all.
     1. Maybe move the operators enum to it's own file, so  it has no dependencies, and then use a dict
 for the mapping.
-    1. could also move the lexing to basic_parsing, and then basic_openators.py wouldn't need the lexer
+    1. Could also move the lexing to basic_parsing, and then basic_openators.py wouldn't need the lexer
     1. Operator eval functions need to return the correct type, not just always "num". Start by returning the type passed in
 1. Testing Improvements
    1. Write smaller test programs.
-1. Renumber
-    1. Not working. Does something but has bugs.  
-    1. Run a trace of star strek, before and after renumbering, for verificaion.
 1. TODO Search and destroy for literal strings used for what should be enums.
 1. You know, maybe I don't need to pass the symbol_type everywhere. You can tell the type of a variable
    from its name. FNx = function, $ == string, I guess you still have to know array vs. not.
@@ -136,15 +65,7 @@ for the mapping.
 ## Bugs in the BASIC program (superstartrek.bas):
 
 # Infinite Recursion on Error (most important=)
-When trek_bot continuously gave a command of "SHE", when "SHIELD CONTROL INOPERABLE",
-I eventually hit
-Syntax Error in line 2080: SyntaxError: FORs nested too deeply: 2080 FORI=1TO9:IFLEFT$(A$,3)<>MID$(A1$,3*I-2,3)THEN2160
-This looks to be a bug in the original basic, that would never matter, as
-a human wouldn't give an error response 2000 times.
-Current state is:  CheatState.SHIELDS
-
-### Division by Zero
-1. TrekBot may have found a bug in superstartrek.bas: Syntax Error in line 8330: Division by zero: 8330 PRINT"DIRECTION =";C1+(ABS(A)/ABS(X)):GOTO8460
-
-maybe course is 1 <= course <= 9. 9 appears to be the same as one, 0 is not  - according to docs I found 0 does equal 
-nine and 0 is not accepted. 0 is right -> 
+Fixed. SuperStarTrek jumps out of loops and then restarts them. A naive implementation assumes you won't do that
+and is "correct" behavior. For now, if the loop we are entering is on the top of the "for stack", we erase the top entry
+and add a new one. This wouldn't fix doing this with "fori;forj", recursively 1000 times, for that, we'd need to look 
+farther down the stack. But should be quite doable.
