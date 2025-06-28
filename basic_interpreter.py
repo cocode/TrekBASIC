@@ -8,6 +8,7 @@ import basic_functions
 from basic_types import ProgramLine, BasicInternalError, assert_syntax, BasicSyntaxError
 from basic_types import SymbolType, RunStatus
 from basic_symbols import SymbolTable
+from basic_utils import TRACE_FILE_NAME
 
 
 # Target of a control transfer. Used by GOTO, GOSUB, NEXT, etc.
@@ -34,7 +35,6 @@ class Executor:
         self._goto = None
         self._gosub_stack = []
         self._for_stack = []
-
 
     def __init__(self, program:list[ProgramLine],
                  trace_file=None, stack_trace=False,
@@ -71,8 +71,8 @@ class Executor:
         self._internal_symbols = SymbolTable()
         self._symbols = self._internal_symbols.get_nested_scope()
 
-    def set_trace_file(self, value):
-        self._trace_file = value
+    def set_trace_file(self, filepointer):
+        self._trace_file = filepointer
 
     def setup_program(self):
         functions = basic_functions.PredefinedFunctions()
@@ -103,7 +103,9 @@ class Executor:
             data_breakpoints:list[str] = []
         self._run = RunStatus.RUN  # TODO Try finally on RunStatus?
         self._data_breakpoints = data_breakpoints
-
+        if self._trace_file is None:
+            with open(TRACE_FILE_NAME, "w") as f:
+                pass   # just truncating the file, with the open.
         while True:
             if self.at_end():
                 self._run = RunStatus.END_OF_PROGRAM
