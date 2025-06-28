@@ -7,6 +7,7 @@
    3. 8bitworkshopo
       4. https://8bitworkshop.com/docs/platforms/basic/index.html
       5. Supports multiple dialects explicitly
+      6. This is a really nice implementation!
 1. BASIC
     1. https://madexp.com/wp-content/uploads/2018/02/Microsoft_Basic_8086Xenix_Reference.pdf
     1. http://www.classiccmp.org/cini/pdf/Apple/AppleSoft%20II%20Basic%20Programming%20Manual.PDF

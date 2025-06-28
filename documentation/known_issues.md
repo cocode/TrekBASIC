@@ -1,6 +1,11 @@
 # Known Issues
 See also future.md
 
+### DIM
+
+* can't take an expression
+* when it throws an exception, it's not properly wrapped.It looks like it gets caught and rethrown twice. Should only be once.
+
 ### Else
 Else is not yet impleted.
 ### Renumber 
@@ -12,6 +17,9 @@ Looks like Dartmouth basic uses READ instead of INPUT. We could add that without
 same, we could just alias.
 ### Escaped quotes
 Should I support \" in Strings? I don't recall older basics doing that, but some do.
+
+### READ, DATA, RESTORE
+need to implement for hunt the wumpus
 
 ### TrekBot
    TrekBot is an automated program to play Star Trek, that was build to help with code coverage testing. It's not very
