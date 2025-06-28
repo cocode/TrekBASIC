@@ -1610,7 +1610,15 @@ class LLVMCodeGenerator:
         for name, dimensions in stmt._dimensions:
             # Calculate total size needed
             total_size = 1
-            for dim in dimensions:
+            for dim_expr in dimensions:
+                # Evaluate dimension expression to get integer value
+                # For now, handle simple cases (constant integers)
+                try:
+                    dim = int(dim_expr.strip())
+                except ValueError:
+                    # If it's not a simple integer, we need to evaluate the expression
+                    # For now, raise an error - complex expressions in DIM not supported in LLVM mode
+                    raise Exception(f"Complex expressions in DIM not yet supported in LLVM mode: {dim_expr}")
                 total_size *= (dim + 1)  # +1 because BASIC arrays are 1-based
 
             # Determine array type based on name
@@ -1650,9 +1658,18 @@ class LLVMCodeGenerator:
                     self.builder.store(empty_ptr, element_ptr)
             
             # Store array info for access
+            # Convert dimension expressions to integers for storage
+            int_dimensions = []
+            for dim_expr in dimensions:
+                try:
+                    dim = int(dim_expr.strip())
+                except ValueError:
+                    raise Exception(f"Complex expressions in DIM not yet supported in LLVM mode: {dim_expr}")
+                int_dimensions.append(dim)
+            
             self.array_info[name] = {
                 'storage': global_array,
-                'dimensions': dimensions,
+                'dimensions': int_dimensions,
                 'total_size': total_size,
                 'is_string': is_string_array
             }
