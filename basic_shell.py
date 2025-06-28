@@ -282,7 +282,7 @@ class BasicShell:
         Clear the current program and all state (breakpoints, watchpoints, coverage, etc.)
         """
         if self.executor:
-            self.executor._close_trace_file()
+            self.executor._close_trace_file_like()
             self.executor = None
         self._breakpoints = []
         self._data_breakpoints = []

@@ -9,6 +9,7 @@ from basic_types import ProgramLine, BasicInternalError, assert_syntax, BasicSyn
 from basic_types import SymbolType, RunStatus
 from basic_symbols import SymbolTable
 from basic_utils import TRACE_FILE_NAME
+from typing import Optional, TextIO
 
 
 # Target of a control transfer. Used by GOTO, GOSUB, NEXT, etc.
@@ -36,7 +37,8 @@ class Executor:
         self._gosub_stack = []
         self._for_stack = []
 
-    def __init__(self, program:list[ProgramLine],
+    def __init__(self,
+                 program:list[ProgramLine],
                  trace_file=None, stack_trace=False,
                  coverage=False,
                  record_inputs=False):
@@ -50,9 +52,9 @@ class Executor:
         a coverage from a previous run, to add to that run
         """
         self._program = program
-        self._location = ControlLocation(0,0)
+        self._location: ControlLocation = ControlLocation(0,0)
         self._run = RunStatus.RUN
-        self._trace_file = trace_file
+        self._trace_file_like: Optional[TextIO] = trace_file
         self._stack_trace = stack_trace
         self._goto = None
         self._gosub_stack = []
@@ -72,7 +74,15 @@ class Executor:
         self._symbols = self._internal_symbols.get_nested_scope()
 
     def set_trace_file(self, filepointer):
-        self._trace_file = filepointer
+        self._trace_file_like = filepointer
+
+    def _close_trace_file_like(self):
+        if self._trace_file_like and hasattr(self._trace_file_like, 'close'):
+            try:
+                self._trace_file_like.close()
+                self._trace_file_like = None
+            except Exception:
+                print(F"Failed to close trace file.")
 
     def setup_program(self):
         functions = basic_functions.PredefinedFunctions()
@@ -103,7 +113,7 @@ class Executor:
             data_breakpoints:list[str] = []
         self._run = RunStatus.RUN  # TODO Try finally on RunStatus?
         self._data_breakpoints = data_breakpoints
-        if self._trace_file is None:
+        if self._trace_file_like is None:
             with open(TRACE_FILE_NAME, "w") as f:
                 pass   # just truncating the file, with the open.
         while True:
@@ -123,14 +133,14 @@ class Executor:
             if self._run != RunStatus.RUN:
                 return self._run
 
-            if self._trace_file and self._location.offset == 0:
-                print(F">{current.source}", file=self._trace_file)
+            if self._trace_file_like and self._location.offset == 0:
+                print(F">{current.source}", file=self._trace_file_like)
 
             s = self.get_current_stmt()
 
-            if self._trace_file:
+            if self._trace_file_like:
                 # TODO ParsedStatements should have a __str__. Not everything is in args anymore.`
-                print(F"\t{s.keyword.name} {s.args}", file=self._trace_file)
+                print(F"\t{s.keyword.name} {s.args}", file=self._trace_file_like)
 
             execution_function = s.keyword.value.get_exec()
             try:
@@ -152,10 +162,10 @@ class Executor:
             self._location = self.get_next_stmt()
 
             if self._goto: # If any control transfer has happened.
-                if self._trace_file:
+                if self._trace_file_like:
                     destination_line = self._program[self._goto.index].line
                     print(F"\tControl Transfer from line {self._location} TO line {destination_line}: {self._goto}.",
-                          file=self._trace_file)
+                          file=self._trace_file_like)
 
                 self._location = self._goto
                 self._goto = None
@@ -279,8 +289,8 @@ class Executor:
         """
 
         # TODO Maybe check is_valid_variable here? Have to allow user defined functions, and built-ins, though.
-        if self._trace_file:
-            print(F"\t\t{symbol}={value}, {symbol_type}", file=self._trace_file)
+        if self._trace_file_like:
+            print(F"\t\t{symbol}={value}, {symbol_type}", file=self._trace_file_like)
         if symbol in self._data_breakpoints:
             self._run = RunStatus.BREAK_DATA
 
@@ -288,8 +298,8 @@ class Executor:
 
     def put_symbol_element(self, symbol, value, subscripts):
         # TODO Maybe check is_valid_variable here? Have to allow user defined functions, and built-ins, though.
-        if self._trace_file:
-            print(F"\t\t{symbol}{subscripts}={value}, array element", file=self._trace_file)
+        if self._trace_file_like:
+            print(F"\t\t{symbol}{subscripts}={value}, array element", file=self._trace_file_like)
         target = self.get_symbol(symbol, SymbolType.ARRAY)
         target_type = self.get_symbol_type(symbol, SymbolType.ARRAY)
         assert_syntax(target_type==SymbolType.ARRAY, F"Can't subscript non-array {symbol} of type {target_type}")
