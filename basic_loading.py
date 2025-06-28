@@ -77,7 +77,7 @@ def tokenize_line(program_line: str) -> ProgramLine:
     number = int(number)
 
     # Rem commands don't split on colons, other lines do.
-    if partial.upper().startswith(Keywords.REM.name):
+    if partial.upper().strip().startswith(Keywords.REM.name):
         commands_text = [partial]
     else:
         commands_text = smart_split(partial)
