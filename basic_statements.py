@@ -8,24 +8,24 @@ from basic_dialect import UPPERCASE_INPUT
 from basic_types import BasicSyntaxError, assert_syntax, is_valid_identifier
 from basic_types import SymbolType, RunStatus
 
-from basic_parsing import ParsedStatement, ParsedStatementIf, ParsedStatementFor, ParsedStatementOnGoto
+from basic_parsing import ParsedStatement, ParsedStatementIf, ParsedStatementFor, ParsedStatementOnGoto, \
+    ParsedStatementTrace
 from basic_parsing import ParsedStatementLet, ParsedStatementNoArgs, ParsedStatementDef, ParsedStatementPrint
 from basic_parsing import ParsedStatementGo, ParsedStatementDim
 from basic_parsing import ParsedStatementInput, ParsedStatementNext
 from basic_lexer import get_lexer
-from basic_types import NUMBERS, LETTERS
 from basic_expressions import Expression
-from basic_utils import smart_split
+from basic_utils import TRACE_FILE_NAME
 
-def stmt_rem(executor, stmt):
+def stmt_rem(_, stmt):
     """
     Does nothing.
     :return:
     """
     return None
 
-
-def stmt_print(executor, stmt:ParsedStatementPrint):
+from basic_interpreter import Executor
+def stmt_print(executor: Executor, stmt:ParsedStatementPrint):
     """
     Prints output.
     :param executor: The program execution environment. Contains variables in its SymbolTable
@@ -144,6 +144,7 @@ def stmt_let(executor, stmt:ParsedStatementLet):
 
 def stmt_clear(executor, stmt):
     # Clear statement removes all variables.
+    # Not to be confused with the CLEAR commannd in basic shell.
     executor.init_symbols()
 
 
@@ -251,6 +252,11 @@ def stmt_stop(executor, stmt):
     print("Stopping program")
     executor._run = RunStatus.END_STOP
 
+def stmt_trace(executor, stmt):
+    print("starting tracing program") # TODO just for debugging, then delete this line,
+    f = open(TRACE_FILE_NAME, "a")
+    # There's a close on program exit()
+    executor.set_trace_file(f)
 
 def stmt_def(executor, stmt:ParsedStatementDef):
     """
@@ -311,5 +317,6 @@ class Keywords(Enum):
     REM = KB(stmt_rem, ParsedStatement)
     RETURN = KB(stmt_return, ParsedStatementNoArgs)
     STOP = KB(stmt_stop, ParsedStatementNoArgs) # Variant of END
+    TRACE = KB(stmt_trace, ParsedStatementTrace) # Trace program execution
     WIDTH = KB(stmt_width, ParsedStatement) # To support another version of superstartrek I found. Ignored
 
