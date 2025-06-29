@@ -17,6 +17,9 @@ Should I support \" in Strings? I don't recall older basics doing that, but some
 ### READ, DATA, RESTORE
 need to implement for hunt the wumpus
 
+### Benchmark timing for llvm code.
+Don't want to count startup time.
+
 ### REM 
 A REM in the middle of an IF then might cause  problems
 we should only allow rem as the first statement on
