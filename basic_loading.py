@@ -75,7 +75,15 @@ def tokenize_line(program_line: str) -> ProgramLine:
         raise BasicSyntaxError("Syntax Error in: " + program_line) from v
     assert_syntax(str.isdigit(number), F"Invalid line number : {number} in {program_line}")
     number = int(number)
+    list_of_statements = tokenize_remaining_line(partial, number)
+    s = ProgramLine(number, list_of_statements, -1, source=program_line)
+    return s
 
+
+def tokenize_remaining_line(partial: str, number: str) -> ProgramLine:
+    """
+    Tokenizes the string, but with the line number removed. This allows us to call this function with partial lines.
+    """
     # Rem commands don't split on colons, other lines do.
     if partial.upper().strip().startswith(Keywords.REM.name):
         commands_text = [partial]
@@ -88,10 +96,9 @@ def tokenize_line(program_line: str) -> ProgramLine:
         raise BasicSyntaxError(bse.message, number)
     except ValueError as ve:
         # Annotate it with the line number and rethrow
-        error = BasicSyntaxError(ve, 99)
+        error = BasicSyntaxError(ve, line_number=number)
         raise error from ve
-    s = ProgramLine(number, list_of_statements, -1, source=program_line)
-    return s
+    return list_of_statements
 
 
 def tokenize(program_lines:list[str]) -> list[ProgramLine]:
