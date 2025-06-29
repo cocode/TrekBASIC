@@ -226,6 +226,7 @@ class Operators(Enum):
     LT=            OpDef('<',   3, BinOpStrNum(lambda x, y: x < y))
     LTE=           OpDef('<=',  3, BinOpStrNum(lambda x, y: x <= y))
     NE=            OpDef('<>',  3, BinOpStrNum(lambda x, y: x != y))
+    HASH_NE=       OpDef('#',   3, BinOpStrNum(lambda x, y: x != y))
     # May be semantic differences between python "and" and basic "AND".
     # Python lets you AND to ints, basic does not. BINOP_BOOL maybe?
     # Basic only allows "AND" of booleans, I believe.
