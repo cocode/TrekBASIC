@@ -1,10 +1,6 @@
 # Task List
 
 Don't start working on these, without asking first
-### smart split doesn't handle nesting,. 
-nesting is needed when enquote is not equal to dequite
-
-### DIM
 
 ### Else
 Else is not yet impleted.
@@ -20,3 +16,15 @@ Should I support \" in Strings? I don't recall older basics doing that, but some
 
 ### READ, DATA, RESTORE
 need to implement for hunt the wumpus
+
+### REM 
+A REM in the middle of an IF then might cause  problems
+we should only allow rem as the first statement on
+a line, Google says they can be not the first statement 
+in a line. I'm worried that this will complicate our
+nested IF then parsing, if we get a REM in a nested IF, how
+will it go the end of the lines above it.
+
+# ValueError
+In basic loading. I think it's been rethrown twice.
+And has the wrong line number. (file line)
