@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Run all tests for TrekBasic - stop at first error unless --continue-on-failure is specified
+Run tests for TrekBasic - can run all tests or individual test suites
+Stop at first error unless --continue-on-failure is specified
 """
 import argparse
 import subprocess
@@ -63,13 +64,42 @@ def check_unit_test_status(output):
         return False, "❓ Unit test status unclear"
 
 def main():
-    parser = argparse.ArgumentParser(description='Run all TrekBasic tests')
+    parser = argparse.ArgumentParser(description='Run TrekBasic tests (all or individual test suites)')
     parser.add_argument('--continue-on-failure', '-c', action='store_true',
                        help='Continue running tests even if some fail')
+    
+    # Test suite selection options
+    parser.add_argument('--unit-tests', '-u', action='store_true',
+                       help='Run only unit tests')
+    parser.add_argument('--interpreter-tests', '-i', action='store_true',
+                       help='Run only BASIC interpreter test suite')
+    parser.add_argument('--llvm-tests', '-l', action='store_true',
+                       help='Run only LLVM compiler test suite')
+    
     args = parser.parse_args()
+    
+    # Determine which test suites to run
+    run_unit = args.unit_tests
+    run_interpreter = args.interpreter_tests  
+    run_llvm = args.llvm_tests
+    
+    # If no specific suites selected, run all
+    if not (run_unit or run_interpreter or run_llvm):
+        run_unit = run_interpreter = run_llvm = True
     
     print("Running TrekBasic Test Suite")
     print("============================")
+    
+    # Show which suites will run
+    suites_to_run = []
+    if run_unit:
+        suites_to_run.append("Unit tests")
+    if run_interpreter:
+        suites_to_run.append("Interpreter tests")
+    if run_llvm:
+        suites_to_run.append("LLVM tests")
+    print(f"Test suites: {', '.join(suites_to_run)}")
+    
     if args.continue_on_failure:
         print("Mode: Continue on failure")
     else:
@@ -78,67 +108,75 @@ def main():
     total_tests = 0
     total_failures = 0
     
+    # Initialize counters for each suite
+    unit_tests = unit_failures = 0
+    interpreter_tests = interpreter_failures = 0
+    llvm_tests = llvm_failures = 0
+    
     # 1. Run unit tests
-    success, output = run_command(
-        "python -m unittest discover -s . -p 'test_*.py' -v",
-        "1. Running unit tests..."
-    )
-    
-    unit_tests = extract_unit_test_count(output)
-    unit_failures = extract_unit_test_failures(output)
-    total_tests += unit_tests
-    total_failures += unit_failures
-    
-    passed, status_msg = check_unit_test_status(output)
-    print(status_msg + f" ({unit_tests} tests)")
-    
-    if not passed:
-        if not args.continue_on_failure:
-            sys.exit(1)
+    if run_unit:
+        success, output = run_command(
+            "python -m unittest discover -s . -p 'test_*.py' -v",
+            "1. Running unit tests..."
+        )
+        
+        unit_tests = extract_unit_test_count(output)
+        unit_failures = extract_unit_test_failures(output)
+        total_tests += unit_tests
+        total_failures += unit_failures
+        
+        passed, status_msg = check_unit_test_status(output)
+        print(status_msg + f" ({unit_tests} tests)")
+        
+        if not passed:
+            if not args.continue_on_failure:
+                sys.exit(1)
     
     # 2. Run BASIC interpreter test suite
-    success, output = run_command(
-        "python test_suite/run_tests.py",
-        "2. Running BASIC interpreter test suite..."
-    )
-    
-    interpreter_tests = extract_suite_test_count(output)
-    interpreter_failures = extract_suite_test_failures(output)
-    total_tests += interpreter_tests
-    total_failures += interpreter_failures
-    
-    if not success or interpreter_failures > 0:
-        print(f"❌ Interpreter tests FAILED ({interpreter_failures} failures)")
-        if not args.continue_on_failure:
-            sys.exit(1)
-    elif interpreter_tests > 0:
-        print(f"✅ Interpreter tests passed ({interpreter_tests} tests)")
-    else:
-        print("❓ Interpreter test status unclear")
-        if not args.continue_on_failure:
-            sys.exit(1)
+    if run_interpreter:
+        success, output = run_command(
+            "python test_suite/run_tests.py",
+            "2. Running BASIC interpreter test suite..."
+        )
+        
+        interpreter_tests = extract_suite_test_count(output)
+        interpreter_failures = extract_suite_test_failures(output)
+        total_tests += interpreter_tests
+        total_failures += interpreter_failures
+        
+        if not success or interpreter_failures > 0:
+            print(f"❌ Interpreter tests FAILED ({interpreter_failures} failures)")
+            if not args.continue_on_failure:
+                sys.exit(1)
+        elif interpreter_tests > 0:
+            print(f"✅ Interpreter tests passed ({interpreter_tests} tests)")
+        else:
+            print("❓ Interpreter test status unclear")
+            if not args.continue_on_failure:
+                sys.exit(1)
     
     # 3. Run LLVM compiler test suite
-    success, output = run_command(
-        "python test_suite/run_llvm_tests.py",
-        "3. Running LLVM compiler test suite..."
-    )
-    
-    llvm_tests = extract_suite_test_count(output)
-    llvm_failures = extract_suite_test_failures(output)
-    total_tests += llvm_tests
-    total_failures += llvm_failures
-    
-    if not success or llvm_failures > 0:
-        print(f"❌ LLVM tests FAILED ({llvm_failures} failures)")
-        if not args.continue_on_failure:
-            sys.exit(1)
-    elif llvm_tests > 0:
-        print(f"✅ LLVM tests passed ({llvm_tests} tests)")
-    else:
-        print("❓ LLVM test status unclear")
-        if not args.continue_on_failure:
-            sys.exit(1)
+    if run_llvm:
+        success, output = run_command(
+            "python test_suite/run_llvm_tests.py",
+            "3. Running LLVM compiler test suite..."
+        )
+        
+        llvm_tests = extract_suite_test_count(output)
+        llvm_failures = extract_suite_test_failures(output)
+        total_tests += llvm_tests
+        total_failures += llvm_failures
+        
+        if not success or llvm_failures > 0:
+            print(f"❌ LLVM tests FAILED ({llvm_failures} failures)")
+            if not args.continue_on_failure:
+                sys.exit(1)
+        elif llvm_tests > 0:
+            print(f"✅ LLVM tests passed ({llvm_tests} tests)")
+        else:
+            print("❓ LLVM test status unclear")
+            if not args.continue_on_failure:
+                sys.exit(1)
     
     # Summary
     print("\n" + "=" * 50)
