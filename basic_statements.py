@@ -34,20 +34,32 @@ def stmt_print(executor: Executor, stmt:ParsedStatementPrint):
     :return: None
     """
     for i, arg in enumerate(stmt._outputs):
-        if arg[0] == '"': # quoted string
-            output = arg[1:-1]
-            #output.replace(" ", "*") # TODO delete this line.
-            executor.do_print(output, end='')
-        else: # Expression
-            v = eval_expression(executor._symbols, arg)
-            #v = executor.get_symbol(arg)
-            if type(v) in (int, float):
-                executor.do_print(F" {v:g} ", end='') # I'm trying to figure out BASIC's rules for spacing.
-                                          # NO spaces is wrong (see initial print out)
-                                          # Spaces around everything is wrong.
-                                          # Spaces around numbers but not strings seems to work, so far.
-            else:
-                executor.do_print(F"{v}", end='')
+        if isinstance(arg, list):
+            # Handle concatenated parts (list of strings/expressions)
+            for part in arg:
+                if part.startswith('"') and part.endswith('"'): # quoted string
+                    output = part[1:-1]
+                    executor.do_print(output, end='')
+                else: # Expression
+                    v = eval_expression(executor._symbols, part)
+                    if type(v) in (int, float):
+                        executor.do_print(F" {v:g} ", end='')
+                    else:
+                        executor.do_print(F"{v}", end='')
+        else:
+            # Handle single string or expression
+            if arg.startswith('"') and arg.endswith('"'): # quoted string
+                output = arg[1:-1]
+                executor.do_print(output, end='')
+            else: # Expression
+                v = eval_expression(executor._symbols, arg)
+                if type(v) in (int, float):
+                    executor.do_print(F" {v:g} ", end='') # I'm trying to figure out BASIC's rules for spacing.
+                                              # NO spaces is wrong (see initial print out)
+                                              # Spaces around everything is wrong.
+                                              # Spaces around numbers but not strings seems to work, so far.
+                else:
+                    executor.do_print(F"{v}", end='')
 
     if not stmt._no_cr:
         executor.do_print("")

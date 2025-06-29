@@ -794,7 +794,52 @@ class LLVMCodeGenerator:
     def _do_print(self, stmt, lexer):
         """Helper method to do the actual printing"""
         for output in stmt._outputs:
-            if output.startswith('"') and output.endswith('"'):
+            if isinstance(output, list):
+                # Handle concatenated parts (list of strings/expressions)
+                for part in output:
+                    if part.startswith('"') and part.endswith('"'):
+                        # String literal
+                        str_val = part[1:-1]
+                        # Process escape sequences
+                        str_val = str_val.encode('utf-8').decode('unicode_escape')
+                        # Create a global string constant without newline
+                        fmt = str_val + "\0"
+                        name = f"str_{hash(fmt)}"
+                        if name in self.module.globals:
+                            global_fmt = self.module.get_global(name)
+                        else:
+                            c_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(fmt)),
+                                                bytearray(fmt.encode("utf8")))
+                            global_fmt = ir.GlobalVariable(self.module, c_fmt.type, name=name)
+                            global_fmt.linkage = 'internal'
+                            global_fmt.global_constant = True
+                            global_fmt.initializer = c_fmt
+                        fmt_ptr = self.builder.bitcast(global_fmt, ir.IntType(8).as_pointer())
+                        self.builder.call(self.printf, [fmt_ptr])
+                    else:
+                        # Expression
+                        tokens = lexer.lex(part)
+                        val = self._codegen_expr(tokens)
+
+                        # Check if this is a string value (pointer to char)
+                        if hasattr(val, 'type') and val.type == ir.IntType(8).as_pointer():
+                            # String value - print without newline
+                            self.builder.call(self.printf, [val])
+                        else:
+                            # Numeric value - print as float without newline
+                            # Create format string for numeric values without newline
+                            fmt = "%g\0"
+                            c_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(fmt)), bytearray(fmt.encode("utf8")))
+                            if "fmt_num" not in self.module.globals:
+                                global_fmt_num = ir.GlobalVariable(self.module, c_fmt.type, name="fmt_num")
+                                global_fmt_num.linkage = 'internal'
+                                global_fmt_num.global_constant = True
+                                global_fmt_num.initializer = c_fmt
+                            else:
+                                global_fmt_num = self.module.get_global("fmt_num")
+                            fmt_ptr = self.builder.bitcast(global_fmt_num, ir.IntType(8).as_pointer())
+                            self.builder.call(self.printf, [fmt_ptr, val])
+            elif output.startswith('"') and output.endswith('"'):
                 # String literal
                 str_val = output[1:-1]
                 # Process escape sequences
@@ -1372,8 +1417,8 @@ class LLVMCodeGenerator:
                     # Numeric comparison
                     cmp_result = builder.fcmp_ordered("==", left, right, name="cmptmp")
                     result = builder.uitofp(cmp_result, ir.DoubleType())  # Convert to double
-            elif op.token == '<>':
-                # Not equal comparison
+            elif op.token == '<>' or op.token == '#':
+                # Not equal comparison (both <> and # operators)
                 if left.type == ir.IntType(8).as_pointer() and right.type == ir.IntType(8).as_pointer():
                     # String comparison using strcmp
                     cmp_result = builder.call(self.strcmp, [left, right], name="strcmp_result")

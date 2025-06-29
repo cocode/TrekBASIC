@@ -347,6 +347,52 @@ class ParsedStatementDef(ParsedStatement):
         return F"{self.keyword.name} {self._variable}({self._function_arg})={self._value}"
 
 
+def parse_concatenated_parts(arg):
+    """
+    Parse an argument that may contain concatenated strings and expressions.
+    
+    For example: '"YOU ARE IN ROOM "L(1)' becomes:
+    ['"YOU ARE IN ROOM "', 'L(1)']
+    
+    Returns a list of parts, where each part is either:
+    - A quoted string (including the quotes)
+    - An expression string
+    """
+    parts = []
+    i = 0
+    current_part = ""
+    
+    while i < len(arg):
+        if arg[i] == '"':
+            # Start of quoted string - find the end
+            if current_part.strip():
+                # Save any accumulated expression
+                parts.append(current_part.strip())
+                current_part = ""
+            
+            # Find closing quote
+            string_start = i
+            i += 1  # Skip opening quote
+            while i < len(arg) and arg[i] != '"':
+                i += 1
+            
+            if i < len(arg):  # Found closing quote
+                i += 1  # Include closing quote
+                parts.append(arg[string_start:i])
+            else:
+                raise BasicSyntaxError(f"Unterminated string in: {arg}")
+        else:
+            # Accumulate expression characters
+            current_part += arg[i]
+            i += 1
+    
+    # Add any remaining expression
+    if current_part.strip():
+        parts.append(current_part.strip())
+    
+    return parts
+
+
 class ParsedStatementPrint(ParsedStatement):
     """
     Handles PRINT statements
@@ -361,22 +407,39 @@ class ParsedStatementPrint(ParsedStatement):
             self._no_cr = False
         self._outputs = []
         args = smart_split(args, split_char=";")
-        # TODO have a print_arg type, that tells stmt_print whether it is a quoted string or an expression
-        # Of course, a quited string should be an expression, so maybe I don't need both branches.
+        
         for i, arg in enumerate(args):
             arg = arg.strip()
             if len(arg) == 0:
                 continue
-            if arg[0] == '"': # quoted string
-                assert_syntax(arg[0] =='"' and arg[-1] == '"', "String not properly quoted for 'PRINT'")
+                
+            # Check if this argument contains concatenated parts
+            if '"' in arg:
+                # Parse concatenated strings and expressions
+                parts = parse_concatenated_parts(arg)
+                # Group concatenated parts together to preserve original format
+                if len(parts) > 1:
+                    # Multiple parts means this was concatenated - store as a group
+                    self._outputs.append(parts)
+                else:
+                    # Single part, just append normally
+                    self._outputs.append(parts[0])
+            else:
+                # Simple expression
                 self._outputs.append(arg)
-            else: # Expression
-                self._outputs.append(arg) # TODO Parse it here, evaluate in stmt_print
         return
 
     def __str__(self):
+        output_strs = []
+        for output in self._outputs:
+            if isinstance(output, list):
+                # This was a concatenated group - join without separators
+                output_strs.append("".join(output))
+            else:
+                output_strs.append(output)
+        
         c = ";" if self._no_cr else ""
-        return F'{self.keyword.name} {";".join(self._outputs)}{c}'
+        return F'{self.keyword.name} {";".join(output_strs)}{c}'
 
 
 class ParsedStatementDim(ParsedStatement):
