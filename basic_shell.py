@@ -790,7 +790,7 @@ class BasicShell:
     commands = {
         "?": (cmd_print, "Usage: ? expression\n\t\tEvaluates and prints an expression."
               "\n\t\tNote: You can't print single array variables. Use 'sym'"),
-        "benchmark": (cmd_benchmark, "Usage: becnhmark\n\t\tRuns the program from the beginning, and shows timing."),
+        "benchmark": (cmd_benchmark, "Usage: benchmark\n\t\tRuns the program from the beginning, and shows timing."),
         "break": (cmd_break, "Usage: break LINE or break SYMBOL or break list break clear"+
                   "\n\t\tSets a breakpoint on a line, or on writes to a variable"+
                   "\n\t\tNote that if you have an array and a symbol with the same"+
