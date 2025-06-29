@@ -80,7 +80,7 @@ def tokenize_line(program_line: str) -> ProgramLine:
     return s
 
 
-def tokenize_remaining_line(partial: str, number: str) -> ProgramLine:
+def tokenize_remaining_line(partial: str, number: int) -> list:
     """
     Tokenizes the string, but with the line number removed. This allows us to call this function with partial lines.
     """
@@ -108,7 +108,9 @@ def tokenize(program_lines:list[str]) -> list[ProgramLine]:
         try:
             tokenized_line = tokenize_line(line)
         except BasicSyntaxError as v:
-            raise BasicSyntaxError(v.message, line_number+1) from v
+            # Re-raise the exception - if it doesn't have a line number, 
+            # it means we couldn't parse the line number from the input
+            raise v
         if tokenized_line is None:
             continue    # Ignore blank lines.
         if last_line is not None:
