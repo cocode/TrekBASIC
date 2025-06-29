@@ -54,16 +54,43 @@ def stmt_print(executor: Executor, stmt:ParsedStatementPrint):
     return None
 
 
+def _handle_goto_gosub(executor, stmt: ParsedStatementGo, op_name: str, jump_func):
+    """
+    Common implementation for GOTO and GOSUB statements.
+    
+    :param executor: The executor instance
+    :param stmt: The parsed GOTO/GOSUB statement
+    :param op_name: The operation name for error messages ("GOTO" or "GOSUB")
+    :param jump_func: The function to call for jumping (executor.goto_line or executor.gosub)
+    """
+    if hasattr(stmt, '_is_computed') and stmt._is_computed:
+        # Handle computed GOTO/GOSUB (GOTO/GOSUB expr OF line1,line2,...)
+        result = eval_expression(executor._symbols, stmt._expression)
+        if not (type(result) == int or type(result) == float):
+            raise BasicSyntaxError(f"Expression not numeric in {op_name}...OF")
+        
+        original_result = int(result)
+        result = original_result - 1  # Basic is 1-based
+        # Check if the index is out of range
+        if result < 0 or result >= len(stmt._target_lines):
+            raise BasicSyntaxError(f"{op_name} OF index {original_result} is out of range (1-{len(stmt._target_lines)})")
+        
+        # Execute the computed jump
+        jump_func(stmt._target_lines[result])
+    else:
+        # Handle regular GOTO/GOSUB
+        destination = stmt.destination
+        assert_syntax(str.isdigit(destination), F"{op_name} target is not an int ")
+        jump_func(int(destination))
+
+
 def stmt_goto(executor, stmt: ParsedStatementGo):
-    destination = stmt.destination
-    executor.goto_line(int(destination))
+    _handle_goto_gosub(executor, stmt, "GOTO", executor.goto_line)
     return None
 
 
 def stmt_gosub(executor, stmt: ParsedStatementGo):
-    destination = stmt.destination
-    assert_syntax(str.isdigit(destination), F"Gosub target is not an int ")
-    executor.gosub(int(destination))
+    _handle_goto_gosub(executor, stmt, "GOSUB", executor.gosub)
     return None
 
 

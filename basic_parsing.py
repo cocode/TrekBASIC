@@ -211,15 +211,56 @@ class ParsedStatementGo(ParsedStatement):
     """
     def __init__(self, keyword, args):
         super().__init__(keyword, "")
-        self.destination = args.strip()
-        assert_syntax(str.isdigit(self.destination), F"GOTO/GOSUB target is not an int ")
+        args = args.strip()
+        
+        # Check for computed GOTO/GOSUB syntax: "GOTO expr OF line1,line2..." or "GOSUB expr OF line1,line2..."
+        of_pos = args.upper().find(" OF ")
+        if of_pos != -1:
+            # This is a computed GOTO/GOSUB - convert it to ON format
+            expression = args[:of_pos].strip()
+            lines_part = args[of_pos + 4:].strip()  # Skip " OF "
+            
+            # Create equivalent ON statement arguments
+            on_args = f"{expression} {keyword.name} {lines_part}"
+            
+            # Parse as ON statement
+            on_stmt = ParsedStatementOnGoto(keyword, on_args)
+            
+            # Copy the parsed data to this object
+            self._is_computed = True
+            self._expression = on_stmt._expression
+            self._op = on_stmt._op
+            self._target_lines = on_stmt._target_lines
+            self.destination = None  # Not used for computed GOTO/GOSUB
+        else:
+            # Regular GOTO/GOSUB with single destination
+            self._is_computed = False
+            self.destination = args
+            assert_syntax(str.isdigit(self.destination), F"GOTO/GOSUB target is not an int ")
 
     def __str__(self):
-        return F"{self.keyword.name} {self.destination}"
+        if hasattr(self, '_is_computed') and self._is_computed:
+            l2 = [str(l) for l in self._target_lines]
+            return F"{self.keyword.name} {self._expression} OF {','.join(l2)}"
+        else:
+            return F"{self.keyword.name} {self.destination}"
 
     def renumber(self, line_map):
-        new_dest = line_map[int(self.destination)]
-        return ParsedStatementGo(self.keyword, str(new_dest))
+        if hasattr(self, '_is_computed') and self._is_computed:
+            # Renumber computed GOTO/GOSUB
+            new_targets = [line_map[line] for line in self._target_lines]
+            # Create a new computed GOTO/GOSUB
+            new_stmt = ParsedStatementGo(self.keyword, "")
+            new_stmt._is_computed = True
+            new_stmt._expression = self._expression
+            new_stmt._op = self._op
+            new_stmt._target_lines = new_targets
+            new_stmt.destination = None
+            return new_stmt
+        else:
+            # Regular GOTO/GOSUB renumbering
+            new_dest = line_map[int(self.destination)]
+            return ParsedStatementGo(self.keyword, str(new_dest))
 
 
 class ParsedStatementOnGoto(ParsedStatement):
