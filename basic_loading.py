@@ -105,12 +105,7 @@ def tokenize(program_lines:list[str]) -> list[ProgramLine]:
     tokenized_lines = []
     last_line: str = None
     for line_number, line in enumerate(program_lines):
-        try:
-            tokenized_line = tokenize_line(line)
-        except BasicSyntaxError as v:
-            # Re-raise the exception - if it doesn't have a line number, 
-            # it means we couldn't parse the line number from the input
-            raise v
+        tokenized_line = tokenize_line(line)
         if tokenized_line is None:
             continue    # Ignore blank lines.
         if last_line is not None:
