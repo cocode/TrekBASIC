@@ -81,11 +81,7 @@ class ParsedStatementIf(ParsedStatement):
     An IF statement runs until it hits the end of a line, or it hits an else statement.
 
     """
-    # TODO superstartrek3.bas uses an ELSE
-    # Notes for ELSE.
-    # IF a=b THEN y=z ELSE y=a
-    # If a T
-    # IF...THEN current works be branching to the next line, if the condition is False.
+    # IF...THEN currently works be branching to the next line, if the condition is False.
     # For else, it would branch to after the ELSE clause, if the condition is false, on the same line.
     # superstartrek3.bas only uses the ELSE on the same line as the THEN.
     # We need to parse the clauses after then ELSE, and add them to the line, like we now do with _additional
