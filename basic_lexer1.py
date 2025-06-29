@@ -11,7 +11,7 @@ just grab sequences of letters.
 from basic_types import lexer_token, BasicSyntaxError, NUMBERS, LETTERS
 import basic_functions
 
-OPERATORS = "()^*/+-=><,"
+OPERATORS = "()^*/+-=><,#"
 BOOLEAN_OPERATORS=["AND", "OR"]
 
 
