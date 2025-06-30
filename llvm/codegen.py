@@ -10,6 +10,7 @@ from basic_lexer import get_lexer
 from basic_utils import smart_split
 from basic_types import lexer_token, BasicSyntaxError, assert_syntax, OP_TOKEN, UNARY_MINUS, SymbolType, UndefinedSymbol
 from basic_operators import get_op_def, get_precedence
+from basic_dialect import UPPERCASE_INPUT
 
 
 class LLVMCodeGenerator:
@@ -99,6 +100,10 @@ class LLVMCodeGenerator:
         
         chr_type = ir.FunctionType(ir.IntType(8), [ir.IntType(32)])
         self.chr = ir.Function(self.module, chr_type, name="chr")
+        
+        # Declare toupper function for converting strings to uppercase
+        toupper_type = ir.FunctionType(ir.IntType(32), [ir.IntType(32)])
+        self.toupper = ir.Function(self.module, toupper_type, name="toupper")
         
         # For now, we'll implement these as simple stubs that return reasonable defaults
         # A full implementation would need more complex string handling
@@ -616,6 +621,51 @@ class LLVMCodeGenerator:
                 
                 # Call scanf to read the string
                 self.builder.call(self.scanf, [string_fmt_ptr, input_buffer])
+                
+                # Convert string to uppercase if UPPERCASE_INPUT is enabled
+                if UPPERCASE_INPUT:
+                    # Create a loop to iterate through the string and convert each character
+                    func = self.builder.block.function
+                    loop_block = func.append_basic_block(name=f"uppercase_loop_{var_name}")
+                    after_loop_block = func.append_basic_block(name=f"after_uppercase_{var_name}")
+                    
+                    # Initialize loop counter
+                    counter_var = self.builder.alloca(ir.IntType(32), name=f"counter_{var_name}")
+                    self.builder.store(ir.Constant(ir.IntType(32), 0), counter_var)
+                    self.builder.branch(loop_block)
+                    
+                    # Loop to convert each character
+                    self.builder.position_at_end(loop_block)
+                    counter = self.builder.load(counter_var, name="counter")
+                    
+                    # Get current character
+                    char_ptr = self.builder.gep(input_buffer, [counter], name="char_ptr")
+                    current_char = self.builder.load(char_ptr, name="current_char")
+                    
+                    # Check if we've reached null terminator
+                    null_char = ir.Constant(ir.IntType(8), 0)
+                    is_null = self.builder.icmp_signed("==", current_char, null_char)
+                    
+                    # Create block for character conversion
+                    convert_block = func.append_basic_block(name=f"convert_char_{var_name}")
+                    self.builder.cbranch(is_null, after_loop_block, convert_block)
+                    
+                    # Convert character to uppercase
+                    self.builder.position_at_end(convert_block)
+                    char_as_int = self.builder.zext(current_char, ir.IntType(32))
+                    upper_char_int = self.builder.call(self.toupper, [char_as_int])
+                    upper_char = self.builder.trunc(upper_char_int, ir.IntType(8))
+                    
+                    # Store the uppercase character back
+                    self.builder.store(upper_char, char_ptr)
+                    
+                    # Increment counter and continue loop
+                    next_counter = self.builder.add(counter, ir.Constant(ir.IntType(32), 1))
+                    self.builder.store(next_counter, counter_var)
+                    self.builder.branch(loop_block)
+                    
+                    # After loop - position builder at the after block
+                    self.builder.position_at_end(after_loop_block)
                 
                 # Store the buffer pointer in the variable
                 self.builder.store(input_buffer, self.symbol_table[var_name])
