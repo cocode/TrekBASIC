@@ -1512,57 +1512,7 @@ class LLVMCodeGenerator:
             
             data_stack.append(result)
 
-    def _codegen_if(self, stmt, line_stmts=None, stmt_index=None):
-        """Generate LLVM IR for an IF statement - simplified approach"""
-        # Evaluate the condition
-        condition_val = self._codegen_expr(stmt._tokens)
-        
-        # Compare to zero to get boolean condition
-        zero = ir.Constant(ir.DoubleType(), 0.0)
-        condition = self.builder.fcmp_ordered("!=", condition_val, zero, name="if_condition")
-        
-        # Find where the ELSE statement is on this line (if any)
-        else_stmt_index = None
-        if line_stmts and stmt_index is not None:
-            for i in range(stmt_index + 1, len(line_stmts)):
-                if isinstance(line_stmts[i], ParsedStatementElse):
-                    else_stmt_index = i
-                    break
-        
-        # Create blocks
-        func = self.builder.block.function
-        true_block = func.append_basic_block(name=f"if_true_{self.builder.block.name}")
-        false_block = func.append_basic_block(name=f"if_false_{self.builder.block.name}")
-        
-        # Branch based on condition
-        if not self.builder.block.is_terminated:
-            self.builder.cbranch(condition, true_block, false_block)
-        else:
-            return true_block, false_block, else_stmt_index
-        
-        # Ensure both blocks have at least one instruction to prevent empty blocks
-        # Position at true block and add a no-op instruction
-        current_pos = self.builder.block
-        self.builder.position_at_end(true_block)
-        temp_val = ir.Constant(ir.DoubleType(), 0.0)
-        if "noop_var" not in self.module.globals:
-            noop_global = ir.GlobalVariable(self.module, ir.DoubleType(), name="noop_var")
-            noop_global.linkage = 'internal'
-            noop_global.global_constant = False
-            noop_global.initializer = temp_val
-        else:
-            noop_global = self.module.get_global("noop_var")
-        self.builder.store(temp_val, noop_global)
-        
-        # Position at false block and add a no-op instruction
-        self.builder.position_at_end(false_block)
-        self.builder.store(temp_val, noop_global)
-        
-        # Restore builder position
-        self.builder.position_at_end(current_pos)
-        
-        # Return context for the main loop to handle
-        return true_block, false_block, else_stmt_index
+
 
     def _codegen_if_simple(self, stmt, line_stmts=None, stmt_index=None):
         """Simple IF codegen that works like the Python interpreter"""
