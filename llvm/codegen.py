@@ -26,6 +26,10 @@ class LLVMCodeGenerator:
         printf_type = ir.FunctionType(ir.IntType(32), [ir.IntType(8).as_pointer()], var_arg=True)
         self.printf = ir.Function(self.module, printf_type, name="printf")
         
+        # Declare sprintf function for string formatting
+        sprintf_type = ir.FunctionType(ir.IntType(32), [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer()], var_arg=True)
+        self.sprintf = ir.Function(self.module, sprintf_type, name="sprintf")
+        
         # Declare scanf function for input
         scanf_type = ir.FunctionType(ir.IntType(32), [ir.IntType(8).as_pointer()], var_arg=True)
         self.scanf = ir.Function(self.module, scanf_type, name="scanf")
@@ -1295,8 +1299,33 @@ class LLVMCodeGenerator:
             return self._create_string_constant("   ")
         elif func_name == "STR$":
             # STR$(number) - convert number to string
-            # For now, return a reasonable default
-            return self._create_string_constant("42")
+            if len(args) != 1:
+                raise Exception("STR$ requires exactly 1 argument")
+            number = args[0]
+            
+            # Allocate buffer for the string result (enough for a double)
+            buffer_size = ir.Constant(ir.IntType(64), 32)  # Should be enough for any double
+            result_ptr = builder.call(self.malloc, [buffer_size], name="str_result")
+            
+            # Create format string for sprintf ("%g" for general format)
+            str_fmt = "%g\0"
+            c_str_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(str_fmt)), 
+                                   bytearray(str_fmt.encode("utf8")))
+            str_fmt_name = f"str_fmt_global"
+            if str_fmt_name not in self.module.globals:
+                global_str_fmt = ir.GlobalVariable(self.module, c_str_fmt.type, name=str_fmt_name)
+                global_str_fmt.linkage = 'internal'
+                global_str_fmt.global_constant = True
+                global_str_fmt.initializer = c_str_fmt
+            else:
+                global_str_fmt = self.module.get_global(str_fmt_name)
+            
+            str_fmt_ptr = builder.bitcast(global_str_fmt, ir.IntType(8).as_pointer())
+            
+            # Call sprintf to convert number to string
+            builder.call(self.sprintf, [result_ptr, str_fmt_ptr, number])
+            
+            return result_ptr
         elif func_name == "LEN":
             # LEN(string) - return length of string
             if len(args) != 1:
