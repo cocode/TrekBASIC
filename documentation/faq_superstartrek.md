@@ -1,20 +1,20 @@
 
 # Game Frequently Asked Questions
 
+Full direction can be found here; https://coding-horror.github.io/basic-computer-games/84_Super_Star_Trek/javascript/index.html
+
 ## Navigation
 
-### Here are the directions you can enter after the nav comand. Decimals can be used 
 ┌─────┬─────┬─────┐
-│  6  │  7  │  8  │
+│  4  │  3  │  2  │
 │  ↖  │  ↑  │  ↗  │
 ├─────┼─────┼─────┤
 │  5  │  ●  │  1  │
 │  ←  │ YOU │  →  │
 ├─────┼─────┼─────┤
-│  4  │  3  │  2  │
+│  6  │  7  │  8  │
 │  ↙  │  ↓  │  ↘  │
 └─────┴─────┴─────┘
-
 ### Warp Factors
 Warp factors also can contain decimals.
 

@@ -53,7 +53,7 @@ Code generation should be quick, it's possible we could do generation at run-tim
 
 ### Auto-detection
 Auto-detection of basic variants sounds possible, but might be hard to get right. Figuring out a dialect uses
-"#" for not equals, and "!" for remarks is easy. Figuring out associativity for exponentiation,  or whether 
+"#" for not equals, and "!" for remarks is easy. Figuring out associativity for exponentiation, or whether 
 "arrays start at 1 or 0" is harder.
 
 ### Current Dialect
