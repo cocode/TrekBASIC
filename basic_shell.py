@@ -656,12 +656,12 @@ class BasicShell:
             return
 
         if args:
-            line_number = int(args[0])
+            line_number = int(args.strip())
         else:
             line_number = None
         for line in self.executor._program:
             # If they give us a line number, only print that line's statements
-            if line_number is not None and line_number != line.line_number:
+            if line_number is not None and line_number != line.line:
                 continue
             print(F"{line.line} ", end="")
             for statement in line.stmts:
