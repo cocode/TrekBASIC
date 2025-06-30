@@ -1,4 +1,3 @@
-1 TRACE on
 10 REM SUPER STARTREK - MAY 16,1978 - REQUIRES 24K MEMORY
 30 REM
 40 REM ****        **** STAR TREK ****        ****
