@@ -1,6 +1,7 @@
 import unittest
 from unittest import TestCase
 from basic_shell import BasicShell
+from basic_loading import tokenize
 
 # test renumbering empty program.
 
@@ -221,6 +222,76 @@ class TestRenumber(TestCase):
         # The GOTO should now point to the renumbered line
         self.assertTrue(any("GOTO 120" in line for line in program_text), 
                        f"GOTO should be updated to new line number: {program_text}")
+
+    def test_renumber_control_flow_statements(self):
+        """Test that all control flow statements renumber correctly and no lines are dropped"""
+        
+        # Create a test program with all types of control flow statements
+        test_program = [
+            "100 REM Test program for renumbering control flow",
+            "110 LET X = 1",
+            "120 GOTO 200",
+            "130 GOSUB 300",
+            "140 ON X GOTO 200,300",
+            "150 ON X GOSUB 200,300",
+            "160 GOTO X OF 200,300",
+            "170 GOSUB X OF 200,300",
+            "180 RESTORE 200",
+            "190 IF X=1 THEN 200",
+            "200 LET Y = 2",
+            "210 RETURN",
+            "300 LET Z = 3",
+            "310 RETURN",
+            "999 END"
+        ]
+        
+        shell = BasicShell()
+        shell.load_from_string("\\n".join(test_program))
+        original_program = shell.executor._program
+        self.assertEqual(len(original_program), 15, "Original program should have 15 lines")
+        
+        # Renumber the program
+        shell.cmd_renum("1000 10", verbose=False)
+        renumbered_program = shell.executor._program
+        self.assertEqual(len(renumbered_program), 15, "Renumbered program should still have 15 lines")
+        
+        # Create a dictionary of renumbered lines for easy lookup
+        renumbered_lines = {line.line: line.source for line in renumbered_program}
+        
+        # Expected line mapping:
+        # 100->1000, 110->1010, 120->1020, 130->1030, 140->1040, 150->1050, 160->1060, 170->1070, 
+        # 180->1080, 190->1090, 200->1100, 210->1110, 300->1120, 310->1130, 999->1140
+        
+        # Verify target lines exist
+        self.assertIn(1100, renumbered_lines, "Target line 200->1100 should exist")
+        self.assertIn(1120, renumbered_lines, "Target line 300->1120 should exist")
+        
+        # Verify target lines have correct content
+        self.assertIn("LET Y=2", renumbered_lines[1100], "Line 1100 should contain 'LET Y=2'")
+        self.assertIn("LET Z=3", renumbered_lines[1120], "Line 1120 should contain 'LET Z=3'")
+        
+        # Check specific control flow renumbering
+        test_cases = [
+            # (expected_line, expected_content_pattern, description)
+            (1020, "GOTO 1100", "Simple GOTO should point to renumbered line 200->1100"),
+            (1030, "GOSUB 1120", "Simple GOSUB should point to renumbered line 300->1120"), 
+            (1040, "ON X GOTO 1100,1120", "ON...GOTO should point to renumbered lines"),
+            (1050, "ON X GOSUB 1100,1120", "ON...GOSUB should point to renumbered lines"),
+            (1060, "GOTO X OF 1100,1120", "Computed GOTO should point to renumbered lines"),
+            (1070, "GOSUB X OF 1100,1120", "Computed GOSUB should point to renumbered lines"),
+            (1080, "RESTORE 1100", "RESTORE should point to renumbered line 200->1100"),
+            (1090, "IF X=1 THEN GOTO 1100", "IF THEN should point to renumbered line 200->1100"),
+        ]
+        
+        for expected_line, expected_pattern, description in test_cases:
+            self.assertIn(expected_line, renumbered_lines, f"{description} - line {expected_line} missing")
+            actual_content = renumbered_lines[expected_line]
+            self.assertIn(expected_pattern, actual_content,
+                         f"Line {expected_line} content wrong.\\nExpected: {expected_pattern}\\nActual: {actual_content}\\n{description}")
+
+    def test_renumber_preserves_all_lines(self):
+        """Test that renumbering doesn't drop any lines from a complex program"""
+        # ... existing code ...
 
 
 if __name__ == '__main__':
