@@ -2,7 +2,8 @@ from llvmlite import ir, binding
 from basic_parsing import (
     ParsedStatementLet, ParsedStatementPrint, ParsedStatementIf,
     ParsedStatementFor, ParsedStatementNext, ParsedStatementGo,
-    ParsedStatementOnGoto, ParsedStatementInput, ParsedStatementDim
+    ParsedStatementOnGoto, ParsedStatementInput, ParsedStatementDim,
+    ParsedStatementThen, ParsedStatementElse
 )
 from basic_expressions import Expression
 from basic_lexer import get_lexer
@@ -332,8 +333,9 @@ class LLVMCodeGenerator:
                 j += 1
                 continue
             elif isinstance(stmt, ParsedStatementIf):
-                # IF statement handles all remaining statements on the line
+                # Use simple IF handling - it processes all statements internally
                 self._generate_statement_ir(stmt, line_stmts=stmts, stmt_index=j)
+                # Skip all processed statements
                 break
             else:
                 # Normal statement
@@ -390,7 +392,7 @@ class LLVMCodeGenerator:
         elif isinstance(stmt, ParsedStatementNext):
              self._codegen_next(stmt)
         elif isinstance(stmt, ParsedStatementIf):
-             self._codegen_if(stmt, line_stmts, stmt_index)
+             self._codegen_if_simple(stmt, line_stmts, stmt_index)
         elif isinstance(stmt, ParsedStatementDim):
              # DIM statements are already processed during variable allocation
              pass
@@ -404,6 +406,12 @@ class LLVMCodeGenerator:
              self._codegen_input(stmt)
         elif isinstance(stmt, ParsedStatementOnGoto):
              self._codegen_on_goto(stmt)
+        elif isinstance(stmt, ParsedStatementThen):
+             # THEN is a no-op - the IF statement handles the control flow
+             pass
+        elif isinstance(stmt, ParsedStatementElse):
+             # ELSE should jump to next line (ending the THEN block)
+             self._codegen_else(stmt)
         # Add other statements here
         else:
             if stmt.keyword.name != "REM":
@@ -1505,7 +1513,7 @@ class LLVMCodeGenerator:
             data_stack.append(result)
 
     def _codegen_if(self, stmt, line_stmts=None, stmt_index=None):
-        """Generate LLVM IR for an IF/THEN statement with proper BASIC line semantics"""
+        """Generate LLVM IR for an IF statement - simplified approach"""
         # Evaluate the condition
         condition_val = self._codegen_expr(stmt._tokens)
         
@@ -1513,91 +1521,110 @@ class LLVMCodeGenerator:
         zero = ir.Constant(ir.DoubleType(), 0.0)
         condition = self.builder.fcmp_ordered("!=", condition_val, zero, name="if_condition")
         
-        # Create blocks for then and else (next line)
-        func = self.builder.block.function
-        then_block = func.append_basic_block(name=f"if_then_{self.builder.block.name}")
-        
-        # For false condition: either continue to next statement on same line, or go to next line
-        if line_stmts and stmt_index is not None and stmt_index + 1 < len(line_stmts):
-            # There are more statements on this line - continue with them
-            else_block = func.append_basic_block(name=f"if_continue_{self.builder.block.name}")
-        else:
-            # No more statements on this line - go to next line
-            # We'll determine the next line block later
-            else_block = func.append_basic_block(name=f"if_next_line_{self.builder.block.name}")
-        
-        # Branch based on condition (only if current block is not terminated)
-        if not self.builder.block.is_terminated:
-            self.builder.cbranch(condition, then_block, else_block)
-        else:
-            # Current block is already terminated - this IF statement is unreachable
-            return
-        
-        # THEN block: execute all remaining statements on this line
-        self.builder.position_at_end(then_block)
-        
-        # First, execute the immediate THEN clause
-        additional = stmt.get_additional()
-        if additional:
-            from basic_utils import smart_split
-            from basic_statements import Keywords
-            from basic_parsing import ParsedStatement, ParsedStatementLet
-            stmts = smart_split(additional)
-            for s in stmts:
-                s = s.strip()
-                if not s:
-                    continue
-                # Handle bare line number as GOTO
-                if s.isdigit():
-                    s = f"GOTO {s}"
-                # Find the keyword
-                for kw in Keywords.__members__.values():
-                    if s.startswith(kw.name):
-                        parser = kw.value.get_parser_class()
-                        parsed = parser(kw, s[len(kw.name):])
-                        break
-                else:
-                    # Default to LET
-                    kw = Keywords.LET
-                    parser = kw.value.get_parser_class()
-                    parsed = parser(kw, s)
-                self._generate_statement_ir(parsed)
-                
-                # Check if the block was terminated (e.g., by GOTO, RETURN, END, STOP)
-                if self.builder.block.is_terminated:
-                    break
-        
-        # Then execute all remaining statements on this line (if any)
-        if not self.builder.block.is_terminated and line_stmts and stmt_index is not None:
+        # Find where the ELSE statement is on this line (if any)
+        else_stmt_index = None
+        if line_stmts and stmt_index is not None:
             for i in range(stmt_index + 1, len(line_stmts)):
-                remaining_stmt = line_stmts[i]
-                self._generate_statement_ir(remaining_stmt)
-                
-                # Check if the block was terminated
-                if self.builder.block.is_terminated:
+                if isinstance(line_stmts[i], ParsedStatementElse):
+                    else_stmt_index = i
                     break
         
-        # Branch to next line (or return if this terminates)
-        if not self.builder.block.is_terminated:
-            # Find next line
-            if self.current_line_index + 1 < len(self.program):
-                next_line_num = self.program[self.current_line_index + 1].line
-                self.builder.branch(self.line_blocks[next_line_num])
-            else:
-                self.builder.ret(ir.Constant(ir.IntType(32), 0))
+        # Create blocks
+        func = self.builder.block.function
+        true_block = func.append_basic_block(name=f"if_true_{self.builder.block.name}")
+        false_block = func.append_basic_block(name=f"if_false_{self.builder.block.name}")
         
-        # ELSE block: handle false condition
-        self.builder.position_at_end(else_block)
-        if line_stmts and stmt_index is not None and stmt_index + 1 < len(line_stmts):
-            # Continue with next statement on same line
-            pass  # The main loop will handle the remaining statements
+        # Branch based on condition
+        if not self.builder.block.is_terminated:
+            self.builder.cbranch(condition, true_block, false_block)
         else:
-            # Go to next line
-            if self.current_line_index + 1 < len(self.program):
-                next_line_num = self.program[self.current_line_index + 1].line
-                self.builder.branch(self.line_blocks[next_line_num])
-            else:
-                self.builder.ret(ir.Constant(ir.IntType(32), 0))
+            return true_block, false_block, else_stmt_index
+        
+        # Ensure both blocks have at least one instruction to prevent empty blocks
+        # Position at true block and add a no-op instruction
+        current_pos = self.builder.block
+        self.builder.position_at_end(true_block)
+        temp_val = ir.Constant(ir.DoubleType(), 0.0)
+        if "noop_var" not in self.module.globals:
+            noop_global = ir.GlobalVariable(self.module, ir.DoubleType(), name="noop_var")
+            noop_global.linkage = 'internal'
+            noop_global.global_constant = False
+            noop_global.initializer = temp_val
+        else:
+            noop_global = self.module.get_global("noop_var")
+        self.builder.store(temp_val, noop_global)
+        
+        # Position at false block and add a no-op instruction
+        self.builder.position_at_end(false_block)
+        self.builder.store(temp_val, noop_global)
+        
+        # Restore builder position
+        self.builder.position_at_end(current_pos)
+        
+        # Return context for the main loop to handle
+        return true_block, false_block, else_stmt_index
+
+    def _codegen_if_simple(self, stmt, line_stmts=None, stmt_index=None):
+        """Simple IF codegen that works like the Python interpreter"""
+        # Evaluate the condition
+        condition_val = self._codegen_expr(stmt._tokens)
+        
+        # Compare to zero to get boolean condition
+        zero = ir.Constant(ir.DoubleType(), 0.0)
+        condition = self.builder.fcmp_ordered("!=", condition_val, zero, name="if_condition")
+        
+        # Find where the ELSE statement is on this line (if any)
+        else_stmt_index = None
+        if line_stmts and stmt_index is not None:
+            for i in range(stmt_index + 1, len(line_stmts)):
+                if isinstance(line_stmts[i], ParsedStatementElse):
+                    else_stmt_index = i
+                    break
+        
+        # Create blocks
+        func = self.builder.block.function
+        true_block = func.append_basic_block(name=f"if_true_{stmt_index}_{self.current_line_index}")
+        if else_stmt_index is not None:
+            false_block = func.append_basic_block(name=f"if_else_{stmt_index}_{self.current_line_index}")
+        else:
+            false_block = func.append_basic_block(name=f"if_false_{stmt_index}_{self.current_line_index}")
+        after_block = func.append_basic_block(name=f"if_after_{stmt_index}_{self.current_line_index}")
+        
+        # Branch based on condition
+        if not self.builder.block.is_terminated:
+            self.builder.cbranch(condition, true_block, false_block)
+        
+        # TRUE block: execute THEN statements
+        self.builder.position_at_end(true_block)
+        if line_stmts and stmt_index is not None:
+            k = stmt_index + 1
+            while k < len(line_stmts) and not isinstance(line_stmts[k], ParsedStatementElse):
+                self._generate_statement_ir(line_stmts[k], line_stmts, k)
+                if self.builder.block.is_terminated:
+                    break
+                k += 1
+        
+        # Branch to after block if not terminated
+        if not self.builder.block.is_terminated:
+            self.builder.branch(after_block)
+        
+        # FALSE block: execute ELSE statements or jump to after
+        self.builder.position_at_end(false_block)
+        if else_stmt_index is not None:
+            # Execute ELSE statements
+            k = else_stmt_index + 1
+            while k < len(line_stmts):
+                self._generate_statement_ir(line_stmts[k], line_stmts, k)
+                if self.builder.block.is_terminated:
+                    break
+                k += 1
+        
+        # Branch to after block if not terminated
+        if not self.builder.block.is_terminated:
+            self.builder.branch(after_block)
+        
+        # Continue execution from after block
+        self.builder.position_at_end(after_block)
 
     def _codegen_goto(self, stmt):
         target_line = int(stmt.destination)
@@ -1623,6 +1650,16 @@ class LLVMCodeGenerator:
                     self.builder.branch(self.line_blocks[target_line])
         else:
             raise Exception(f"GOTO/GOSUB target line not found: {target_line}")
+
+    def _codegen_else(self, stmt):
+        """Generate LLVM IR for ELSE - jump to next line"""
+        if not self.builder.block.is_terminated:
+            # Find next line and jump to it
+            if self.current_line_index + 1 < len(self.program):
+                next_line_num = self.program[self.current_line_index + 1].line
+                self.builder.branch(self.line_blocks[next_line_num])
+            else:
+                self.builder.ret(ir.Constant(ir.IntType(32), 0))
 
     def _push_return_address(self, line_number):
         """Push a return address onto the runtime stack"""
