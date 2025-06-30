@@ -26,6 +26,10 @@ This is a really nice version of Star Trek in the browser. I believe it's a rewr
 
 https://coding-horror.github.io/basic-computer-games/84_Super_Star_Trek/javascript/index.html
 
+## Other Versions of BASIC
+There are so many of them: 
+https://github.com/JohnBlood/awesome-basic?tab=readme-ov-file
+
 ##  BASIC Language references
  1. https://madexp.com/wp-content/uploads/2018/02/Microsoft_Basic_8086Xenix_Reference.pdf
  1. http://www.classiccmp.org/cini/pdf/Apple/AppleSoft%20II%20Basic%20Programming%20Manual.PDF
