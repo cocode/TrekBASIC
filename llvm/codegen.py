@@ -29,6 +29,15 @@ class LLVMCodeGenerator:
         # Declare scanf function for input
         scanf_type = ir.FunctionType(ir.IntType(32), [ir.IntType(8).as_pointer()], var_arg=True)
         self.scanf = ir.Function(self.module, scanf_type, name="scanf")
+        
+        # Declare fgets function for reading lines (better for string input)
+        fgets_type = ir.FunctionType(ir.IntType(8).as_pointer(), 
+                                   [ir.IntType(8).as_pointer(), ir.IntType(32), ir.IntType(8).as_pointer()])
+        self.fgets = ir.Function(self.module, fgets_type, name="fgets")
+        
+        # Declare getchar function for reading single characters
+        getchar_type = ir.FunctionType(ir.IntType(32), [])
+        self.getchar = ir.Function(self.module, getchar_type, name="getchar")
 
         # Declare strcat for string concatenation
         strcat_type = ir.FunctionType(ir.IntType(8).as_pointer(), 
@@ -46,6 +55,10 @@ class LLVMCodeGenerator:
         # Declare strcmp for string comparison
         strcmp_type = ir.FunctionType(ir.IntType(32), [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer()])
         self.strcmp = ir.Function(self.module, strcmp_type, name="strcmp")
+        
+        # Declare strchr for finding characters in strings
+        strchr_type = ir.FunctionType(ir.IntType(8).as_pointer(), [ir.IntType(8).as_pointer(), ir.IntType(32)])
+        self.strchr = ir.Function(self.module, strchr_type, name="strchr")
         
         # Declare strncpy for copying strings with length limit
         strncpy_type = ir.FunctionType(ir.IntType(8).as_pointer(), [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer(), ir.IntType(64)])
@@ -604,23 +617,31 @@ class LLVMCodeGenerator:
                 buffer_size = ir.Constant(ir.IntType(64), 256)
                 input_buffer = self.builder.call(self.malloc, [buffer_size], name=f"input_buffer_{var_name}")
                 
-                # Create format string for string input ("%255s" to prevent buffer overflow)
-                string_fmt = "%255s\0"
-                c_string_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(string_fmt)), 
-                                         bytearray(string_fmt.encode("utf8")))
-                string_fmt_name = f"string_input_fmt_{var_name}"
-                if string_fmt_name not in self.module.globals:
-                    global_string_fmt = ir.GlobalVariable(self.module, c_string_fmt.type, name=string_fmt_name)
-                    global_string_fmt.linkage = 'internal'
-                    global_string_fmt.global_constant = True
-                    global_string_fmt.initializer = c_string_fmt
+                # Initialize buffer to empty string
+                null_char = ir.Constant(ir.IntType(8), 0)
+                self.builder.store(null_char, input_buffer)
+                
+                # Use scanf with format that handles empty input
+                # %[^\n] reads everything up to newline, allows empty input
+                line_fmt = "%[^\n]\0"
+                c_line_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(line_fmt)), 
+                                       bytearray(line_fmt.encode("utf8")))
+                line_fmt_name = f"line_input_fmt_{var_name}"
+                if line_fmt_name not in self.module.globals:
+                    global_line_fmt = ir.GlobalVariable(self.module, c_line_fmt.type, name=line_fmt_name)
+                    global_line_fmt.linkage = 'internal'
+                    global_line_fmt.global_constant = True
+                    global_line_fmt.initializer = c_line_fmt
                 else:
-                    global_string_fmt = self.module.get_global(string_fmt_name)
+                    global_line_fmt = self.module.get_global(line_fmt_name)
                 
-                string_fmt_ptr = self.builder.bitcast(global_string_fmt, ir.IntType(8).as_pointer())
+                line_fmt_ptr = self.builder.bitcast(global_line_fmt, ir.IntType(8).as_pointer())
                 
-                # Call scanf to read the string
-                self.builder.call(self.scanf, [string_fmt_ptr, input_buffer])
+                # Call scanf to read the line (may be empty)
+                scanf_result = self.builder.call(self.scanf, [line_fmt_ptr, input_buffer])
+                
+                # Consume the newline character left by scanf
+                self.builder.call(self.getchar, [])
                 
                 # Convert string to uppercase if UPPERCASE_INPUT is enabled
                 if UPPERCASE_INPUT:
