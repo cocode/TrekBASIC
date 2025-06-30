@@ -3,9 +3,11 @@
 Don't start working on these, without asking first
 
 ### Else
-Else is not yet impleted.
+I don't believe that two ELSEs on one line work.
+
 ### Renumber 
 Renumber is not working correctly
+
 ### stmts command
 The 'stmts' command prints an extra : before the goto on something simple like "100 if x=1 then goto 100"
 ### READ vs INPUT
@@ -41,11 +43,27 @@ We partially fixed parsing with inserting colons to force
 statement boundaries, but the real answer is a proper pull parser.
 That will fix the rem issue, below, as well.
 
-# REM
-We don't tokenize a rem statement in the middle of a line correctly.
+# REM - FIXED
+- [x] We don't tokenize a rem statement in the middle of a line correctly.
 1300 I=RND(1):REM IF INP(1)=13 THEN 1300
 tokenizes as
 1300 LET I=RND(1)|	REM |	THEN|	GOTO 1300|
 which is an infinite loop!
 It should be
 1300 LET I=RND(1)| REM THEN GOTO 1300
+
+FIXED: Added break in tokenize_statements() when REM is encountered.
+
+
+### Features
+Add a watch commmand, so someone can edit in the editor of their choice, and TrekBasic will reload it automatically.
+recommended:  watchdog library
+
+### Fix unusual object initialization in renumber methods
+- [ ] Replace `object.__new__()` pattern in `ParsedStatementGo.renumber()` and `ParsedStatementOnGoto.renumber()`
+- Current code uses `object.__new__(ParsedStatementGo)` to bypass constructor during renumbering
+- Better alternatives:
+  - Add factory method like `from_renumber()`
+  - Add `skip_parsing` flag to constructor
+  - Use `copy.deepcopy()` and modify attributes
+- Files affected: `basic_parsing.py` lines ~230 and ~280 
