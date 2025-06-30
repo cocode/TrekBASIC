@@ -30,6 +30,10 @@ class LLVMCodeGenerator:
         sprintf_type = ir.FunctionType(ir.IntType(32), [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer()], var_arg=True)
         self.sprintf = ir.Function(self.module, sprintf_type, name="sprintf")
         
+        # Declare sscanf function for parsing strings
+        sscanf_type = ir.FunctionType(ir.IntType(32), [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer()], var_arg=True)
+        self.sscanf = ir.Function(self.module, sscanf_type, name="sscanf")
+        
         # Declare scanf function for input
         scanf_type = ir.FunctionType(ir.IntType(32), [ir.IntType(8).as_pointer()], var_arg=True)
         self.scanf = ir.Function(self.module, scanf_type, name="scanf")
@@ -695,7 +699,7 @@ class LLVMCodeGenerator:
                 # Store the buffer pointer in the variable
                 self.builder.store(input_buffer, self.symbol_table[var_name])
             else:
-                # Numeric variable - read double input
+                # Numeric variable - read entire line then parse number
                 if var_name not in self.symbol_table:
                     # Create the variable if it doesn't exist
                     global_var = ir.GlobalVariable(self.module, ir.DoubleType(), name=f"global_{var_name}")
@@ -704,11 +708,40 @@ class LLVMCodeGenerator:
                     global_var.initializer = ir.Constant(ir.DoubleType(), 0.0)
                     self.symbol_table[var_name] = global_var
                 
-                # Create format string for double input
+                # Allocate buffer for line input (same approach as string input)
+                buffer_size = ir.Constant(ir.IntType(64), 256)
+                input_buffer = self.builder.call(self.malloc, [buffer_size], name=f"numeric_input_buffer_{var_name}")
+                
+                # Initialize buffer to empty string
+                null_char = ir.Constant(ir.IntType(8), 0)
+                self.builder.store(null_char, input_buffer)
+                
+                # Read entire line (same as string input)
+                line_fmt = "%[^\n]\0"
+                c_line_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(line_fmt)), 
+                                       bytearray(line_fmt.encode("utf8")))
+                line_fmt_name = f"numeric_line_input_fmt_{var_name}"
+                if line_fmt_name not in self.module.globals:
+                    global_line_fmt = ir.GlobalVariable(self.module, c_line_fmt.type, name=line_fmt_name)
+                    global_line_fmt.linkage = 'internal'
+                    global_line_fmt.global_constant = True
+                    global_line_fmt.initializer = c_line_fmt
+                else:
+                    global_line_fmt = self.module.get_global(line_fmt_name)
+                
+                line_fmt_ptr = self.builder.bitcast(global_line_fmt, ir.IntType(8).as_pointer())
+                
+                # Call scanf to read the line (may be empty)
+                scanf_result = self.builder.call(self.scanf, [line_fmt_ptr, input_buffer])
+                
+                # Consume the newline character left by scanf
+                self.builder.call(self.getchar, [])
+                
+                # Now parse the number from the string using sscanf
                 double_fmt = "%lf\0"
                 c_double_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(double_fmt)), 
                                          bytearray(double_fmt.encode("utf8")))
-                double_fmt_name = f"double_input_fmt_{var_name}"
+                double_fmt_name = f"double_parse_fmt_{var_name}"
                 if double_fmt_name not in self.module.globals:
                     global_double_fmt = ir.GlobalVariable(self.module, c_double_fmt.type, name=double_fmt_name)
                     global_double_fmt.linkage = 'internal'
@@ -719,12 +752,9 @@ class LLVMCodeGenerator:
                 
                 double_fmt_ptr = self.builder.bitcast(global_double_fmt, ir.IntType(8).as_pointer())
                 
-                # Call scanf to read the double directly into the variable
+                # Use sscanf to parse the number from the string
                 var_ptr = self.symbol_table[var_name]
-                self.builder.call(self.scanf, [double_fmt_ptr, var_ptr])
-                
-                # Consume the newline character left by scanf (consistent with string input)
-                self.builder.call(self.getchar, [])
+                self.builder.call(self.sscanf, [input_buffer, double_fmt_ptr, var_ptr])
 
     def _codegen_on_goto(self, stmt):
         """Generate LLVM IR for an ON...GOTO or ON...GOSUB statement"""
