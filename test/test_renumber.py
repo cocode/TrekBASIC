@@ -246,7 +246,7 @@ class TestRenumber(TestCase):
         ]
         
         shell = BasicShell()
-        shell.load_from_string("\\n".join(test_program))
+        shell.load_from_string(test_program)
         original_program = shell.executor._program
         self.assertEqual(len(original_program), 15, "Original program should have 15 lines")
         
