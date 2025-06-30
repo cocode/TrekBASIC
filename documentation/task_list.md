@@ -40,6 +40,7 @@ with a "*" or something
 We partially fixed parsing with inserting colons to force 
 statement boundaries, but the real answer is a proper pull parser.
 That will fix the rem issue, below, as well.
+
 # REM
 We don't tokenize a rem statement in the middle of a line correctly.
 1300 I=RND(1):REM IF INP(1)=13 THEN 1300

@@ -1,16 +1,11 @@
 # Future
 
-It would be interesting to make BASIC available in more places, such as web
-assembly. 
+## Targets
+By using python and LLVM, we can run TrekBasic almost anywhere. 
 
-
-
-LLVM could be used to generate code for multiple backends, including wasm.
-I see no particular need for using basic to script web applications, but 
+We'd like to run in the browser, as some point. While I see no particular need for using basic to script web applications, but 
 the idea amuses me. 
 
-Using LLVM to build a compiler would provide much better
-performance. Not that anyone uses BASIC to get high performance. 
 
 It would be nice to have pluggable parsers. 
 Every old basic had a slightly different syntax, 
@@ -23,7 +18,7 @@ a syntactic different, not a semantic.
 Support different BASIC dialects. 
    
    Currently, TrekBasic only supports one dialect, the one that runs 
-   programs/superstartrek.bas. 
+   programs/superstartrek.bas. It 
    
    This document describes the compatibility issues between various versions of BASIC: 
     https://files.eric.ed.gov/fulltext/ED083819.pdf
