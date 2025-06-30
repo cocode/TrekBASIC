@@ -227,8 +227,14 @@ class BasicShell:
             if index is None:
                 # Program has finished running.
                 index = 0
+        current_location =  self.executor.get_current_location()
+        # Get the lines to list.
         lines = self.executor.get_program_lines(index, count)
-        for line in lines:
+        for local_line_offset, line in enumerate(lines):
+            if local_line_offset + index == current_location.index:
+                print("*",end="")
+            else:
+                print(" ", end="")
             print(line)
 
     def format_cl(self, cl):
@@ -369,6 +375,15 @@ class BasicShell:
         :param args:  Not used.
         :return: None
         """
+        # TODO Next from non-running state should run the program and run the first line.
+        # But for now, print an error.
+        if not self.executor._run in (RunStatus.RUN, RunStatus.BREAK_STEP):
+            print("The program must be running, before you can single step.")
+            print("You can use a breakpoint to get started.")
+            # NOTE: The program starts in RUN mode, but after running once, its state is END, so
+            # "n" after a program has terminated is the only case where this happens.
+            return
+
         self.print_current("")
         self.cmd_continue("step")
 
