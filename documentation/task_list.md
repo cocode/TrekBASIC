@@ -47,3 +47,7 @@ Do this on an as-needed basis, don't just throw everything in.
 
 ### Warn on Exit if Editted
 Now that we ca replace lines in the shell, we should warn before exiting, if the program was modified.
+
+### Support "OPTION BASE"
+Add OPTION BASE statement to set the starting index of array variables as either 0 or 1
+Found in GWBASIC
