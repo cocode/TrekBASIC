@@ -3,8 +3,24 @@
 
 Full direction can be found here; https://coding-horror.github.io/basic-computer-games/84_Super_Star_Trek/javascript/index.html
 
-## Navigation
+Short directions
+Use the command srs to see what is in your current area
 
+Use the command lrs to see what is in adjacent squares
+
+213 in LRS output means 2 klingons, 1 starbase, and 3 stars.
+
+Use the command "com", then "0" to see a full quadrant map. It only shows information for
+quadrants you have visited or scanned.
+
+Move around the map, shooting Klingons with commands "pha" or "tor". If you run low on energy or 
+take damage, find a starbase to recharge.
+
+The game is turn limited, so don't waste too much time wandering around.
+
+
+## Navigation
+```
 ┌─────┬─────┬─────┐
 │  4  │  3  │  2  │
 │  ↖  │  ↑  │  ↗  │
@@ -15,6 +31,8 @@ Full direction can be found here; https://coding-horror.github.io/basic-computer
 │  6  │  7  │  8  │
 │  ↙  │  ↓  │  ↘  │
 └─────┴─────┴─────┘
+```
+
 ### Warp Factors
 Warp factors also can contain decimals.
 
