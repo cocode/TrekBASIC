@@ -17,7 +17,39 @@ lexer_token = namedtuple("Token", "token type")
 # next: This is an int that DOES NOT represent the program line number, it represents an index into the list of lines, or -1
 #       for the last line.
 # source: The original line as a str
-ProgramLine = namedtuple("ProgramLine", "line stmts next source") # TODO Change "next" to "next_offset" for clarity.
+ProgramLineBase = namedtuple("ProgramLine", "line stmts next source") # TODO Change "next" to "next_offset" for clarity.
+
+class ProgramLine(ProgramLineBase):
+    """
+    Subclass of ProgramLine that:
+      - compares equality based on (line, stmts, next), ignoring `source`
+      - provides a more compact string representation
+    """
+    def __eq__(self, other):
+        if not isinstance(other, ProgramLine):
+            return NotImplemented
+        # compare only the fields you care about; here we ignore `source`
+        if self.line != other.line:
+            print("Line mismatch")
+        if self.stmts != other.stmts:
+            print("Stmts mismatch")
+            for s in range(0, len(self.stmts)):
+                print(F"{self.stmts[s]} {other.stmts[s]} {self.stmts[s] == other.stmts[s]}")
+        if self.next != other.next:
+            print("Next mismatch")
+        return (self.line, self.stmts, self.next) == (other.line, other.stmts, other.next)
+
+    def __str__(self):
+        stmts_str = ", ".join(str(stmt) for stmt in self.stmts)
+        return (
+            f"ProgramLine(line={self.line}, stmts=[{stmts_str}], "
+            f"next={self.next}, source={self.source!r})"
+        )
+
+    def __repr__(self):
+        # optional: keep repr in sync with str
+        return str(self)
+
 
 # Symbol table entry
 # Value - Value of the variable
