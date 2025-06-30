@@ -568,8 +568,8 @@ class LLVMCodeGenerator:
             if prompt.startswith('"') and prompt.endswith('"'):
                 prompt = prompt[1:-1]
             
-            # Create format string for prompt (no newline)
-            prompt_fmt = prompt + "\0"
+            # Create format string for prompt with space after it (BASIC convention)
+            prompt_fmt = prompt + " \0"
             c_prompt_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(prompt_fmt)), 
                                      bytearray(prompt_fmt.encode("utf8")))
             prompt_fmt_name = f"input_prompt_{hash(prompt)}"
