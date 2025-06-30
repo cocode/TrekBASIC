@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from basic_statements import Keywords
 from basic_types import ProgramLine, lexer_token
-from basic_loading import tokenize_line, load_program, tokenize
+from basic_loading import tokenize_line, load_program, tokenize, preprocess_then_else
 from basic_parsing import ParsedStatementIf
 from basic_interpreter import Executor
 
@@ -55,7 +55,7 @@ class Test(TestCase):
         results = tokenize_line(line)
         self.assertTrue(isinstance(results, ProgramLine))
         self.assertEqual(370, results.line)
-        self.assertEqual(2, len(results.stmts))
+        self.assertEqual(3, len(results.stmts))
 
 
     def test_case_insensitive_keywords(self):
@@ -65,7 +65,7 @@ class Test(TestCase):
         results = tokenize_line(line)
         self.assertTrue(isinstance(results, ProgramLine))
         self.assertEqual(370, results.line)
-        self.assertEqual(2, len(results.stmts))
+        self.assertEqual(3, len(results.stmts))
 
     def test_multiple(self):
         """
@@ -138,5 +138,12 @@ class Test(TestCase):
     def test_ne(self):
         line = '8675 IF LEN(A$)<>3THEN PRINT"ERROR":STOP'
         statements = tokenize_line(line)
-        self.assertEqual(3, len(statements.stmts))
+        self.assertEqual(4, len(statements.stmts))
         self.assertEqual(ParsedStatementIf, type(statements.stmts[0]))
+
+    def test_add_colons(self):
+        a = preprocess_then_else("If x=b then c=d else y=x")
+        self.assertEqual("If x=b :then: c=d :else: y=x", a)
+        # try nested.
+        a = preprocess_then_else("If x=b then c=d: e=f if y=j then p=q else y=x else z=y")
+        self.assertEqual("If x=b :then: c=d: e=f if y=j :then: p=q :else: y=x :else: z=y", a)

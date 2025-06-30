@@ -10,7 +10,7 @@ class TestFindNextStrNotQuoted(unittest.TestCase):
 
     def test_inside_quotes_only(self):
         s = '"ELSE"'
-        self.assertEqual(find_next_str_not_quoted(s, 'ELSE'), (None, None))
+        self.assertEqual(find_next_str_not_quoted(s, 'ELSE'), None)
 
     def test_mixed_quoted_and_unquoted(self):
         s = 'start "ELSE" middle ELSE end'
@@ -24,7 +24,7 @@ class TestFindNextStrNotQuoted(unittest.TestCase):
 
     def test_no_occurrence(self):
         s = 'no matching word here'
-        self.assertEqual(find_next_str_not_quoted(s, 'ELSE'), (None, None))
+        self.assertEqual(find_next_str_not_quoted(s, 'ELSE'), None)
 
     def test_target_with_special_chars(self):
         s = 'look for +*? outside quotes +*?'

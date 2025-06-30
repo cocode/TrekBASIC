@@ -21,8 +21,8 @@ try:
 except ImportError:
     readline = None  # Windows doesn't have readline by default
 
-from basic_parsing import ParsedStatement, ParsedStatementIf
-from basic_types import UndefinedSymbol, BasicSyntaxError, SymbolType, ProgramLine
+from basic_parsing import ParsedStatement, ParsedStatementIf, ParsedStatementThen
+from basic_types import UndefinedSymbol, BasicSyntaxError, SymbolType, ProgramLine, BasicRuntimeError
 
 from basic_interpreter import Executor
 from basic_loading import load_program, tokenize, tokenize_line
@@ -385,7 +385,11 @@ class BasicShell:
         if args=="step":
             single_step = True
 
-        rc = self.executor.run_program(self._breakpoints, self._data_breakpoints, single_step=single_step)
+        try:
+            rc = self.executor.run_program(self._breakpoints, self._data_breakpoints, single_step=single_step)
+        except BasicRuntimeError as e:
+            print("Runtime Error: ", e.message)
+            return
         if rc == RunStatus.BREAK_CODE:
             print("Breakpoint!")
             self.print_current(None)
@@ -394,6 +398,8 @@ class BasicShell:
             line = self.executor.get_current_line()
             print(F"Data Breakpoint before line {line.line} clause: {loc.offset}")
             self.print_current(None)
+        elif rc == RunStatus.BREAK_STEP:
+            print(F"Single Step Done {rc}.")
         else:
             print(F"Program completed with return of {rc}.")
 
@@ -441,12 +447,18 @@ class BasicShell:
         100 A = 3 becomes 100 LET A=3
         """
         source = ""
-        last_was_if = False
+        last_was_then = False  # TODO for ELSE?
+        last_was_if = False  # TODO for ELSE?
         for stmt in stmts:
-            if not last_was_if and source:
-                source += ":"
+            if source:
+                # Only add colons, after the first statement
+                if not (last_was_then or last_was_if):
+                    source += ":"
+                else:
+                    source += " "
             source += str(stmt)
             last_was_if = isinstance(stmt, ParsedStatementIf)
+            last_was_then = isinstance(stmt, ParsedStatementThen)
         return source
 
     def renumber(self, old_program: list[ProgramLine], line_map: dict[int:int], start_line: int, increment: int):

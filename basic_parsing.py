@@ -28,15 +28,12 @@ class ParsedStatement:
         For example, we should tokenize expressions here, so we don't have to do it every
         time we execute the line.
         :param keyword: The keyword for the line, for example: IF
-        :param args: Any unparsed arguments. ParsedSatement subclasses may consume this. May be "", may not be None
+        :param args: Any unparsed arguments. ParsedStatement subclasses may consume this. May be "", may not be None
         """
         assert args is not None
         self.keyword = keyword
         args = args.strip()
         self.args = args
-
-    def get_additional(self):
-        return [] # Only used by if statement
 
     def renumber(self, line_map):
         return copy.copy(self)
@@ -59,7 +56,7 @@ class ParsedStatementNoArgs(ParsedStatement):
     def __init__(self, keyword, args):
         super().__init__(keyword, "")
         self.keyword = keyword  # TODO Do we need this, it's in the base class?
-        assert_syntax(len(args.strip())== 0, "Command does not take any arguments.")
+        assert_syntax(len(args.strip()) == 0, "Command does not take any arguments.")
         self.args = ""
 
 class ParsedStatementIf(ParsedStatement):
@@ -80,33 +77,21 @@ class ParsedStatementIf(ParsedStatement):
 
     An IF statement runs until it hits the end of a line, or it hits an else statement.
 
+    New version: We don't see the THEN statement here. We just get IF expression
     """
     # IF...THEN currently works be branching to the next line, if the condition is False.
     # For else, it would branch to after the ELSE clause, if the condition is false, on the same line.
     # superstartrek3.bas only uses the ELSE on the same line as the THEN.
-    # We need to parse the clauses after then ELSE, and add them to the line, like we now do with _additional
     # and we need to know the offset of the statements after the else.
     def __init__(self, keyword, args):
         super().__init__(keyword, "")
-        # then = args.upper().find("THEN") # TODO watch for quotes
-        # assert_syntax(then != -1, "No THEN found for IF")
-        then, then_end = find_next_str_not_quoted(args.upper(), "THEN")
-        assert_syntax(then is not None, "No THEN found for IF")
-        then_clause = args[then+len("THEN"):]
-        self._additional = then_clause.strip()
         lexer = get_lexer()
-        left_over = args[:then]
+        left_over = args
         self._tokens = lexer.lex(left_over)
-
-    def get_additional(self):
-        return self._additional
-
-    def clear_additional(self):
-        self._additional = ""
 
     def __str__(self):
         clause = tokens_to_str(self._tokens)
-        return F"{self.keyword.name} {clause} THEN {self._additional}"
+        return F"{self.keyword.name} {clause}"
 
 class ParsedStatementFor(ParsedStatement):
     """
@@ -119,7 +104,7 @@ class ParsedStatementFor(ParsedStatement):
         step = args.find("STEP")
         assert_syntax(eq != -1, "No = found for FOR")
         assert_syntax(to != -1, "No TO found for FOR")
-        self._index_clause = args[:eq].strip() # TODO convert to int here.
+        self._index_clause = args[:eq].strip()  # TODO convert to int here.
         self._start_clause = args[eq+1:to].strip()
         end_to = step if step != -1 else None
         self._to_clause = args[to+2:end_to].strip()
@@ -236,7 +221,7 @@ class ParsedStatementGo(ParsedStatement):
 
     def __str__(self):
         if hasattr(self, '_is_computed') and self._is_computed:
-            l2 = [str(l) for l in self._target_lines]
+            l2 = [str(line) for line in self._target_lines]
             return F"{self.keyword.name} {self._expression} OF {','.join(l2)}"
         else:
             return F"{self.keyword.name} {self.destination}"
@@ -281,12 +266,23 @@ class ParsedStatementOnGoto(ParsedStatement):
             line = line.strip()
             assert_syntax(str.isdigit(line), F"Invalid line {line} for target of ON GOTO/GOSUB")
             line = int(line)
-            lines2.append(line) # Why are these ints?
+            lines2.append(line)  # Why are these ints?
         self._target_lines = lines2
 
     def __str__(self):
-        l2 = [str(l) for l in self._target_lines]
+        l2 = [str(line) for line in self._target_lines]
         return F"{self.keyword.name} {self._expression} {self._op} {','.join(l2)}"
+
+
+class ParsedStatementRem(ParsedStatement):
+    """
+    Handles REM statements
+    """
+    def __init__(self, keyword, args):
+        super().__init__(keyword, "")
+
+    def __str__(self):
+        return F"{self.keyword.name} {self.args}"
 
 
 class ParsedStatementLet(ParsedStatement):
@@ -301,7 +297,7 @@ class ParsedStatementLet(ParsedStatement):
         try:
             variable, value = args.split("=", 1)
         except Exception as e:
-            raise BasicSyntaxError(F"Error in expression. No '='.")
+            raise BasicSyntaxError(F"Error in expression. No '='.") from e
 
         variable = variable.strip()
 
@@ -556,6 +552,7 @@ class ParsedStatementRestore(ParsedStatement):
     """
     Handles RESTORE statements - optionally takes a line number
     """
+
     def __init__(self, keyword, args):
         super().__init__(keyword, "")
         args = args.strip()
@@ -567,8 +564,31 @@ class ParsedStatementRestore(ParsedStatement):
                 raise BasicSyntaxError(f"RESTORE requires a line number, got '{args}'")
             self._line_number = int(args)
 
+def __str__(self):
+    if self._line_number is None:
+        return self.keyword.name
+    else:
+        return F"{self.keyword.name} {self._line_number}"
+
+class ParsedStatementElse(ParsedStatement):
+    """
+    Handles THEN statements - No Args, No Op.
+    TODO Maybe merge with THEN, they are identical
+    """
+
+    def __init__(self, keyword, _):
+        super().__init__(keyword, "")
+
     def __str__(self):
-        if self._line_number is None:
-            return self.keyword.name
-        else:
-            return F"{self.keyword.name} {self._line_number}"
+        return self.keyword.name
+
+class ParsedStatementThen(ParsedStatement):
+    """
+    Handles ELSE statements - No Args, No Op.
+    """
+
+    def __init__(self, keyword, _):
+        super().__init__(keyword, "")
+
+    def __str__(self):
+        return self.keyword.name

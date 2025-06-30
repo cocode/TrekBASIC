@@ -1,6 +1,7 @@
 """
 Main program for running a basic program from the command line.
 """
+import os
 import sys
 import argparse
 import pprint
@@ -18,7 +19,9 @@ if __name__ == "__main__":
     parser.add_argument('--symbols', '-s', action='store_true', help="Dump the symbol table on exit.")
     parser.add_argument('--time', action='store_true', help="Time the execution (excluding parsing/loading).")
     args = parser.parse_args()
-
+    if not os.path.exists(args.program):
+        if os.path.exists(args.program+".bas"):
+            args.program = args.program+".bas"
     try:
         program = load_program(args.program)
     except BasicSyntaxError as bse:
@@ -28,7 +31,7 @@ if __name__ == "__main__":
         print(F"File not found {f}")
         sys.exit(1)
     except ValueError as f:
-        print(F"XXXXXX Value Error {f}")
+        print(F"Value Error {f}")
         sys.exit(1)
 
     if args.trace:

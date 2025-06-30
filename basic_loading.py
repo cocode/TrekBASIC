@@ -1,6 +1,7 @@
 """
 This module contains the code the load and parse BASIC programs
 """
+from basic_find_str_quotes import find_next_str_not_quoted
 from basic_types import ProgramLine, BasicSyntaxError, assert_syntax
 from basic_utils import smart_split
 from basic_statements import Keywords
@@ -33,23 +34,18 @@ def tokenize_statements(commands_text:list[str]):
                 parsed_statement = parser_for_keyword(cmd, command[len(cmd.name):])
                 break
         else:
-            # Assignment expression is the default
+            # Assignment expression is the default, unless you are following a THEN.
+            # Following a THEN you can just have 100, for example. Short for goto 100
             cmd = Keywords.LET
+
+            if list_of_statements:
+                if list_of_statements[-1].keyword == Keywords.THEN and str.isdigit(command):
+                    cmd = Keywords.GOTO
+
             parser_for_keyword = cmd.value.get_parser_class()
             parsed_statement = parser_for_keyword(cmd, command)
 
         list_of_statements.append(parsed_statement)
-        # This picks up the clauses after then "THEN" in an "IF ... THEN ..."
-        additional_text = parsed_statement.get_additional()
-        if additional_text:
-            commands_array = smart_split(additional_text)
-            for i in range(len(commands_array)):
-                # Handle special case of "IF x THEN X=3:100"
-                if commands_array[i].strip().isdigit():
-                    commands_array[i] = "GOTO "+commands_array[i]
-            additional = tokenize_statements(commands_array)
-            list_of_statements.extend(additional)
-            parsed_statement.clear_additional()
 
     return list_of_statements
 
@@ -69,16 +65,42 @@ def tokenize_line(program_line: str) -> ProgramLine:
     """
     if len(program_line) == 0:
         return None
+
+    # Get the line number
     try:
         number, partial = program_line.split(" ", 1)
     except ValueError as v:
         raise BasicSyntaxError("Syntax Error in: " + program_line) from v
     assert_syntax(str.isdigit(number), F"Invalid line number : {number} in {program_line}")
     number = int(number)
+    # Parse the remainder of the line.
     list_of_statements = tokenize_remaining_line(partial, number)
     s = ProgramLine(number, list_of_statements, -1, source=program_line)
     return s
 
+
+def add_colons(partial, target):
+    """
+    This function adds colons to a string, to simplify parsing.
+    """
+    offset = 0
+    while (found := find_next_str_not_quoted(partial, target, offset) ) is not None:
+        start, end = found
+        partial = partial[:start] + ":" + target  + ":" + partial[end:]
+        offset = end + 1
+    return partial
+
+def preprocess_then_else(source: str):
+    """
+    Breaks between statements are normally marked by a colon, but there are a couple of places the breaks are implied,
+    and that's with THEN and ELSE.
+
+    Rather than rewrite the whole parser (probably should be done), we are going to simply add a colon to mark
+    the end of a statement explicitly.
+    """
+    a = add_colons(source, "else")
+    b = add_colons(a, "then")
+    return b
 
 def tokenize_remaining_line(partial: str, number: int) -> list:
     """
@@ -88,7 +110,8 @@ def tokenize_remaining_line(partial: str, number: int) -> list:
     if partial.upper().strip().startswith(Keywords.REM.name):
         commands_text = [partial]
     else:
-        commands_text = smart_split(partial)
+        preprocessed = preprocess_then_else(partial)
+        commands_text = smart_split(preprocessed)
     try:
         list_of_statements = tokenize_statements(commands_text)
     except BasicSyntaxError as bse:

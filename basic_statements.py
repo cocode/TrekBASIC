@@ -9,7 +9,7 @@ from basic_types import BasicSyntaxError, assert_syntax, is_valid_identifier
 from basic_types import SymbolType, RunStatus, BasicRuntimeError
 
 from basic_parsing import ParsedStatement, ParsedStatementIf, ParsedStatementFor, ParsedStatementOnGoto, \
-    ParsedStatementTrace
+    ParsedStatementTrace, ParsedStatementElse, ParsedStatementThen, ParsedStatementRem
 from basic_parsing import ParsedStatementLet, ParsedStatementNoArgs, ParsedStatementDef, ParsedStatementPrint
 from basic_parsing import ParsedStatementGo, ParsedStatementDim
 from basic_parsing import ParsedStatementInput, ParsedStatementNext
@@ -17,15 +17,18 @@ from basic_parsing import ParsedStatementData, ParsedStatementRead, ParsedStatem
 from basic_lexer import get_lexer
 from basic_expressions import Expression
 from basic_utils import TRACE_FILE_NAME
+from basic_interpreter import Executor
 
-def stmt_rem(_, stmt):
+def stmt_rem(executor: Executor, stmt):
     """
     Does nothing.
     :return:
     """
-    return None
+    # TODO: Currently we tokenize past a rem statement, and consider them valid statements.
+    # Need to fix that, but for now, just skip them
+    executor.goto_next_line()
 
-from basic_interpreter import Executor
+
 def stmt_print(executor: Executor, stmt:ParsedStatementPrint):
     """
     Prints output.
@@ -228,7 +231,7 @@ def stmt_if(executor, stmt):
     e = Expression()
     result = e.eval(stmt._tokens, symbols=executor._symbols)
     if not result:
-        executor.goto_next_line()
+        executor.goto_else()    # Continue execution after the else statement.
 
 
 def stmt_input(executor, stmt):
@@ -291,8 +294,13 @@ def stmt_on(executor, stmt):
 
 
 def stmt_end(executor, stmt):
-    print("Ending program")
     executor._run = RunStatus.END_CMD
+
+def stmt_else(executor, stmt):
+    executor.goto_next_line()
+
+def stmt_then(executor, stmt):
+    pass
 
 def stmt_stop(executor, stmt):
     print("Stopping program")
@@ -413,6 +421,7 @@ class Keywords(Enum):
     DEF = KB(stmt_def, ParsedStatementDef) # User defined functions
     DIM = KB(stmt_dim, ParsedStatementDim)
     END = KB(stmt_end, ParsedStatementNoArgs)
+    ELSE = KB(stmt_else, ParsedStatementElse)
     ERROR = KB(stmt_error, ParsedStatementNoArgs)
     FOR = KB(stmt_for, ParsedStatementFor)
     GOTO = KB(stmt_goto, ParsedStatementGo)
@@ -424,10 +433,11 @@ class Keywords(Enum):
     ON = KB(stmt_on, ParsedStatementOnGoto) # Computed gotos, gosubs
     PRINT = KB(stmt_print, ParsedStatementPrint)
     READ = KB(stmt_read, ParsedStatementRead)
-    REM = KB(stmt_rem, ParsedStatement)
+    REM = KB(stmt_rem, ParsedStatementRem)
     RESTORE = KB(stmt_restore, ParsedStatementRestore)
     RETURN = KB(stmt_return, ParsedStatementNoArgs)
     STOP = KB(stmt_stop, ParsedStatementNoArgs) # Variant of END
+    THEN = KB(stmt_then, ParsedStatementThen)
     TRACE = KB(stmt_trace, ParsedStatementTrace) # Trace program execution
     WIDTH = KB(stmt_width, ParsedStatement) # To support another version of superstartrek I found. Ignored
 

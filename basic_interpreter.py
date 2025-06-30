@@ -5,6 +5,7 @@ from collections import namedtuple, defaultdict
 import random
 
 import basic_functions
+from basic_parsing import ParsedStatementElse
 from basic_types import ProgramLine, BasicInternalError, assert_syntax, BasicSyntaxError
 from basic_types import SymbolType, RunStatus, BasicRuntimeError
 from basic_symbols import SymbolTable
@@ -165,9 +166,6 @@ class Executor:
             if self._coverage is not None:
                 self._coverage[current.line].add(self._location.offset)
 
-            # Advance to next statement, on this line or the next
-            self._location = self.get_next_stmt()
-
             if self._goto: # If any control transfer has happened.
                 if self._trace_file_like:
                     destination_line = self._program[self._goto.index].line
@@ -176,6 +174,10 @@ class Executor:
 
                 self._location = self._goto
                 self._goto = None
+            else:
+                # Advance to next statement, on this line or the next
+                self._location = self.get_next_stmt()
+
             if single_step:
                 self._run = RunStatus.BREAK_STEP
 
@@ -356,7 +358,7 @@ class Executor:
         Get a pointer to the next statement that would normally be executed.
         This is the next statement, if there are more statements on this line,
         or the next line.
-        This is used it for loops to set where the NEXT will return to
+        This is used in for loops to set where the NEXT will return to
         GOSUB should also use this, but don't yet.
         :return: ControlLocation Object, pointing to the next statement.
         """
@@ -385,11 +387,35 @@ class Executor:
         """
         location = self._get_next_line()
         if location is None:
-            # If condition was false, and if statement was last line of program.
+            # If the condition was false, and if statement was the last line of program.
             self._run = RunStatus.END_OF_PROGRAM
             return
 
-        self._goto_location(location) # why do we need to hunt for the line? We know the index, and can go directly.
+        self._goto_location(location)
+
+    def goto_else(self) -> None:
+        """
+        When an if then condition is false, we scan the line for an else statement.
+        transfers control to the statement after the else, or to the next line.
+        """
+        current_index = self._location.index
+        current_offset = self._location.offset
+        current_offset += 1
+        while current_offset < len(self._program[current_index].stmts):
+            if isinstance(self._program[current_index].stmts[current_offset], ParsedStatementElse):
+                current_offset += 1
+                # We want the statement AFTER the else, if any
+                if current_offset < len(self._program[current_index].stmts):
+                    location = ControlLocation(current_index, current_offset)
+                    self._goto_location(location)
+                    return
+                else:
+                    raise BasicSyntaxError("No clause with ELSE statement.")
+                current_offset = 0
+            current_offset += 1
+        else:
+            # No else found, go to the next line.
+            self.goto_next_line()
 
     def is_symbol_defined(self, symbol, symbol_type:SymbolType=SymbolType.VARIABLE):
         """

@@ -31,3 +31,16 @@ will it go the end of the lines above it.
 # ValueError
 In basic loading. I think it's been rethrown twice.
 And has the wrong line number. (file line)
+
+# When single stepping in basic_shell, the list
+command should indicate the next instruction
+with a "*" or something
+
+# REM
+We don't tokenize a rem statement in the middle of a line correctly.
+1300 I=RND(1):REM IF INP(1)=13 THEN 1300
+tokenizes as
+1300 LET I=RND(1)|	REM |	THEN|	GOTO 1300|
+which is an infinite loop!
+It should be
+1300 LET I=RND(1)| REM THEN GOTO 1300

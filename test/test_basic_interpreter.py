@@ -432,7 +432,7 @@ class Test(TestCaseBase):
         listing = [
             '100 IF I > 0'
         ]
-        self.runit_se(listing)
+        self.runit_re(listing)
 
     def test_order_se(self):
         listing = [

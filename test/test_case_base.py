@@ -11,7 +11,7 @@ from math import e
 from basic_dialect import ARRAY_OFFSET
 from basic_interpreter import Executor
 from basic_statements import is_valid_identifier
-from basic_types import SymbolType, RunStatus, lexer_token, BasicSyntaxError
+from basic_types import SymbolType, RunStatus, lexer_token, BasicSyntaxError, BasicRuntimeError
 from basic_loading import tokenize
 
 
@@ -76,4 +76,13 @@ class TestCaseBase(TestCase):
         :return:
         """
         with self.assertRaises(BasicSyntaxError):
+            executor = self.runit_capture(listing)
+
+    def runit_re(self, listing):
+        """
+        Run, and verify that the program raises a BasicSyntaxError
+        :param listing:
+        :return:
+        """
+        with self.assertRaises(BasicRuntimeError):
             executor = self.runit_capture(listing)
