@@ -1,7 +1,6 @@
 # TrekBasic
 
 TrekBASIC is now both a full BASIC interpreter, written in Python, and a BASIC compiler, via LLVM.
-** ELSE is currently broken. I'll get to that shortly. **
 
 My goal was to be able to play the old Star Trek game, which was written in BASIC.
 
@@ -81,8 +80,9 @@ If you want the development environment, similar to what you would have had with
 
 Use "help" to get available commands, like "load programs/superstartrek.abs" and "run". 
 
-I have not implemented an editor in basic_shell. While the old-style line-by-line editing might be nostalgic,
-modern editors are *so* much better. 
+I have not implemented an editor in basic_shell. You can input individual lines, but there is no editing.
+While the old-style line-by-line editing might be nostalgic, modern editors are *so* much better. 
+You can edit in your favorite editor, and paste in changes to the shell, or just run them directly.
 
 ## Features
 
