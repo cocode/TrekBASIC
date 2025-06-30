@@ -80,8 +80,14 @@ for the mapping.
 
 ## Bugs in the BASIC program (superstartrek.bas):
 
-# Infinite Recursion on Error (most important=)
+# Infinitely Nested FOR loops 
 Fixed. SuperStarTrek jumps out of loops and then restarts them. A naive implementation assumes you won't do that
-and is "correct" behavior. For now, if the loop we are entering is on the top of the "for stack", we erase the top entry
-and add a new one. This wouldn't fix doing this with "fori;forj", recursively 1000 times, for that, we'd need to look 
-farther down the stack. But should be quite doable.
+and is "correct" behavior. For now, if the loop we are entering uses the same loop index variable as the one on the top 
+of the "for stack", we erase the top entry and add a new one. 
+This wouldn't fix doing this with stacking nested loops, like "fori;forj", recursively 1000 times, for that, we'd need to look 
+farther down the stack. But that should be quite doable.
+
+### Exponentiation.
+Exponentiation is currently left associative, as opposed to the more standard right association. We do this because 
+older dialects of basic had it that way, and we are currently emulating older versions.
+This could be handled as a dialog option in basic_dialect.py

@@ -1,34 +1,20 @@
 # Task List
 
-Don't start working on these, without asking first
-
 ### Else
 I don't believe that two ELSEs on one line work.
 
-### Renumber 
-Renumber is not working correctly
-
 ### stmts command
 The 'stmts' command prints an extra : before the goto on something simple like "100 if x=1 then goto 100"
+
 ### READ vs INPUT
 Looks like Dartmouth basic uses READ instead of INPUT. We could add that without conflict. If the semantics are the
 same, we could just alias.
-### Escaped quotes
-Should I support \" in Strings? I don't recall older basics doing that, but some do.
 
-### READ, DATA, RESTORE
-need to implement for hunt the wumpus
+### Escaped quotes
+Should I support \" in Strings? I don't recall older basics doing that.
 
 ### Benchmark timing for llvm code.
 Don't want to count startup time.
-
-### REM 
-A REM in the middle of an IF then might cause  problems
-we should only allow rem as the first statement on
-a line, Google says they can be not the first statement 
-in a line. I'm worried that this will complicate our
-nested IF then parsing, if we get a REM in a nested IF, how
-will it go the end of the lines above it.
 
 # ValueError
 In basic loading. I think it's been rethrown twice.
@@ -43,18 +29,6 @@ We partially fixed parsing with inserting colons to force
 statement boundaries, but the real answer is a proper pull parser.
 That will fix the rem issue, below, as well.
 
-# REM - FIXED
-- [x] We don't tokenize a rem statement in the middle of a line correctly.
-1300 I=RND(1):REM IF INP(1)=13 THEN 1300
-tokenizes as
-1300 LET I=RND(1)|	REM |	THEN|	GOTO 1300|
-which is an infinite loop!
-It should be
-1300 LET I=RND(1)| REM THEN GOTO 1300
-
-FIXED: Added break in tokenize_statements() when REM is encountered.
-
-
 ### Features
 Add a watch commmand, so someone can edit in the editor of their choice, and TrekBasic will reload it automatically.
 recommended:  watchdog library
@@ -67,3 +41,9 @@ recommended:  watchdog library
   - Add `skip_parsing` flag to constructor
   - Use `copy.deepcopy()` and modify attributes
 - Files affected: `basic_parsing.py` lines ~230 and ~280 
+
+### Support more built-in functions: LOG10. We can now add more functions easily in basic_functions.py
+Do this on an as-needed basis, don't just throw everything in.
+
+### Warn on Exit if Editted
+Now that we ca replace lines in the shell, we should warn before exiting, if the program was modified.
