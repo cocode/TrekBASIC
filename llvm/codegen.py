@@ -873,17 +873,17 @@ class LLVMCodeGenerator:
                             # String value - print without newline
                             self.builder.call(self.printf, [val])
                         else:
-                            # Numeric value - print as float without newline
-                            # Create format string for numeric values without newline
-                            fmt = "%g\0"
+                            # Numeric value - print as float with spaces around it (BASIC convention)
+                            # Create format string for numeric values with spaces
+                            fmt = " %g \0"
                             c_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(fmt)), bytearray(fmt.encode("utf8")))
-                            if "fmt_num" not in self.module.globals:
-                                global_fmt_num = ir.GlobalVariable(self.module, c_fmt.type, name="fmt_num")
+                            if "fmt_num_spaced" not in self.module.globals:
+                                global_fmt_num = ir.GlobalVariable(self.module, c_fmt.type, name="fmt_num_spaced")
                                 global_fmt_num.linkage = 'internal'
                                 global_fmt_num.global_constant = True
                                 global_fmt_num.initializer = c_fmt
                             else:
-                                global_fmt_num = self.module.get_global("fmt_num")
+                                global_fmt_num = self.module.get_global("fmt_num_spaced")
                             fmt_ptr = self.builder.bitcast(global_fmt_num, ir.IntType(8).as_pointer())
                             self.builder.call(self.printf, [fmt_ptr, val])
             elif output.startswith('"') and output.endswith('"'):
@@ -915,17 +915,17 @@ class LLVMCodeGenerator:
                     # String value - print without newline
                     self.builder.call(self.printf, [val])
                 else:
-                    # Numeric value - print as float without newline
-                    # Create format string for numeric values without newline
-                    fmt = "%g\0"
+                    # Numeric value - print as float with spaces around it (BASIC convention)
+                    # Create format string for numeric values with spaces
+                    fmt = " %g \0"
                     c_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(fmt)), bytearray(fmt.encode("utf8")))
-                    if "fmt_num" not in self.module.globals:
-                        global_fmt_num = ir.GlobalVariable(self.module, c_fmt.type, name="fmt_num")
+                    if "fmt_num_spaced" not in self.module.globals:
+                        global_fmt_num = ir.GlobalVariable(self.module, c_fmt.type, name="fmt_num_spaced")
                         global_fmt_num.linkage = 'internal'
                         global_fmt_num.global_constant = True
                         global_fmt_num.initializer = c_fmt
                     else:
-                        global_fmt_num = self.module.get_global("fmt_num")
+                        global_fmt_num = self.module.get_global("fmt_num_spaced")
                     fmt_ptr = self.builder.bitcast(global_fmt_num, ir.IntType(8).as_pointer())
                     self.builder.call(self.printf, [fmt_ptr, val])
         
