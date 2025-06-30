@@ -435,8 +435,8 @@ class BasicShell:
         for line in old_program:
             line_number = line.line
             line_map[line_number] = cur_line
+            cur_line += increment
             for statement in line.stmts:
-                cur_line += increment  # maybe move outof loop?
                 st_count += 1
         return line_map, st_count
 
