@@ -397,6 +397,8 @@ class Executor:
         """
         When an if then condition is false, we scan the line for an else statement.
         transfers control to the statement after the else, or to the next line.
+        # TODO: I don't think this will handle nested IFs. for that, I think we
+        # have to scan for the Nth ELSE statement.
         """
         current_index = self._location.index
         current_offset = self._location.offset
