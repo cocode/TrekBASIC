@@ -13,9 +13,11 @@ from basic_operators import get_op_def, get_precedence
 
 
 class LLVMCodeGenerator:
-    def __init__(self, program, debug=False):
+    def __init__(self, program, debug=False, trace=False):
         self.program = program
         self.debug = debug
+        self.trace = trace
+        self.rnd_seeded = False  # Track if random number generator has been seeded
         self.module = ir.Module(name="basic_program")
         self.module.triple = binding.get_default_triple()
 
@@ -162,6 +164,9 @@ class LLVMCodeGenerator:
         
         # Initialize string variables at runtime
         self._initialize_string_variables()
+        
+        # Seed random number generator once at program start
+        self._seed_random_generator()
 
         # Generate user-defined function bodies (now that variables/arrays are allocated)
         self._generate_user_function_bodies()
@@ -182,13 +187,32 @@ class LLVMCodeGenerator:
             self.builder.position_at_end(self.line_blocks[line.line])
             self.current_line_index = i  # Track current line index for GOSUB
             
-            # Check if this basic block is empty (no instructions yet)
-            block_was_empty = len(self.builder.block.instructions) == 0
+            # Add optional trace output to show which line is being executed
+            if self.trace:
+                debug_str = f"Executing line {line.line}\\n"
+                debug_str_global_name = f"debug_str_{line.line}"
+                if debug_str_global_name not in self.module.globals:
+                    debug_str_global = ir.GlobalVariable(self.module, ir.ArrayType(ir.IntType(8), len(debug_str)), 
+                                                       name=debug_str_global_name)
+                    debug_str_global.linkage = 'internal'
+                    debug_str_global.global_constant = True
+                    debug_str_global.initializer = ir.Constant(ir.ArrayType(ir.IntType(8), len(debug_str)), 
+                                                             bytearray(debug_str.encode("utf-8")))
+                else:
+                    debug_str_global = self.module.get_global(debug_str_global_name)
+                debug_str_ptr = self.builder.bitcast(debug_str_global, ir.PointerType(ir.IntType(8)))
+                self.builder.call(self.printf, [debug_str_ptr])
+            
+            # Check if this basic block is empty (no instructions yet) 
+            trace_instructions = 2 if self.trace else 0
+            block_was_empty = len(self.builder.block.instructions) <= trace_instructions
             
             self._generate_line_statements(line.stmts)
             
             # If block is still empty after processing statements, add a no-op
-            if block_was_empty and len(self.builder.block.instructions) == 0:
+            # But only if the block doesn't already have a terminator instruction
+            if (block_was_empty and len(self.builder.block.instructions) <= trace_instructions and 
+                not self.builder.block.is_terminated):
                 # Add a simple no-op to prevent empty basic blocks
                 temp_val = ir.Constant(ir.DoubleType(), 0.0)
                 if "noop_var" not in self.module.globals:
@@ -358,6 +382,14 @@ class LLVMCodeGenerator:
                     empty_ptr = self.builder.bitcast(global_empty, ir.IntType(8).as_pointer())
                     self.builder.store(empty_ptr, var_ptr)
 
+    def _seed_random_generator(self):
+        """Seed the random number generator once at program start"""
+        null_ptr = ir.Constant(ir.IntType(64).as_pointer(), None)
+        time_val = self.builder.call(self.time, [null_ptr], name="time_val")
+        time_int = self.builder.trunc(time_val, ir.IntType(32), name="time_int")
+        self.builder.call(self.srand, [time_int])
+        self.rnd_seeded = True
+
     def _generate_user_function_bodies(self):
         """Generate bodies for user-defined functions after variables are allocated"""
         for stmt in self.user_function_defs:
@@ -414,20 +446,27 @@ class LLVMCodeGenerator:
              self._codegen_else(stmt)
         # Add other statements here
         else:
-            if stmt.keyword.name != "REM":
-                print(f"Warning: Codegen for statement '{type(stmt).__name__}' not implemented.", stmt.keyword)
-            # Generate a simple no-op to avoid broken control flow
-            # Create a global noop variable if it doesn't exist
-            if "noop_var" not in self.module.globals:
-                noop_global = ir.GlobalVariable(self.module, ir.DoubleType(), name="noop_var")
-                noop_global.linkage = 'internal'
-                noop_global.global_constant = False
-                noop_global.initializer = ir.Constant(ir.DoubleType(), 0.0)
+            if stmt.keyword.name == "REM":
+                # REM should terminate execution of the current line and go to next line
+                if self.current_line_index + 1 < len(self.program):
+                    next_line_num = self.program[self.current_line_index + 1].line
+                    self.builder.branch(self.line_blocks[next_line_num])
+                else:
+                    self.builder.ret(ir.Constant(ir.IntType(32), 0))
             else:
-                noop_global = self.module.get_global("noop_var")
-            # Add a simple store instruction to prevent empty basic blocks
-            temp_val = ir.Constant(ir.DoubleType(), 0.0)
-            self.builder.store(temp_val, noop_global)
+                print(f"Warning: Codegen for statement '{type(stmt).__name__}' not implemented.", stmt.keyword)
+                # Generate a simple no-op to avoid broken control flow
+                # Create a global noop variable if it doesn't exist
+                if "noop_var" not in self.module.globals:
+                    noop_global = ir.GlobalVariable(self.module, ir.DoubleType(), name="noop_var")
+                    noop_global.linkage = 'internal'
+                    noop_global.global_constant = False
+                    noop_global.initializer = ir.Constant(ir.DoubleType(), 0.0)
+                else:
+                    noop_global = self.module.get_global("noop_var")
+                # Add a simple store instruction to prevent empty basic blocks
+                temp_val = ir.Constant(ir.DoubleType(), 0.0)
+                self.builder.store(temp_val, noop_global)
 
     def _codegen_for(self, stmt):
         """Generate LLVM IR for a FOR loop"""
@@ -1165,13 +1204,7 @@ class LLVMCodeGenerator:
             return builder.call(self.int_func, [args[0]], name="int_result")
         elif func_name == "RND":
             # RND(x) - return random number between 0 and 1
-            # First seed the random number generator if not already done
-            null_ptr = ir.Constant(ir.IntType(64).as_pointer(), None)
-            time_val = builder.call(self.time, [null_ptr], name="time_val")
-            time_int = builder.trunc(time_val, ir.IntType(32), name="time_int")
-            builder.call(self.srand, [time_int])
-            
-            # Get random integer and convert to float between 0 and 1
+            # Random generator is seeded once at program start
             rand_int = builder.call(self.rand, [], name="rand_int")
             rand_float = builder.uitofp(rand_int, ir.DoubleType(), name="rand_float")
             max_rand = ir.Constant(ir.DoubleType(), 2147483647.0)  # RAND_MAX
@@ -1748,6 +1781,6 @@ class LLVMCodeGenerator:
         return element_ptr
 
 
-def generate_llvm_ir(program, debug=False):
-    codegen = LLVMCodeGenerator(program, debug=debug)
+def generate_llvm_ir(program, debug=False, trace=False):
+    codegen = LLVMCodeGenerator(program, debug=debug, trace=trace)
     return codegen.generate_ir()
