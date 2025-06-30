@@ -722,6 +722,9 @@ class LLVMCodeGenerator:
                 # Call scanf to read the double directly into the variable
                 var_ptr = self.symbol_table[var_name]
                 self.builder.call(self.scanf, [double_fmt_ptr, var_ptr])
+                
+                # Consume the newline character left by scanf (consistent with string input)
+                self.builder.call(self.getchar, [])
 
     def _codegen_on_goto(self, stmt):
         """Generate LLVM IR for an ON...GOTO or ON...GOSUB statement"""
