@@ -230,8 +230,10 @@ class ParsedStatementGo(ParsedStatement):
         if hasattr(self, '_is_computed') and self._is_computed:
             # Renumber computed GOTO/GOSUB
             new_targets = [line_map[line] for line in self._target_lines]
-            # Create a new computed GOTO/GOSUB
-            new_stmt = ParsedStatementGo(self.keyword, "")
+            # Create new object without calling constructor to avoid parsing empty args
+            new_stmt = object.__new__(ParsedStatementGo)
+            new_stmt.keyword = self.keyword
+            new_stmt.args = ""
             new_stmt._is_computed = True
             new_stmt._expression = self._expression
             new_stmt._op = self._op
@@ -272,6 +274,18 @@ class ParsedStatementOnGoto(ParsedStatement):
     def __str__(self):
         l2 = [str(line) for line in self._target_lines]
         return F"{self.keyword.name} {self._expression} {self._op} {','.join(l2)}"
+
+    def renumber(self, line_map):
+        """Renumber the target lines in ON...GOTO/GOSUB statements"""
+        new_targets = [line_map[line] for line in self._target_lines]
+        # Create new object without calling constructor to avoid parsing empty args
+        new_stmt = object.__new__(ParsedStatementOnGoto)
+        new_stmt.keyword = self.keyword
+        new_stmt.args = ""
+        new_stmt._expression = self._expression
+        new_stmt._op = self._op
+        new_stmt._target_lines = new_targets
+        return new_stmt
 
 
 class ParsedStatementRem(ParsedStatement):
@@ -564,11 +578,22 @@ class ParsedStatementRestore(ParsedStatement):
                 raise BasicSyntaxError(f"RESTORE requires a line number, got '{args}'")
             self._line_number = int(args)
 
-def __str__(self):
-    if self._line_number is None:
-        return self.keyword.name
-    else:
-        return F"{self.keyword.name} {self._line_number}"
+    def __str__(self):
+        if self._line_number is None:
+            return self.keyword.name
+        else:
+            return F"{self.keyword.name} {self._line_number}"
+
+    def renumber(self, line_map):
+        """Renumber the line number in RESTORE statements"""
+        if self._line_number is None:
+            # No line number to renumber
+            return self
+        else:
+            new_line = line_map[self._line_number]
+            new_stmt = ParsedStatementRestore(self.keyword, "")
+            new_stmt._line_number = new_line
+            return new_stmt
 
 class ParsedStatementElse(ParsedStatement):
     """

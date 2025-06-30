@@ -46,6 +46,10 @@ def tokenize_statements(commands_text:list[str]):
             parsed_statement = parser_for_keyword(cmd, command)
 
         list_of_statements.append(parsed_statement)
+        
+        # If we hit a REM statement, everything after it is a comment
+        if parsed_statement.keyword == Keywords.REM:
+            break
 
     return list_of_statements
 
@@ -106,6 +110,14 @@ def tokenize_remaining_line(partial: str, number: int) -> list:
     """
     Tokenizes the string, but with the line number removed. This allows us to call this function with partial lines.
     """
+    # Handle ! and ' comments - strip everything after comment markers (like some BASIC dialects)
+    for comment_char in ["!", "'"]:
+        comment_pos = find_next_str_not_quoted(partial, comment_char, 0)
+        if comment_pos is not None:
+            start, end = comment_pos
+            partial = partial[:start].rstrip()  # Remove the comment and everything after it
+            break  # Only process the first comment character found
+    
     # Rem commands don't split on colons, other lines do.
     if partial.upper().strip().startswith(Keywords.REM.name):
         commands_text = [partial]
