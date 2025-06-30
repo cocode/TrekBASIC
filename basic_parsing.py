@@ -279,7 +279,7 @@ class ParsedStatementRem(ParsedStatement):
     Handles REM statements
     """
     def __init__(self, keyword, args):
-        super().__init__(keyword, "")
+        super().__init__(keyword, args=args)
 
     def __str__(self):
         return F"{self.keyword.name} {self.args}"
