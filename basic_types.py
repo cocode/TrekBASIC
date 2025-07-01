@@ -5,11 +5,11 @@ Lexical analysis for the basic intrepreter.
 from collections import namedtuple
 from enum import Enum, auto
 
+# Used internally to tokenize unary minus. This simplifies parsing.
 UNARY_MINUS="—"# That's an m-dash.
 ARRAY_ACCESS="@"
 
 lexer_token = namedtuple("Token", "token type")
-#statement = namedtuple("Subs", "keyword args")
 
 # Represents one line in a basic program, which may be composed of multiple statements
 # line: The line of the statement, "100" in "100 PRINT:PRINT:END"
