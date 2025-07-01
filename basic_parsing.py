@@ -306,7 +306,7 @@ class ParsedStatementLet(ParsedStatement):
     def __init__(self, keyword, args):
         super().__init__(keyword, "")
         if "=" not in args:
-            raise BasicSyntaxError(F"Command not recognized. '{args}'")
+            raise BasicSyntaxError(f"Invalid assignment statement '{args}' - missing '=' operator, or unrecognized command")
 
         try:
             variable, value = args.split("=", 1)
