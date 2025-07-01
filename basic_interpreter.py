@@ -3,6 +3,7 @@ This module contains the class, Executor, that runs BASIC programs
 """
 from collections import namedtuple, defaultdict
 import random
+from typing import Optional, TextIO, List, Tuple, Dict, Set, Any, Union
 
 import basic_functions
 from basic_parsing import ParsedStatementElse
@@ -10,7 +11,6 @@ from basic_types import ProgramLine, Program, BasicInternalError, assert_syntax,
 from basic_types import SymbolType, RunStatus, BasicRuntimeError, ControlLocation
 from basic_symbols import SymbolTable
 from basic_utils import TRACE_FILE_NAME
-from typing import Optional, TextIO
 
 
 # Target of a control transfer. Used by GOTO, GOSUB, NEXT, etc.
@@ -28,7 +28,7 @@ ForRecord = namedtuple("ForRecord", "var stop step stmt")
 
 
 class Executor:
-    def restart(self):
+    def restart(self) -> None:
         self._location = ControlLocation(0,0)
         self._goto = None
         self._gosub_stack = []
@@ -38,9 +38,10 @@ class Executor:
 
     def __init__(self,
                  program: Program,
-                 trace_file=None, stack_trace=False,
-                 coverage=False,
-                 record_inputs=False):
+                 trace_file: Optional[TextIO] = None, 
+                 stack_trace: bool = False,
+                 coverage: Union[bool, Dict[int, Set[int]]] = False,
+                 record_inputs: bool = False) -> None:
         """
 
         :param program:
@@ -50,36 +51,36 @@ class Executor:
         :param coverage: None, or a dict of (line_number:set of statements). Set to [] to enable coverage. Set to
         a coverage from a previous run, to add to that run
         """
-        self._program = program
+        self._program: Program = program
         self._location: ControlLocation = ControlLocation(0,0)
-        self._run = RunStatus.RUN
+        self._run: RunStatus = RunStatus.RUN
         # A "File-like" object. Could be File pointer - it's not the file name.
         self._trace_file_like: Optional[TextIO] = trace_file
-        self._stack_trace = stack_trace
-        self._goto = None
-        self._gosub_stack = []
-        self._for_stack = []
+        self._stack_trace: bool = stack_trace
+        self._goto: Optional[ControlLocation] = None
+        self._gosub_stack: List[ControlLocation] = []
+        self._for_stack: List[ForRecord] = []
         # PyCharm complains if these are defined anywhere outside of __init__
-        self._internal_symbols = None
-        self._symbols = None
-        self._data_breakpoints = []
+        self._internal_symbols: Optional[SymbolTable] = None
+        self._symbols: Optional[SymbolTable] = None
+        self._data_breakpoints: List[str] = []
         # DATA/READ/RESTORE state  
-        self._data_position = None  # Current position: (line_index, stmt_index, value_index) or None for start
-        self._coverage = defaultdict(set) if coverage else None
+        self._data_position: Optional[Tuple[int, int, int]] = None  # Current position: (line_index, stmt_index, value_index) or None for start
+        self._coverage: Optional[Dict[int, Set[int]]] = defaultdict(set) if coverage else None
         if self._coverage:
             print("Running with code coverage")
         self.init_symbols()
         self.setup_program()
-        self.modified = False
+        self.modified: bool = False
 
-    def init_symbols(self):
+    def init_symbols(self) -> None:
         self._internal_symbols = SymbolTable()
         self._symbols = self._internal_symbols.get_nested_scope()
 
-    def set_trace_file(self, filepointer):
+    def set_trace_file(self, filepointer: Optional[TextIO]) -> None:
         self._trace_file_like = filepointer
 
-    def _close_trace_file_like(self):
+    def _close_trace_file_like(self) -> None:
         if self._trace_file_like and hasattr(self._trace_file_like, 'close'):
             try:
                 self._trace_file_like.close()
@@ -87,14 +88,16 @@ class Executor:
             except Exception:
                 print(F"Failed to close trace file.")
 
-    def setup_program(self):
+    def setup_program(self) -> None:
         functions = basic_functions.PredefinedFunctions()
         for f in functions.functions:
             self._internal_symbols.put_symbol(f, "⌊", SymbolType.FUNCTION, arg=None)
 
         random.seed(1)
 
-    def run_program(self, breaklist:list[tuple]=None, data_breakpoints:list[str]=None, single_step=False):
+    def run_program(self, breaklist: Optional[List[Tuple[int, int]]] = None, 
+                   data_breakpoints: Optional[List[str]] = None, 
+                   single_step: bool = False) -> RunStatus:
         """
         Run the program. This can also be called to resume after a breakpoint.
 
@@ -111,9 +114,9 @@ class Executor:
         :return: A value from RunStatus
         """
         if breaklist is None:
-            breaklist: list[tuple] = []
+            breaklist: List[Tuple[int, int]] = []
         if data_breakpoints is None:
-            data_breakpoints:list[str] = []
+            data_breakpoints: List[str] = []
         self._run = RunStatus.RUN  # TODO Try finally on RunStatus?
         self._data_breakpoints = data_breakpoints
         if self._trace_file_like is None:
@@ -124,8 +127,8 @@ class Executor:
                 self._run = RunStatus.END_OF_PROGRAM
                 return self._run
 
-            current = self.get_current_line()
-            index = self.get_current_index()
+            current: ProgramLine = self.get_current_line()
+            index: int = self.get_current_index()
             # If single step mode, allow them to go over the breakpoint they just hit.
             if not single_step:
                 for breakpoint in breaklist:
@@ -184,7 +187,7 @@ class Executor:
             if single_step:
                 self._run = RunStatus.BREAK_STEP
 
-    def get_current_line(self):
+    def get_current_line(self) -> ProgramLine:
         return self._program.get_line(self._location.index)
 
     def get_current_location(self)->ControlLocation:
@@ -207,29 +210,29 @@ class Executor:
         """
         return self._location.index
 
-    def get_program_lines(self, start=0, count=None)->list[str]:
+    def get_program_lines(self, start: int = 0, count: Optional[int] = None) -> List[str]:
         """
         Returns a range of source lines. Used to implement the LIST command
         :return: list[str]
         """
         return self._program.get_lines_range(start, count)
 
-    def get_current_stmt(self):
+    def get_current_stmt(self):  # Return type depends on statement types, keeping as is for now
         return self._program.get_line(self._location.index).stmts[self._location.offset]
 
-    def at_end(self):
+    def at_end(self) -> bool:
         return self._location.index is None
 
-    def do_for(self, var, stop, step, stmt):
+    def do_for(self, var: str, stop: str, step: str, stmt: Optional[ControlLocation]) -> None:
         """
         Begin a FOR loop.
 
         The start index is set by the caller of this function.
 
         :param var: The index of the "FOR" loop
-        :param stop: The upper limit. In BASIC, it is inclusive.
-        :param step: The amount to increment the index after each loop.
-        :param stmt:
+        :param stop: The upper limit expression as a string. In BASIC, it is inclusive.
+        :param step: The step expression as a string. Both expressions can change during loop execution.
+        :param stmt: The ControlLocation to return to for the next iteration
         :return:
         """
         # Note that var and start are evaluated before beginning, but stop and step
@@ -246,7 +249,7 @@ class Executor:
         # It might be more correct to only allow one for loop per variable, so we'd
         # scan the stack and remove the previous one. But that gets complicated - do we
         # remove everything above the duplicated for loop? So, for now, we only touch the top entry
-        new_for = ForRecord(var, stop, step, stmt)
+        new_for: ForRecord = ForRecord(var, stop, step, stmt)
         if self._for_stack:
             top = self._for_stack[-1]
             if top.var == new_for.var:
@@ -254,7 +257,7 @@ class Executor:
 
         self._for_stack.append(ForRecord(var, stop, step, stmt))
 
-    def do_next_peek(self, var):
+    def do_next_peek(self, var: str) -> ForRecord:
         """
         Checks to see if we are on the correct next, and get the for_record
         :param var:
@@ -265,19 +268,19 @@ class Executor:
         assert_syntax(for_record.var==var, F"Wrong NEXT. Expected {for_record.var}, got {var}")
         return for_record
 
-    def do_next_pop(self, var):
+    def do_next_pop(self, var: str) -> None:
         assert_syntax(len(self._for_stack) > 0, "NEXT without FOR")
         for_record = self._for_stack.pop()
         assert_syntax(for_record.var==var, F"Wrong NEXT. Expected {for_record.var}, got {var}")
 
-    def get_symbol_count(self):
+    def get_symbol_count(self) -> int:
         """
         Get number of defined symbols. Used for testing. This deliberately does not count nested scopes.
         :return:
         """
         return self._symbols.local_length()
 
-    def put_symbol(self, symbol:str, value, symbol_type:SymbolType, arg:str)->None:
+    def put_symbol(self, symbol: str, value: Any, symbol_type: SymbolType, arg: Optional[str]) -> None:
         """
         Adds a symbol to a the current symbol table.
 
@@ -299,7 +302,7 @@ class Executor:
 
         self._symbols.put_symbol(symbol, value, symbol_type, arg)
 
-    def put_symbol_element(self, symbol, value, subscripts):
+    def put_symbol_element(self, symbol: str, value: Any, subscripts: List[int]) -> None:
         # TODO Maybe check is_valid_variable here? Have to allow user defined functions, and built-ins, though.
         if self._trace_file_like:
             print(F"\t\t{symbol}{subscripts}={value}, array element", file=self._trace_file_like)
@@ -312,17 +315,17 @@ class Executor:
         subscript = subscripts[-1]
         v[subscript] = value
 
-    def find_line(self, line_number):
+    def find_line(self, line_number: int) -> ControlLocation:
         """
         Convert a program line number (like, "100") to the index into self._program.
         """
         return ControlLocation(self._program.find_line_index(line_number), 0)
 
-    def goto_line(self, line):
+    def goto_line(self, line: int) -> None:
         target = self.find_line(line)
         self._goto_location(target)
 
-    def _goto_location(self, ct):
+    def _goto_location(self, ct: ControlLocation) -> None:
         """
         This does an internal control transfer. It uses an index into the self._program list,
         rather than a BASIC line number.
@@ -334,20 +337,20 @@ class Executor:
         assert ControlLocation == type(ct)
         self._goto = ct
 
-    def gosub(self, line_number):
+    def gosub(self, line_number: int) -> None:
         go_to = self.find_line(line_number)
         return_to = self.get_next_stmt()
         self._gosub_stack.append(return_to)
         self._goto_location(go_to)
         return
 
-    def do_return(self):
+    def do_return(self) -> None:
         assert_syntax(len(self._gosub_stack), "RETURN without GOSUB")
         return_to = self._gosub_stack.pop()
         self._goto_location(return_to)
         return
 
-    def get_next_stmt(self):
+    def get_next_stmt(self) -> Optional[ControlLocation]:
         """
         Get a pointer to the next statement that would normally be executed.
         This is the next statement, if there are more statements on this line,
@@ -358,7 +361,7 @@ class Executor:
         """
         return self._program.get_next_statement_location(self._location.index, self._location.offset)
 
-    def _get_next_line(self):
+    def _get_next_line(self) -> Optional[ControlLocation]:
         next_index = self._program.get_next_index(self._location.index)
         if next_index is None:
             # TODO Style: Should this return None, or ControlLocation(None,0), which is used above
@@ -366,7 +369,7 @@ class Executor:
 
         return ControlLocation(next_index, 0)
 
-    def goto_next_line(self):
+    def goto_next_line(self) -> None:
         """
         This is used by "IF ... THEN...", if the condition is false. It moves us to the next line, instead
         of continuing with the THEN clause.
@@ -407,18 +410,18 @@ class Executor:
             # No else found, go to the next line.
             self.goto_next_line()
 
-    def is_symbol_defined(self, symbol, symbol_type:SymbolType=SymbolType.VARIABLE):
+    def is_symbol_defined(self, symbol: str, symbol_type: SymbolType = SymbolType.VARIABLE) -> bool:
         """
         :param symbol:
         :return: True if defined, else False
         """
         return self._symbols.is_symbol_defined(symbol, symbol_type)
 
-    def get_symbol(self, symbol, symbol_type:SymbolType=SymbolType.VARIABLE):
+    def get_symbol(self, symbol: str, symbol_type: SymbolType = SymbolType.VARIABLE) -> Any:
         # TODO Delete this. use get_symbol_value
         return self.get_symbol_value(symbol, symbol_type)
 
-    def get_symbol_value(self, symbol, symbol_type:SymbolType=SymbolType.VARIABLE):
+    def get_symbol_value(self, symbol: str, symbol_type: SymbolType = SymbolType.VARIABLE) -> Any:
         """
         :param symbol:
         :param symbol_type: Arrays, functions and Scalars all have their own namespaces
@@ -426,7 +429,7 @@ class Executor:
         """
         return self._symbols.get_symbol_value(symbol, symbol_type)
 
-    def get_symbol_type(self, symbol, symbol_type:SymbolType=SymbolType.VARIABLE):
+    def get_symbol_type(self, symbol: str, symbol_type: SymbolType = SymbolType.VARIABLE) -> SymbolType:
         """
         :param symbol:
         :param symbol_type: Arrays, functions and Scalars all have their own namespaces
@@ -434,7 +437,7 @@ class Executor:
         """
         return self._symbols.get_symbol_type(symbol, symbol_type)
 
-    def do_print(self, msg, **kwargs):
+    def do_print(self, msg: str, **kwargs) -> None:
         """
         This function exists so we can do redirection of output conveniently, for testing.
         :param msg:
@@ -442,7 +445,7 @@ class Executor:
         """
         print(msg, **kwargs)
 
-    def do_input(self):
+    def do_input(self) -> str:
         """
         This function exists so that we can do redirection of output conveniently, for testing.
         :return:
@@ -450,7 +453,7 @@ class Executor:
         response = input()
         return response
 
-    def read_data_value(self):
+    def read_data_value(self) -> Any:
         """
         Read the next DATA value from the program.
         Scans the program for DATA statements and returns the next value.
@@ -496,7 +499,7 @@ class Executor:
         # No more data found
         raise BasicRuntimeError("I tried to READ, but ran out of data.")
 
-    def restore_data(self, line_number=None):
+    def restore_data(self, line_number: Optional[int] = None) -> None:
         """
         Reset the data pointer to the beginning of data or to a specific line.
         """
