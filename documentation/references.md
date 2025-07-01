@@ -44,7 +44,6 @@ In particular, it's for supporting multiple versions of BASIC.
     1. https://henry416.wordpress.com/tag/bnf/
 1. BASIC and BNF
     1. https://rosettacode.org/wiki/BNF_Grammar#BASIC
-2. Full Star Trek game in a browser. (rewrite in Javascript, I think)
 
 ## Super Startrek rules
 https://github.com/beejjorgensen/Super-Star-Trek-Info/blob/main/doc/sst_spec.md
