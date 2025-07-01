@@ -6,8 +6,8 @@ import random
 
 import basic_functions
 from basic_parsing import ParsedStatementElse
-from basic_types import ProgramLine, BasicInternalError, assert_syntax, BasicSyntaxError
-from basic_types import SymbolType, RunStatus, BasicRuntimeError
+from basic_types import ProgramLine, Program, BasicInternalError, assert_syntax, BasicSyntaxError
+from basic_types import SymbolType, RunStatus, BasicRuntimeError, ControlLocation
 from basic_symbols import SymbolTable
 from basic_utils import TRACE_FILE_NAME
 from typing import Optional, TextIO
@@ -17,10 +17,6 @@ from typing import Optional, TextIO
 # TODO This should be a mutable class, and we should use it for the current instruction
 # index: The index into the Executor._program list
 # offset: The index into the Executor._program[x].stmts list.
-class ControlLocation:
-    def __init__(self, index, offset):
-        self.index = index
-        self.offset = offset
 
 
 # var: the index variable
@@ -41,7 +37,7 @@ class Executor:
         self._data_position = None
 
     def __init__(self,
-                 program:list[ProgramLine],
+                 program: Program,
                  trace_file=None, stack_trace=False,
                  coverage=False,
                  record_inputs=False):
@@ -146,8 +142,7 @@ class Executor:
             s = self.get_current_stmt()
 
             if self._trace_file_like:
-                # TODO ParsedStatements should have a __str__. Not everything is in args anymore.`
-                print(F"\t{s.keyword.name} {s.args}", file=self._trace_file_like)
+                print(F"\t{s}", file=self._trace_file_like)
 
             execution_function = s.keyword.value.get_exec()
             try:
@@ -170,7 +165,7 @@ class Executor:
 
             if self._goto: # If any control transfer has happened.
                 if self._trace_file_like:
-                    destination_line = self._program[self._goto.index].line
+                    destination_line = self._program.get_line(self._goto.index).line
                     print(F"\tControl Transfer from line {self._location} TO line {destination_line}: {self._goto}.",
                           file=self._trace_file_like)
 
@@ -178,13 +173,19 @@ class Executor:
                 self._goto = None
             else:
                 # Advance to next statement, on this line or the next
-                self._location = self.get_next_stmt()
+                next_location = self.get_next_stmt()
+                if next_location is None:
+                    # End of program
+                    self._run = RunStatus.END_OF_PROGRAM
+                    self._location = ControlLocation(None, 0)
+                else:
+                    self._location = next_location
 
             if single_step:
                 self._run = RunStatus.BREAK_STEP
 
     def get_current_line(self):
-        return self._program[self._location.index]
+        return self._program.get_line(self._location.index)
 
     def get_current_location(self)->ControlLocation:
         """
@@ -211,19 +212,10 @@ class Executor:
         Returns a range of source lines. Used to implement the LIST command
         :return: list[str]
         """
-        length = len(self._program)
-        if count is None:
-            count = length
-
-        assert_syntax(0 <= start < length, "Line number out of range.")
-        stop = start + count
-        if stop >= length:
-            stop = length
-        lines = [line.source for line in self._program[start:stop]]
-        return lines
+        return self._program.get_lines_range(start, count)
 
     def get_current_stmt(self):
-        return self._program[self._location.index].stmts[self._location.offset]
+        return self._program.get_line(self._location.index).stmts[self._location.offset]
 
     def at_end(self):
         return self._location.index is None
@@ -321,10 +313,10 @@ class Executor:
         v[subscript] = value
 
     def find_line(self, line_number):
-        for index, possible in enumerate(self._program):
-            if possible.line == line_number:
-                return ControlLocation(index=index, offset=0)
-        raise BasicSyntaxError(F"No line {line_number} found.")
+        """
+        Convert a program line number (like, "100") to the index into self._program.
+        """
+        return ControlLocation(self._program.find_line_index(line_number), 0)
 
     def goto_line(self, line):
         target = self.find_line(line)
@@ -364,17 +356,10 @@ class Executor:
         GOSUB should also use this, but don't yet.
         :return: ControlLocation Object, pointing to the next statement.
         """
-        # 'line' refers to an index into the self._program list, not a basic line number.
-        current_index = self._location.index
-        current_offset = self._location.offset
-        current_offset += 1
-        if current_offset >= len(self._program[current_index].stmts):
-            current_index = self._program[current_index].next
-            current_offset = 0
-        return ControlLocation(current_index, current_offset)
+        return self._program.get_next_statement_location(self._location.index, self._location.offset)
 
     def _get_next_line(self):
-        next_index = self._program[self._location.index].next
+        next_index = self._program.get_next_index(self._location.index)
         if next_index is None:
             # TODO Style: Should this return None, or ControlLocation(None,0), which is used above
             return None
@@ -405,11 +390,12 @@ class Executor:
         current_index = self._location.index
         current_offset = self._location.offset
         current_offset += 1
-        while current_offset < len(self._program[current_index].stmts):
-            if isinstance(self._program[current_index].stmts[current_offset], ParsedStatementElse):
+        current_line = self._program.get_line(current_index)
+        while current_offset < len(current_line.stmts):
+            if isinstance(current_line.stmts[current_offset], ParsedStatementElse):
                 current_offset += 1
                 # We want the statement AFTER the else, if any
-                if current_offset < len(self._program[current_index].stmts):
+                if current_offset < len(current_line.stmts):
                     location = ControlLocation(current_index, current_offset)
                     self._goto_location(location)
                     return
@@ -479,7 +465,7 @@ class Executor:
 
         # Scan through program starting from current position
         while line_index < len(self._program):
-            program_line = self._program[line_index]
+            program_line = self._program.get_line(line_index)
             
             # Start from stmt_index for current line, 0 for subsequent lines
             start_stmt = stmt_index if line_index == (self._data_position[0] if self._data_position else 0) else 0

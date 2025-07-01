@@ -2,7 +2,7 @@
 This module contains the code the load and parse BASIC programs
 """
 from basic_find_str_quotes import find_next_str_not_quoted
-from basic_types import ProgramLine, BasicSyntaxError, assert_syntax
+from basic_types import ProgramLine, Program, BasicSyntaxError, assert_syntax
 from basic_utils import smart_split
 from basic_statements import Keywords
 
@@ -79,7 +79,7 @@ def tokenize_line(program_line: str) -> ProgramLine:
     number = int(number)
     # Parse the remainder of the line.
     list_of_statements = tokenize_remaining_line(partial, number)
-    s = ProgramLine(number, list_of_statements, -1, source=program_line)
+    s = ProgramLine(number, list_of_statements, source=program_line)
     return s
 
 
@@ -136,7 +136,7 @@ def tokenize_remaining_line(partial: str, number: int) -> list:
     return list_of_statements
 
 
-def tokenize(program_lines:list[str]) -> list[ProgramLine]:
+def tokenize(program_lines:list[str]) -> Program:
     tokenized_lines = []
     last_line: str = None
     for line_number, line in enumerate(program_lines):
@@ -148,22 +148,11 @@ def tokenize(program_lines:list[str]) -> list[ProgramLine]:
         tokenized_lines.append(tokenized_line)
         last_line = tokenized_line.line
 
-    # Set default execution of next line.
-    finished_lines = []
-    if len(tokenized_lines): # Deal with zero length files.
-        for i in range(len(tokenized_lines)-1):
-            finished_lines.append(ProgramLine(tokenized_lines[i].line,
-                                             tokenized_lines[i].stmts,
-                                             i+1,
-                                             source=tokenized_lines[i].source))
-        finished_lines.append(ProgramLine(tokenized_lines[-1].line,
-                                         tokenized_lines[-1].stmts,
-                                         None,
-                                         source=tokenized_lines[-1].source))
-    return finished_lines
+    # Return a Program object instead of manually managing next pointers
+    return Program(tokenized_lines)
 
 
-def load_program(program_filename) -> list[ProgramLine]:
+def load_program(program_filename) -> Program:
     """
     Loads and preprocesses a BASIC program.
     :param program_filename:  The filename to read the program from.

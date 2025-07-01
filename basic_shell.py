@@ -22,7 +22,7 @@ except ImportError:
     readline = None  # Windows doesn't have readline by default
 
 from basic_parsing import ParsedStatement, ParsedStatementIf, ParsedStatementThen
-from basic_types import UndefinedSymbol, BasicSyntaxError, SymbolType, ProgramLine, BasicRuntimeError
+from basic_types import UndefinedSymbol, BasicSyntaxError, SymbolType, ProgramLine, Program, BasicRuntimeError
 
 from basic_interpreter import Executor
 from basic_loading import load_program, tokenize, tokenize_line
@@ -238,7 +238,7 @@ class BasicShell:
             print(line)
 
     def format_cl(self, cl):
-        program_line = self.executor._program[cl.index]
+        program_line = self.executor._program.get_line(cl.index)
         offset = cl.offset
         return F"Line: {program_line.line:6}: Clause: {offset}"
 
@@ -476,32 +476,28 @@ class BasicShell:
             last_was_then = isinstance(stmt, ParsedStatementThen)
         return source
 
-    def renumber(self, old_program: list[ProgramLine], line_map: dict[int:int], start_line: int, increment: int):
-        new_program: list[ProgramLine] = []
+    def renumber(self, old_program: Program, line_map: dict[int:int], start_line: int, increment: int):
+        new_program_lines: list[ProgramLine] = []
         cur_line = start_line
         for index, line in enumerate(old_program):
             stmts: list[ParsedStatement] = []
             for statement in line.stmts:
                 ps = statement.renumber(line_map)
                 stmts.append(ps)
-            if index + 1 == len(old_program):
-                next_line = None
-            else:
-                next_line = len(new_program)
             source = self.smart_join(stmts)
-            pl = ProgramLine(cur_line, stmts, next_line, str(cur_line)+" " + source)
-            new_program.append(pl)
+            pl = ProgramLine(cur_line, stmts, str(cur_line)+" " + source)
+            new_program_lines.append(pl)
             cur_line += increment
 
-        return new_program
+        return Program(new_program_lines)
 
-    def format(self, old_program):
+    def format(self, old_program: Program):
         """
         Parses the program, and returns the new program. This should standardize formatting, spacing.
         :param old_program:
         :return:
         """
-        new_program:ProgramLine = []
+        new_program_lines: list[ProgramLine] = []
         # Make a dummy, identity map. We are renumbering to the same numbers.
         line_map = {line.line:line.line for line in old_program}
         for line in old_program:
@@ -509,12 +505,11 @@ class BasicShell:
             for statement in line.stmts:
                 ps = statement.renumber(line_map)
                 new_statements.append(ps)
-            # TODO. The "next" from the last line should be -1
             string_statements = ":".join([str(stmt) for stmt in new_statements])
-            program_line = ProgramLine(line.line, new_statements, len(new_program), str(line.line)+" " +
+            program_line = ProgramLine(line.line, new_statements, str(line.line)+" " +
                                        str(string_statements))
-            new_program.append(program_line)
-        return new_program
+            new_program_lines.append(program_line)
+        return Program(new_program_lines)
 
     def cmd_format(self, args):
         """
@@ -727,17 +722,13 @@ class BasicShell:
             print("No program has been loaded yet.")
             return
             
-        # Find and remove the line
-        program = self.executor._program
-        original_count = len(program)
-        program = [line for line in program if line.line != line_number]
+        # Use the Program class method to delete the line
+        was_deleted = self.executor._program.delete_line(line_number)
         
-        if len(program) == original_count:
+        if not was_deleted:
             print(f"Line {line_number} not found")
             return
             
-        # Rebuild program with correct next pointers and reload
-        self.rebuild_and_reload_program(program)
         print(f"Line {line_number} deleted")
 
     def insert_or_replace_line(self, new_line: ProgramLine):
@@ -747,61 +738,24 @@ class BasicShell:
         """
         if not self.executor:
             # Create empty program if none exists
-            program = []
-        else:
-            program = self.executor._program.copy()
+            self.executor = Executor(Program([]))
             
-        # Find insertion point or replacement
-        insertion_index = 0
-        replaced = False
+        # Use the Program class method to insert or replace the line
+        was_replaced = self.executor._program.insert_or_replace_line(new_line)
+        self.executor.modified = True
         
-        for i, existing_line in enumerate(program):
-            if existing_line.line == new_line.line:
-                # Replace existing line
-                program[i] = new_line
-                replaced = True
-                break
-            elif existing_line.line > new_line.line:
-                # Insert before this line
-                insertion_index = i
-                break
-            insertion_index = i + 1
-            
-        if not replaced:
-            # Insert new line at correct position
-            program.insert(insertion_index, new_line)
-            
-        # Rebuild program with correct next pointers and reload
-        self.rebuild_and_reload_program(program)
-        
-        action = "replaced" if replaced else "inserted"
+        action = "replaced" if was_replaced else "inserted"
         print(f"Line {new_line.line} {action}")
 
     def rebuild_and_reload_program(self, program_lines: list[ProgramLine]):
         """
-        Rebuild a program with correct next pointers and reload the executor
+        Rebuild a program and reload the executor
         :param program_lines: List of ProgramLine objects in correct order
         """
-        # Set up next pointers correctly
-        rebuilt_program = []
-        for i, line in enumerate(program_lines):
-            if i == len(program_lines) - 1:
-                next_index = None  # Last line points to None
-            else:
-                next_index = i + 1
-                
-            rebuilt_line = ProgramLine(
-                line.line,
-                line.stmts,
-                next_index,
-                line.source
-            )
-            rebuilt_program.append(rebuilt_line)
-            
-        # Create new executor with the updated program  
-        # This resets execution state as requested
+        # Create new Program object and executor
         try:
-            self.executor = Executor(rebuilt_program)
+            new_program = Program(program_lines)
+            self.executor = Executor(new_program)
             # Mark as successfully loaded
             self.load_status = True
         except BasicSyntaxError as e:

@@ -10,7 +10,7 @@ from typing import Optional, TextIO
 
 from basic_interpreter import Executor
 from basic_loading import load_program
-from basic_types import BasicSyntaxError, RunStatus, ProgramLine
+from basic_types import BasicSyntaxError, RunStatus, Program
 from basic_utils import TRACE_FILE_NAME
 
 # Constants
@@ -42,7 +42,7 @@ def find_program_file(program_name: str) -> str:
     return program_name  # Return original name to trigger FileNotFoundError
 
 
-def load_program_with_error_handling(program_path: str) -> list[ProgramLine]:
+def load_program_with_error_handling(program_path: str) -> Program:
     """Load a BASIC program with comprehensive error handling."""
     try:
         return load_program(program_path)
@@ -57,7 +57,7 @@ def load_program_with_error_handling(program_path: str) -> list[ProgramLine]:
         sys.exit(EXIT_ERROR)
 
 
-def execute_program(program: list[ProgramLine], trace_file: Optional[TextIO] = None, 
+def execute_program(program: Program, trace_file: Optional[TextIO] = None, 
                    enable_timing: bool = False) -> tuple[RunStatus, Executor]:
     """Execute a BASIC program with optional tracing and timing."""
     executor = Executor(program, trace_file=trace_file)
