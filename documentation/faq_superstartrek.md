@@ -3,23 +3,27 @@
 
 Full direction can be found here; https://coding-horror.github.io/basic-computer-games/84_Super_Star_Trek/javascript/index.html
 
-Short directions
-Use the command srs to see what is in your current area
+## Short directions
 
-Use the command lrs to see what is in adjacent squares
+Use the command **SRS** to see what is in your current area
 
-213 in LRS output means 2 klingons, 1 starbase, and 3 stars.
+Use the command **LRS** to see what is in adjacent squares
 
-Use the command "com", then "0" to see a full quadrant map. It only shows information for
+213 in **LRS** output means 2 klingons, 1 starbase, and 3 stars.
+
+Use the command **COM**, then "0" to see a full quadrant map. It only shows information for
 quadrants you have visited or scanned.
 
-Move around the map, shooting Klingons with commands "pha" or "tor". If you run low on energy or 
+Move around the map, shooting Klingons with commands **PHA**sers or **TOR**pedoes. If you run low on energy or 
 take damage, find a starbase to recharge.
+
+If you don't raise **SHE**ilds first, you'll die at the first shot from a Klingon,
 
 The game is turn limited, so don't waste too much time wandering around.
 
 
 ## Navigation
+### Directions
 ```
 ┌─────┬─────┬─────┐
 │  4  │  3  │  2  │
@@ -33,14 +37,14 @@ The game is turn limited, so don't waste too much time wandering around.
 └─────┴─────┴─────┘
 ```
 
-### Warp Factors
-Warp factors also can contain decimals.
+### Directions and Warp Factors
+Directions and warp factors can contain decimals.
 
 ## Computer Commands
 
 Source: https://www.atariarchives.org/bcc1/showpage.php?page=276
 
-You access these commands with the "COM" command at the main menu. 
+You access these commands with the **COM** command at the main menu. 
 
 Library computer options are as follows (more complete descriptions are in program instructions, above):
 
