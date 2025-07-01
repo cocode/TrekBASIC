@@ -51,3 +51,35 @@ Now that we can add/replace lines in the shell, we should warn before exiting, i
 ### Support "OPTION BASE"
 Add OPTION BASE statement to set the starting index of array variables as either 0 or 1
 Found in GWBASIC
+
+### Refactor Program
+Convert the list[ProgramLine] to a "Program" class.
+
+COMMAND ^DTraceback (most recent call last):
+  File "/Users/tomhill/PycharmProjects/TrekBasic/basic_interpreter.py", line 152, in run_program
+    execution_function(self, s)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/tomhill/PycharmProjects/TrekBasic/basic_statements.py", line 250, in stmt_input
+    result = executor.do_input()
+  File "/Users/tomhill/PycharmProjects/TrekBasic/basic_interpreter.py", line 454, in do_input
+    response = input()
+EOFError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/tomhill/PycharmProjects/TrekBasic/basic_shell.py", line 861, in <module>
+    debugger.do_command()
+    ~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/tomhill/PycharmProjects/TrekBasic/basic_shell.py", line 852, in do_command
+    function(self, args)
+    ~~~~~~~~^^^^^^^^^^^^
+  File "/Users/tomhill/PycharmProjects/TrekBasic/basic_shell.py", line 434, in cmd_run
+    self.cmd_continue(None)
+    ~~~~~~~~~~~~~~~~~^^^^^^
+  File "/Users/tomhill/PycharmProjects/TrekBasic/basic_shell.py", line 404, in cmd_continue
+    rc = self.executor.run_program(self._breakpoints, self._data_breakpoints, single_step=single_step)
+  File "/Users/tomhill/PycharmProjects/TrekBasic/basic_interpreter.py", line 164, in run_program
+    raise BasicInternalError(F"Internal error in line {current.line}: {e}")
+basic_types.BasicInternalError: Internal error in line 1000:
+
