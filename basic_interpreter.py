@@ -57,6 +57,7 @@ class Executor:
         self._program = program
         self._location: ControlLocation = ControlLocation(0,0)
         self._run = RunStatus.RUN
+        # A "File-like" object. Could be File pointer - it's not the file name.
         self._trace_file_like: Optional[TextIO] = trace_file
         self._stack_trace = stack_trace
         self._goto = None
