@@ -73,6 +73,7 @@ class Executor:
             print("Running with code coverage")
         self.init_symbols()
         self.setup_program()
+        self.modified = False
 
     def init_symbols(self):
         self._internal_symbols = SymbolTable()
@@ -535,13 +536,3 @@ class Executor:
             
             # Line not found
             raise BasicRuntimeError(f"RESTORE {line_number}: Line not found")
-
-    # Is this needed?
-    # def _get_current_line_number(self):
-    #     """
-    #     Gets the line_number that is next to be executed.
-    #     :return:
-    #     """
-    #     current = self._program[self._location.index]
-    #     line_number = current.line
-    #     return line_number
