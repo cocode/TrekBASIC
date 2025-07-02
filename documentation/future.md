@@ -34,4 +34,5 @@ See test_runner_common.py
     "This test suite covered xx% of the code."
 * "auto-test" - find functions and write tests, based on their definitons. - that is more of a unit test thing.
 
- 
+ ### AI Player
+we have TrekBot, which plays startrek badly. adding a chatbot player would be fun.
