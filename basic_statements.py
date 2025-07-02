@@ -215,7 +215,7 @@ def stmt_dim(executor, stmt:ParsedStatementDim):
         for dim_expr in dimension_expressions:
             result = eval_expression(executor._symbols, dim_expr)
             evaluated_dimensions.append(int(result))
-        
+        # TODO put a limit on array size
         initializer = init_array(evaluated_dimensions)
         executor.put_symbol(name, initializer, SymbolType.ARRAY, arg=None)
 
