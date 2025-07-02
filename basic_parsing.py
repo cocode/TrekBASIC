@@ -3,7 +3,6 @@ This file contains the classes used to represent parsed statements.
 """
 from typing import List, Tuple, Optional, Union, Any, Dict
 from basic_lexer import get_lexer
-from basic_find_str_quotes import find_next_str_not_quoted
 from basic_types import tokens_to_str, NUMBERS
 
 from basic_types import is_valid_identifier
@@ -56,7 +55,6 @@ class ParsedStatementNoArgs(ParsedStatement):
     """
     def __init__(self, keyword: 'Keywords', args: str) -> None:
         super().__init__(keyword, "")
-        self.keyword: 'Keywords' = keyword  # TODO Do we need this, it's in the base class?
         assert_syntax(len(args.strip()) == 0, "Command does not take any arguments.")
         self.args = ""
 
