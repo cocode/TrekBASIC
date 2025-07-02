@@ -19,7 +19,7 @@ def get_expected_exit_code(program_path):
     try:
         with open(program_path, 'r') as f:
             first_line = f.readline().strip()
-            if first_line.startswith('10 REM EXPECT_EXIT_CODE='):
+            if first_line.startswith('10 REM @EXPECT_EXIT_CODE='):
                 return int(first_line.split('=')[1])
     except (FileNotFoundError, ValueError, IndexError):
         pass
