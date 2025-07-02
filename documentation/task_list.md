@@ -83,3 +83,15 @@ Traceback (most recent call last):
     raise BasicInternalError(F"Internal error in line {current.line}: {e}")
 basic_types.BasicInternalError: Internal error in line 1000:
 
+### Restructure
+Move all basic.*py files to subdirectory
+Move all remaining tests in ./* to approriate test dir
+
+### Fix all TODOs
+
+### Make basic.py and tbc.py runnable
+Add shebang line
+
+### Publish to pypy
+
+### Put a limit on the size of all dymnamic objects, strings, arrays. What else?
