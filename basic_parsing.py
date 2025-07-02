@@ -101,8 +101,8 @@ class ParsedStatementFor(ParsedStatement):
     def __init__(self, keyword: 'Keywords', args: str) -> None:
         super().__init__(keyword, "")
         eq = args.find("=")
-        to = args.find("TO")
-        step = args.find("STEP")
+        to = args.upper().find("TO")
+        step = args.upper().find("STEP")
         assert_syntax(eq != -1, "No = found for FOR")
         assert_syntax(to != -1, "No TO found for FOR")
         self._index_clause = args[:eq].strip()  # TODO convert to int here.
