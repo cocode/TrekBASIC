@@ -9,7 +9,7 @@ from collections import namedtuple
 from enum import Enum
 
 from basic_dialect import ARRAY_OFFSET
-from basic_types import lexer_token, assert_syntax, SymbolType, BasicSyntaxError
+from basic_types import lexer_token, assert_syntax, SymbolType, BasicSyntaxError, BasicRuntimeError
 
 import basic_expressions
 import basic_functions
@@ -138,12 +138,15 @@ class ArrayAccessOp(MonoOp):
             for arg in args:
                 assert_syntax(type(v) is list, F"Too many array dimensions for {array_name} subscript.")
                 assert_syntax(arg < len(v), F"Array subscript out of bounds for {array_name}")
+                assert_syntax(arg >= 0, F"Array subscript out of bounds for {array_name}")
                 v = v[arg]
             return v
         else:
             # TODO should only need the above.
             assert_syntax(int(first) == first, F"Non-integral array subscript {first}'")
             subscript = int(first) - ARRAY_OFFSET
+            if subscript >= len(variable) or subscript < 0:
+                raise BasicRuntimeError("Subscript out of range for {variable} {subscript")
             return variable[subscript] # TODO This will only work for one dimensional arrays, that don't have expressions as subscripts.
 
     def eval(self, stack, *, op):
