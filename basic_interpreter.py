@@ -154,7 +154,7 @@ class Executor:
                 # TODO: This needs a bit more thought. The tests are checking for exceptions,
                 # TODO and don't need the print statement. The user just needs the message printed.
                 self._run = RunStatus.END_ERROR_SYNTAX
-                raise BasicSyntaxError(bse.message, current.line) from bre
+                raise BasicSyntaxError(bse.message, current.line) from bse
                 # TODO what is current.source?  previous had: print(F"Syntax Error in line {current.line}: {bse.message}: {current.source}")
             except BasicRuntimeError as bre:
                 self._run = RunStatus.END_ERROR_RUNTIME
