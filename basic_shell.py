@@ -648,9 +648,27 @@ class BasicShell:
                 print(F"\t{key}: {tup[1]}")
             return
         print("Commands are:")
-        for key in self.commands:
+        
+        # Sort commands alphabetically and find longest command name for alignment
+        sorted_commands = sorted(self.commands.keys())
+        max_cmd_len = max(len(cmd) for cmd in sorted_commands)
+        
+        for key in sorted_commands:
             tup = self.commands[key]
-            print(F"\t{key}: {tup[1]}")
+            # Put colon right after command name, then pad with spaces
+            padding = " " * (max_cmd_len - len(key) + 1)
+            help_text = tup[1]
+            
+            # Calculate the alignment for continuation lines
+            # Tab (8 spaces) + command + colon + padding = total indent for continuation lines
+            total_indent = 8 + len(key) + 1 + len(padding)
+            continuation_indent = " " * total_indent
+            
+            # Replace \n\t\t with proper alignment
+            help_text = help_text.replace("\n\t\t", f"\n{continuation_indent}")
+            
+            print(F"\t{key}:{padding}{help_text}")
+        
         print("Commands can be abbreviated to shortest unique prefix.")
         print("For convenience, 'r' works for 'run', and 'c' for 'continue'")
         print()
@@ -680,6 +698,13 @@ class BasicShell:
             for statement in line.stmts:
                 print(F"\t{statement}", end="|")
             print()
+
+    def cmd_stop(self, args):
+        if not self.executor:
+            print("No program has been loaded yet.")
+            return
+
+        self.executor.restart()
 
     def handle_line_entry(self, line_input: str):
         """
@@ -771,40 +796,70 @@ class BasicShell:
         "r": "run",
         "c": "continue",
     }
-    commands = {
-        "?": (cmd_print, "Usage: ? expression\n\t\tEvaluates and prints an expression."
-              "\n\t\tNote: You can't print single array variables. Use 'sym'"),
-        "benchmark": (cmd_benchmark, "Usage: benchmark\n\t\tRuns the program from the beginning, and shows timing."),
-        "break": (cmd_break, "Usage: break LINE or break SYMBOL or break list break clear"+
+    
+    # Map from cmd_XXX method names to help text
+    cmd_help_map = {
+        cmd_print: "Usage: ? expression\n\t\tEvaluates and prints an expression."
+                  "\n\t\tNote: You can't print single array variables. Use 'sym'",
+        cmd_benchmark: "Usage: benchmark\n\t\tRuns the program from the beginning, and shows timing.",
+        cmd_break: "Usage: break LINE or break SYMBOL or break list break clear"+
                   "\n\t\tSets a breakpoint on a line, or on writes to a variable"+
                   "\n\t\tNote that if you have an array and a symbol with the same"+
-                  "\n\t\tname, it will break on writes to either one."),
-        "clear": (cmd_clear, "Usage: clear\n\t\tClears the current program and all state (breakpoints, watchpoints, coverage, etc.)"),
-        "continue": (cmd_continue, "Usage: continue\n\t\tContinues, after a breakpoint."),
-        "coverage": (cmd_coverage, "Usage: coverage\n\t\tPrint code coverage report."+
-                     "\n\t\tkoverage on\n\t\tkoverage off\n\t\tkoverage clear\n\t\tkoverage report <save|load|list>"),
-        "exit": (cmd_quit, "Usage: quit. Synonym for 'quit'"),
-        "format": (cmd_format, "Usage: format\n\t\tFormats the program. Does not save it."),
-        "forstack": (cmd_for_stack, "Usage: fors\n\t\tPrints the FOR stack."),
-        "gosubs": (cmd_gosub_stack, "Usage: gosubs\n\t\tPrints the FOR stack."),
-        "help": (cmd_help, "Usage: help <command>"),
-        "list": (cmd_list, "Usage: list <start line number> <count>"),
-        "llvm": (cmd_llvm, "llvm [file]: generate LLVM IR and print to console or save to file"),
-        "load": (cmd_load, "Usage: load <program>\n\t\tRunning load clears coverage data."),
-        "next": (cmd_next, "Usage: next.\n" +
-                 "\t\tExecutes the next line of the program."),
-        "quit": (cmd_quit, "Usage: quit. Synonym for 'exit'"),
-        "renumber": (cmd_renum, "Usage: renum <start <increment>>\n\t\tRenumbers the program."),
-        "run": (cmd_run, "Usage: run <coverage>\n\t\tRuns the program from the beginning.\n""+"
-                         "\t\tAdding the string 'coverage' will cause code coverage data to be recorded from this run"),
-        "save": (cmd_save, "Usage: save FILE"+
-                "\n\t\tSaves the current program to a new file."),
-        "statements": (cmd_stmts, "Usage: stmt <line>\n\t\tPrints the tokenized version of the program." +
-                 "\n\t\tThis is used for debugging TrekBasic."),
-        "symbols": (cmd_symbols, "Usage: sym <symbol> <type>"+
+                  "\n\t\tname, it will break on writes to either one.",
+        cmd_clear: "Usage: clear\n\t\tClears the current program and all state"+
+                  "\n(breakpoints, watchpoints, coverage, etc.)" +
+                  "\nSee also STOP command.",
+        cmd_continue: "Usage: continue\n\t\tContinues, after a breakpoint.",
+        cmd_coverage: "Usage: coverage\n\t\tPrint code coverage report."+
+                     "\n\t\tkoverage on\n\t\tkoverage off\n\t\tkoverage clear\n\t\tkoverage report <save|load|list>",
+        cmd_quit: "Usage: quit. Synonym for 'exit'",
+        cmd_format: "Usage: format\n\t\tFormats the program. Does not save it.",
+        cmd_for_stack: "Usage: fors\n\t\tPrints the FOR stack.",
+        cmd_gosub_stack: "Usage: gosubs\n\t\tPrints the FOR stack.",
+        cmd_help: "Usage: help <command>",
+        cmd_list: "Usage: list <start line number> <count>",
+        cmd_llvm: "llvm [file]: generate LLVM IR and print to console or save to file",
+        cmd_load: "Usage: load <program>\n\t\tRunning load clears coverage data.",
+        cmd_next: "Usage: next.\n" +
+                 "\t\tExecutes the next line of the program.",
+        cmd_renum: "Usage: renum <start <increment>>\n\t\tRenumbers the program.",
+        cmd_run: "Usage: run <coverage>\n\t\tRuns the program from the beginning.\n"
+                         "\t\tAdding the string 'coverage' will cause code coverage data to be recorded from this run",
+        cmd_save: "Usage: save FILE"+
+                "\n\t\tSaves the current program to a new file.",
+        cmd_stmts: "Usage: stmt <line>\n\t\tPrints the tokenized version of the program." +
+                 "\n\t\tThis is used for debugging TrekBasic.",
+        cmd_stop: "Usage: stop. If you are running a program, this sets you back to the start. " +
+                 "\n\t\tUnlike clear, which clears the program, breakpoints, etc. This only resets execution.",
+        cmd_symbols: "Usage: sym <symbol> <type>"+
                 "\n\t\tPrints the symbol table, or one entry."+
                 "\n\t\tType is 'variable', 'array' or 'function'. Defaults to 'variable'."+
-                "\n\t\tThis is used for debugging TrekBask."),
+                "\n\t\tThis is used for debugging TrekBask.",
+    }
+    
+    commands = {
+        "?": (cmd_print, cmd_help_map[cmd_print]),
+        "benchmark": (cmd_benchmark, cmd_help_map[cmd_benchmark]),
+        "break": (cmd_break, cmd_help_map[cmd_break]),
+        "clear": (cmd_clear, cmd_help_map[cmd_clear]),
+        "continue": (cmd_continue, cmd_help_map[cmd_continue]),
+        "coverage": (cmd_coverage, cmd_help_map[cmd_coverage]),
+        "exit": (cmd_quit, cmd_help_map[cmd_quit]),
+        "format": (cmd_format, cmd_help_map[cmd_format]),
+        "forstack": (cmd_for_stack, cmd_help_map[cmd_for_stack]),
+        "gosubs": (cmd_gosub_stack, cmd_help_map[cmd_gosub_stack]),
+        "help": (cmd_help, cmd_help_map[cmd_help]),
+        "list": (cmd_list, cmd_help_map[cmd_list]),
+        "llvm": (cmd_llvm, cmd_help_map[cmd_llvm]),
+        "load": (cmd_load, cmd_help_map[cmd_load]),
+        "next": (cmd_next, cmd_help_map[cmd_next]),
+        "quit": (cmd_quit, cmd_help_map[cmd_quit]),
+        "renumber": (cmd_renum, cmd_help_map[cmd_renum]),
+        "run": (cmd_run, cmd_help_map[cmd_run]),
+        "save": (cmd_save, cmd_help_map[cmd_save]),
+        "statements": (cmd_stmts, cmd_help_map[cmd_stmts]),
+        "stop": (cmd_stop, cmd_help_map[cmd_stop]),
+        "symbols": (cmd_symbols, cmd_help_map[cmd_symbols]),
     }
 
     def find_command(self, prefix):
