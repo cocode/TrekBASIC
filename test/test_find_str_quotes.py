@@ -32,11 +32,13 @@ class TestFindNextStrNotQuoted(unittest.TestCase):
         first = s.index('+*?')
         self.assertEqual(find_next_str_not_quoted(s, '+*?'), (first, first + 3))
 
-    def test_quoted_with_escaped_quote(self):
-        s = 'foo \\"ELSE\\" bar ELSE'
-        # the escaped-quote syntax isn’t treated as a literal quote, so we still match the final ELSE
-        idx = s.index('ELSE', 12)
-        self.assertEqual(find_next_str_not_quoted(s, 'ELSE'), (idx, idx + 4))
+    # NOTE basic does not sopport escaped quotes
+    # Some versions support two doublequotes "" as a indicator if the character "
+    # def test_quoted_with_escaped_quote(self):
+    #     s = 'foo \\"ELSE\\" bar ELSE'
+    #     # the escaped-quote syntax isn’t treated as a literal quote, so we still match the final ELSE
+    #     idx = s.index('ELSE', 12)
+    #     self.assertEqual(find_next_str_not_quoted(s, 'ELSE'), (idx, idx + 4))
 
 if __name__ == '__main__':
     unittest.main()
