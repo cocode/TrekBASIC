@@ -822,7 +822,7 @@ class BasicShell:
                   "\nSee also STOP command.",
         cmd_continue: "Usage: continue\n\t\tContinues, after a breakpoint.",
         cmd_coverage: "Usage: coverage\n\t\tPrint code coverage report."+
-                     "\n\t\tkoverage on\n\t\tkoverage off\n\t\tkoverage clear\n\t\tkoverage report <save|load|list>",
+                     "\n\t\tcoverage on\n\t\tcoverage off\n\t\tcoverage clear\n\t\tcoverage report <save|load|list>",
         cmd_quit: "Usage: quit. Synonym for 'exit'",
         cmd_format: "Usage: format\n\t\tFormats the program. Does not save it.",
         cmd_for_stack: "Usage: fors\n\t\tPrints the FOR stack.",
