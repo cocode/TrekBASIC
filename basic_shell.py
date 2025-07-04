@@ -666,6 +666,8 @@ class BasicShell:
         print("General Commands:")
         self._print_help_group("general")
         print("\nDebug Commands:")
+        print("\tDebug Command generally work while a program is running, or after it ends..")
+        print("\tCommands like forstack and symbols require a program context to work.\n")
         self._print_help_group("debug")
         print("\nCommands can be abbreviated to shortest unique prefix.")
         print("For convenience, 'r' works for 'run', and 'c' for 'continue'")
