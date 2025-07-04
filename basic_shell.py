@@ -142,8 +142,8 @@ class BasicShell:
         :param cmd:
         :return:
         """
-        tup = self.commands[cmd]
-        usage = tup[1]
+        function = self.commands[cmd]
+        usage = self.cmd_help_map[function]
         print(usage)
 
     def cmd_load(self, filename):
@@ -655,20 +655,21 @@ class BasicShell:
         if args is not None:
             if args in self.commands:
                 key = args
-                tup = self.commands[args]
-                print(F"\t{key}: {tup[1]}")
+                function = self.commands[args]
+                help_text = self.cmd_help_map[function]
+                print(F"\t{key}: {help_text}")
             return
         print("Commands are:")
         
-        # Sort commands alphabetically and find longest command name for alignment
+        # Sort commands alphabetically and find the longest command name for alignment
         sorted_commands = sorted(self.commands.keys())
         max_cmd_len = max(len(cmd) for cmd in sorted_commands)
         
         for key in sorted_commands:
-            tup = self.commands[key]
+            function = self.commands[key]
             # Put colon right after command name, then pad with spaces
             padding = " " * (max_cmd_len - len(key) + 1)
-            help_text = tup[1]
+            help_text = self.cmd_help_map[function]
             
             # Calculate the alignment for continuation lines
             # Tab (8 spaces) + command + colon + padding = total indent for continuation lines
@@ -817,9 +818,8 @@ class BasicShell:
                   "\n\t\tSets a breakpoint on a line, or on writes to a variable"+
                   "\n\t\tNote that if you have an array and a symbol with the same"+
                   "\n\t\tname, it will break on writes to either one.",
-        cmd_clear: "Usage: clear\n\t\tClears the current program and all state"+
-                  "\n(breakpoints, watchpoints, coverage, etc.)" +
-                  "\nSee also STOP command.",
+        cmd_clear: "Usage: clear\n\t\tClears the current program and all state (breakpoints, watchpoints, coverage, etc.)"+
+                  "\n\t\tSee also STOP command.",
         cmd_continue: "Usage: continue\n\t\tContinues, after a breakpoint.",
         cmd_coverage: "Usage: coverage\n\t\tPrint code coverage report."+
                      "\n\t\tcoverage on\n\t\tcoverage off\n\t\tcoverage clear\n\t\tcoverage report <save|load|list>",
@@ -840,7 +840,7 @@ class BasicShell:
                 "\n\t\tSaves the current program to a new file.",
         cmd_stmts: "Usage: stmt <line>\n\t\tPrints the tokenized version of the program." +
                  "\n\t\tThis is used for debugging TrekBasic.",
-        cmd_stop: "Usage: stop. If you are running a program, this sets you back to the start. " +
+        cmd_stop: "Usage: stop.\n\t\tIf you are running a program, this sets you back to the start. " +
                  "\n\t\tUnlike clear, which clears the program, breakpoints, etc. This only resets execution.",
         cmd_symbols: "Usage: sym <symbol> <type>"+
                 "\n\t\tPrints the symbol table, or one entry."+
@@ -849,28 +849,28 @@ class BasicShell:
     }
     
     commands = {
-        "?": (cmd_print, cmd_help_map[cmd_print]),
-        "benchmark": (cmd_benchmark, cmd_help_map[cmd_benchmark]),
-        "break": (cmd_break, cmd_help_map[cmd_break]),
-        "clear": (cmd_clear, cmd_help_map[cmd_clear]),
-        "continue": (cmd_continue, cmd_help_map[cmd_continue]),
-        "coverage": (cmd_coverage, cmd_help_map[cmd_coverage]),
-        "exit": (cmd_quit, cmd_help_map[cmd_quit]),
-        "format": (cmd_format, cmd_help_map[cmd_format]),
-        "forstack": (cmd_for_stack, cmd_help_map[cmd_for_stack]),
-        "gosubs": (cmd_gosub_stack, cmd_help_map[cmd_gosub_stack]),
-        "help": (cmd_help, cmd_help_map[cmd_help]),
-        "list": (cmd_list, cmd_help_map[cmd_list]),
-        "llvm": (cmd_llvm, cmd_help_map[cmd_llvm]),
-        "load": (cmd_load, cmd_help_map[cmd_load]),
-        "next": (cmd_next, cmd_help_map[cmd_next]),
-        "quit": (cmd_quit, cmd_help_map[cmd_quit]),
-        "renumber": (cmd_renum, cmd_help_map[cmd_renum]),
-        "run": (cmd_run, cmd_help_map[cmd_run]),
-        "save": (cmd_save, cmd_help_map[cmd_save]),
-        "statements": (cmd_stmts, cmd_help_map[cmd_stmts]),
-        "stop": (cmd_stop, cmd_help_map[cmd_stop]),
-        "symbols": (cmd_symbols, cmd_help_map[cmd_symbols]),
+        "?": cmd_print,
+        "benchmark": cmd_benchmark,
+        "break": cmd_break,
+        "clear": cmd_clear,
+        "continue": cmd_continue,
+        "coverage": cmd_coverage,
+        "exit": cmd_quit,
+        "format": cmd_format,
+        "forstack": cmd_for_stack,
+        "gosubs": cmd_gosub_stack,
+        "help": cmd_help,
+        "list": cmd_list,
+        "llvm": cmd_llvm,
+        "load": cmd_load,
+        "next": cmd_next,
+        "quit": cmd_quit,
+        "renumber": cmd_renum,
+        "run": cmd_run,
+        "save": cmd_save,
+        "statements": cmd_stmts,
+        "stop": cmd_stop,
+        "symbols": cmd_symbols,
     }
 
     def find_command(self, prefix):
@@ -916,8 +916,7 @@ class BasicShell:
                 print(F"Unknown command {cmd}")
                 self.cmd_help(args)
                 continue
-            tup = self.commands[cmd]
-            function = tup[0]
+            function = self.commands[cmd]
             function(self, args)
 
 
