@@ -19,8 +19,9 @@ def get_expected_exit_code(program_path):
     try:
         with open(program_path, 'r') as f:
             first_line = f.readline().strip()
-            if first_line.startswith('10 REM @EXPECT_EXIT_CODE='):
-                return int(first_line.split('=')[1])
+            if (equals := first_line.find("@EXPECT_EXIT_CODE") != -1):
+                value = first_line[:equals]
+                return int(value)
     except (FileNotFoundError, ValueError, IndexError):
         pass
     return 0  # Default to 0 (success)
