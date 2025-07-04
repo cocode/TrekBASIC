@@ -1,0 +1,7 @@
+[run]
+branch = True
+source = trekbasic
+
+[report]
+show_missing = True
+skip_covered = True
