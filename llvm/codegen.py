@@ -3,7 +3,8 @@ from basic_parsing import (
     ParsedStatementLet, ParsedStatementPrint, ParsedStatementIf,
     ParsedStatementFor, ParsedStatementNext, ParsedStatementGo,
     ParsedStatementOnGoto, ParsedStatementInput, ParsedStatementDim,
-    ParsedStatementThen, ParsedStatementElse
+    ParsedStatementThen, ParsedStatementElse, ParsedStatementData,
+    ParsedStatementRead
 )
 from basic_expressions import Expression
 from basic_lexer import get_lexer
@@ -150,6 +151,11 @@ class LLVMCodeGenerator:
         self.return_stack_ptr = None
         self.return_stack_top = None
         self.newline_counter = 0
+        
+        # DATA/READ infrastructure
+        self.data_values = []  # Collect all DATA values at compile time
+        self.data_ptr = None   # Global pointer to track current read position
+        self._collect_data_values()
 
         # User-defined functions: map name to LLVM function
         self.user_functions = {}
@@ -464,6 +470,10 @@ class LLVMCodeGenerator:
              self._codegen_input(stmt)
         elif isinstance(stmt, ParsedStatementOnGoto):
              self._codegen_on_goto(stmt)
+        elif isinstance(stmt, ParsedStatementData):
+             self._codegen_data(stmt)
+        elif isinstance(stmt, ParsedStatementRead):
+             self._codegen_read(stmt)
         elif isinstance(stmt, ParsedStatementThen):
              # THEN is a no-op - the IF statement handles the control flow
              pass
@@ -1891,7 +1901,8 @@ class LLVMCodeGenerator:
         if len(indices) != len(dimensions):
             raise Exception(f"Array {array_name} has {len(dimensions)} dimensions, got {len(indices)} indices")
         
-        # Calculate offset: index1 * dim2 * dim3 + index2 * dim3 + index3
+        # Calculate offset: index1 * (dim2+1) * (dim3+1) + index2 * (dim3+1) + index3
+        # Since BASIC arrays are 1-based, DIM S(3,3) creates a 4x4 array
         offset = ir.Constant(ir.IntType(32), 0)
         multiplier = 1
         
@@ -1912,6 +1923,281 @@ class LLVMCodeGenerator:
         # Get element pointer
         element_ptr = builder.gep(array_storage, [ir.Constant(ir.IntType(32), 0), offset])
         return element_ptr
+
+
+    def _collect_data_values(self):
+        """Collect all DATA values from the program at compile time."""
+        for program_line in self.program:
+            for stmt in program_line.stmts:
+                if isinstance(stmt, ParsedStatementData):
+                    # Add each data value from this DATA statement
+                    self.data_values.extend(stmt._values)
+        
+        if self.debug:
+            print(f"DEBUG: Collected {len(self.data_values)} DATA values: {self.data_values}")
+
+    def _codegen_data(self, stmt):
+        """Generate LLVM IR for a DATA statement (no-op since data is collected at compile time)."""
+        # DATA statements are passive - all data is collected at compile time
+        # and stored in global data structures
+        pass
+
+    def _codegen_read(self, stmt):
+        """Generate LLVM IR for a READ statement."""
+        # Initialize data pointer if not already done
+        if self.data_ptr is None:
+            self.data_ptr = ir.GlobalVariable(self.module, ir.IntType(32), name="data_ptr")
+            self.data_ptr.linkage = 'internal'
+            self.data_ptr.global_constant = False
+            self.data_ptr.initializer = ir.Constant(ir.IntType(32), 0)
+        
+        # Create global array of data values (stored as strings for flexibility)
+        if "data_values" not in self.module.globals:
+            self._create_global_data_array()
+        
+        # Read each variable in the READ statement
+        for var_name in stmt._variables:
+            self._read_data_value(var_name)
+
+    def _create_global_data_array(self):
+        """Create a global array containing all DATA values as strings."""
+        if not self.data_values:
+            return
+        
+        # Create array of string pointers
+        str_ptr_type = ir.IntType(8).as_pointer()
+        array_type = ir.ArrayType(str_ptr_type, len(self.data_values))
+        
+        # Create global constants for each data value
+        data_constants = []
+        for i, value in enumerate(self.data_values):
+            # Create global string constant for this data value
+            str_val = value
+            if str_val.startswith('"') and str_val.endswith('"'):
+                str_val = str_val[1:-1]  # Remove quotes
+            str_val += "\0"  # Add null terminator
+            
+            c_str = ir.Constant(ir.ArrayType(ir.IntType(8), len(str_val)), bytearray(str_val.encode("utf8")))
+            global_str = ir.GlobalVariable(self.module, c_str.type, name=f"data_str_{i}")
+            global_str.linkage = 'internal'
+            global_str.global_constant = True
+            global_str.initializer = c_str
+            
+            # Get pointer to the string
+            str_ptr = global_str.bitcast(str_ptr_type)
+            data_constants.append(str_ptr)
+        
+        # Create the array initializer
+        array_init = ir.Constant(array_type, data_constants)
+        
+        # Create global variable for the data array
+        data_array = ir.GlobalVariable(self.module, array_type, name="data_values")
+        data_array.linkage = 'internal'
+        data_array.global_constant = True
+        data_array.initializer = array_init
+
+    def _read_data_value(self, var_name):
+        """Read one data value and assign it to the specified variable."""
+        # Get current data pointer value
+        current_ptr = self.builder.load(self.data_ptr, name="current_data_ptr")
+        
+        # Check bounds
+        max_index = ir.Constant(ir.IntType(32), len(self.data_values))
+        bounds_check = self.builder.icmp_signed("<", current_ptr, max_index, name="bounds_check")
+        
+        # Create blocks for bounds check
+        func = self.builder.block.function
+        valid_block = func.append_basic_block(name="valid_data")
+        error_block = func.append_basic_block(name="data_error")
+        continue_block = func.append_basic_block(name="continue_read")
+        
+        # Branch based on bounds check
+        self.builder.cbranch(bounds_check, valid_block, error_block)
+        
+        # Error block - print error and exit
+        self.builder.position_at_end(error_block)
+        error_msg = "I tried to READ, but ran out of data.\\n\0"
+        c_error_msg = ir.Constant(ir.ArrayType(ir.IntType(8), len(error_msg)), 
+                                bytearray(error_msg.encode("utf8")))
+        error_msg_name = "read_error_msg"
+        if error_msg_name not in self.module.globals:
+            global_error_msg = ir.GlobalVariable(self.module, c_error_msg.type, name=error_msg_name)
+            global_error_msg.linkage = 'internal'
+            global_error_msg.global_constant = True
+            global_error_msg.initializer = c_error_msg
+        else:
+            global_error_msg = self.module.get_global(error_msg_name)
+        
+        error_msg_ptr = self.builder.bitcast(global_error_msg, ir.IntType(8).as_pointer())
+        self.builder.call(self.printf, [error_msg_ptr])
+        self.builder.ret(ir.Constant(ir.IntType(32), 1))  # Exit with error
+        
+        # Valid block - get data value
+        self.builder.position_at_end(valid_block)
+        data_array = self.module.get_global("data_values")
+        data_ptr_val = self.builder.gep(data_array, [ir.Constant(ir.IntType(32), 0), current_ptr])
+        data_str_ptr = self.builder.load(data_ptr_val, name="data_str_ptr")
+        
+        # Determine if this is a string or numeric variable
+        is_string_var = self._is_string_variable(var_name)
+        
+        if is_string_var:
+            # String variable - assign the string directly
+            self._assign_string_variable(var_name, data_str_ptr)
+        else:
+            # Numeric variable - convert string to number
+            self._assign_numeric_variable(var_name, data_str_ptr)
+        
+        # Increment data pointer
+        next_ptr = self.builder.add(current_ptr, ir.Constant(ir.IntType(32), 1), name="next_data_ptr")
+        self.builder.store(next_ptr, self.data_ptr)
+        
+        # Continue to next variable
+        self.builder.branch(continue_block)
+        self.builder.position_at_end(continue_block)
+
+    def _is_string_variable(self, var_name):
+        """Check if a variable name refers to a string variable."""
+        var_clean = var_name.replace(" ", "")
+        i = var_clean.find("(")
+        if i != -1:
+            # Array element - check base variable name
+            base_var = var_clean[:i]
+            return base_var.endswith("$")
+        else:
+            # Simple variable
+            return var_name.endswith("$")
+
+    def _assign_string_variable(self, var_name, str_ptr):
+        """Assign a string value to a string variable."""
+        if self._is_array_element(var_name):
+            # Array element assignment
+            self._assign_array_element(var_name, str_ptr)
+        else:
+            # Simple string variable assignment
+            if var_name not in self.symbol_table:
+                # Create the variable if it doesn't exist
+                global_var = ir.GlobalVariable(self.module, ir.IntType(8).as_pointer(), name=f"global_{var_name}")
+                global_var.linkage = 'internal'
+                global_var.global_constant = False
+                global_var.initializer = ir.Constant(ir.IntType(8).as_pointer(), None)
+                self.symbol_table[var_name] = global_var
+            
+            var_ptr = self.symbol_table[var_name]
+            self.builder.store(str_ptr, var_ptr)
+
+    def _assign_numeric_variable(self, var_name, str_ptr):
+        """Convert string to number and assign to numeric variable."""
+        # Use sscanf to parse the number from the string
+        double_fmt = "%lf\0"
+        c_double_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(double_fmt)), 
+                                 bytearray(double_fmt.encode("utf8")))
+        double_fmt_name = "double_parse_fmt"
+        if double_fmt_name not in self.module.globals:
+            global_double_fmt = ir.GlobalVariable(self.module, c_double_fmt.type, name=double_fmt_name)
+            global_double_fmt.linkage = 'internal'
+            global_double_fmt.global_constant = True
+            global_double_fmt.initializer = c_double_fmt
+        else:
+            global_double_fmt = self.module.get_global(double_fmt_name)
+        
+        double_fmt_ptr = self.builder.bitcast(global_double_fmt, ir.IntType(8).as_pointer())
+        
+        # Allocate temporary variable for parsing
+        temp_double = self.builder.alloca(ir.DoubleType(), name="temp_double")
+        
+        # Parse the string to double
+        self.builder.call(self.sscanf, [str_ptr, double_fmt_ptr, temp_double])
+        parsed_value = self.builder.load(temp_double, name="parsed_value")
+        
+        if self._is_array_element(var_name):
+            # Array element assignment
+            self._assign_array_element(var_name, parsed_value)
+        else:
+            # Simple numeric variable assignment
+            if var_name not in self.symbol_table:
+                # Create the variable if it doesn't exist
+                global_var = ir.GlobalVariable(self.module, ir.DoubleType(), name=f"global_{var_name}")
+                global_var.linkage = 'internal'
+                global_var.global_constant = False
+                global_var.initializer = ir.Constant(ir.DoubleType(), 0.0)
+                self.symbol_table[var_name] = global_var
+            
+            var_ptr = self.symbol_table[var_name]
+            self.builder.store(parsed_value, var_ptr)
+
+    def _is_array_element(self, var_name):
+        """Check if a variable name refers to an array element."""
+        return "(" in var_name and ")" in var_name
+
+    def _assign_array_element(self, var_name, value):
+        """Assign a value to an array element."""
+        # Parse array name and indices
+        var_clean = var_name.replace(" ", "")
+        i = var_clean.find("(")
+        j = var_clean.rfind(")")
+        
+        array_name = var_clean[:i]
+        indices_str = var_clean[i+1:j]
+        
+        # Parse indices (handle multiple dimensions)
+        indices = [idx.strip() for idx in indices_str.split(",")]
+        
+        # Evaluate each index expression
+        lexer = get_lexer()
+        index_values = []
+        for idx in indices:
+            idx_tokens = lexer.lex(idx)
+            idx_value = self._codegen_expr(idx_tokens)
+            index_values.append(idx_value)
+        
+        # Get array storage
+        if array_name not in self.array_info:
+            raise Exception(f"Array {array_name} not found")
+        
+        array_info = self.array_info[array_name]
+        array_storage = array_info['storage']
+        
+        # Calculate linear index for multi-dimensional arrays
+        if len(index_values) == 1:
+            # 1D array
+            index_val = self.builder.fptoui(index_values[0], ir.IntType(32))
+            # Convert to 0-based index (BASIC arrays are 1-based by default)
+            one = ir.Constant(ir.IntType(32), 1)
+            zero_based_index = self.builder.sub(index_val, one)
+        else:
+            # Multi-dimensional array - calculate linear index
+            # For array A(m,n), index A(i,j) = i*(n+1) + j (0-based)
+            # Since BASIC arrays are 1-based, DIM S(3,3) creates a 4x4 array
+            dimensions = array_info['dimensions']
+            linear_index = None
+            
+            for dim_idx, idx_val in enumerate(index_values):
+                # Convert to 0-based
+                idx_int = self.builder.fptoui(idx_val, ir.IntType(32))
+                one = ir.Constant(ir.IntType(32), 1)
+                zero_based_idx = self.builder.sub(idx_int, one)
+                
+                if dim_idx == 0:
+                    # First dimension
+                    if len(dimensions) > 1:
+                        # Multiply by size of remaining dimensions (dimension+1 for 1-based)
+                        multiplier = ir.Constant(ir.IntType(32), dimensions[1] + 1)
+                        linear_index = self.builder.mul(zero_based_idx, multiplier)
+                    else:
+                        linear_index = zero_based_idx
+                else:
+                    # Subsequent dimensions
+                    if linear_index is None:
+                        linear_index = zero_based_idx
+                    else:
+                        linear_index = self.builder.add(linear_index, zero_based_idx)
+            
+            zero_based_index = linear_index
+        
+        # Get element pointer and store value
+        element_ptr = self.builder.gep(array_storage, [ir.Constant(ir.IntType(32), 0), zero_based_index])
+        self.builder.store(value, element_ptr)
 
 
 def generate_llvm_ir(program, debug=False, trace=False):
