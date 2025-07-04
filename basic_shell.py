@@ -15,6 +15,8 @@ import argparse
 import time
 import re
 
+from basic_symbols import SymbolTable
+
 # Add readline for command history and line editing
 try:
     import readline
@@ -346,23 +348,32 @@ class BasicShell:
                 print(F"Types are 'variable', 'array' and 'function'. Default is 'variable'")
 
     def cmd_print(self, args):
-        if not self.executor:
-            print("No program has been loaded yet.")
-            return
         if not args:
             self.usage("?")
             return
 
         try:
-            result = eval_expression(self.executor._symbols, args)
+            if self.executor is None or self.executor._symbols is None:
+                # This path can only do constant expresions, since there are no symbols.
+                # this is what you get when using ? before running a program.
+                symbols = SymbolTable()
+            else:
+                symbols = self.executor._symbols
+            result = eval_expression(symbols, args)
         except UndefinedSymbol as e:
             print(e.message)
             return
         except BasicSyntaxError as e:
             print(e.message)
             return
+        except TypeError as e:
+            print("Type Exception: " + str(e))
+            return
+        except AttributeError as e:
+            print("AttributeError: " + str(e))
+            return
         except Exception as e:
-            print("Exception: "+ e)
+            print("Exception: "+ str(e))
             return
         print(result)
 
