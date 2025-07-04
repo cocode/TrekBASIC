@@ -657,7 +657,11 @@ class BasicShell:
                 key = args
                 function = self.commands[args]
                 help_text = self.cmd_help_map[function]
-                print(F"\t{key}: {help_text}")
+                lines = help_text.split('\n')
+                print(f"\t{key}: {lines[0]}")
+                pad = ' ' * (8 + len(key) + 1)
+                for line in lines[1:]:
+                    print(f"{pad}{line}")
             return
         print("Commands are:")
         
@@ -667,19 +671,13 @@ class BasicShell:
         
         for key in sorted_commands:
             function = self.commands[key]
-            # Put colon right after command name, then pad with spaces
             padding = " " * (max_cmd_len - len(key) + 1)
             help_text = self.cmd_help_map[function]
-            
-            # Calculate the alignment for continuation lines
-            # Tab (8 spaces) + command + colon + padding = total indent for continuation lines
-            total_indent = 8 + len(key) + 1 + len(padding)
-            continuation_indent = " " * total_indent
-            
-            # Replace \n\t\t with proper alignment
-            help_text = help_text.replace("\n\t\t", f"\n{continuation_indent}")
-            
-            print(F"\t{key}:{padding}{help_text}")
+            lines = help_text.split('\n')
+            print(f"\t{key}:{padding}{lines[0]}")
+            pad = ' ' * (8 + len(key) + 1 + len(padding))
+            for line in lines[1:]:
+                print(f"{pad}{line}")
         
         print("Commands can be abbreviated to shortest unique prefix.")
         print("For convenience, 'r' works for 'run', and 'c' for 'continue'")
@@ -811,41 +809,91 @@ class BasicShell:
     
     # Map from cmd_XXX method names to help text
     cmd_help_map = {
-        cmd_print: "Usage: ? expression\n\t\tEvaluates and prints an expression."
-                  "\n\t\tNote: You can't print single array variables. Use 'sym'",
-        cmd_benchmark: "Usage: benchmark\n\t\tRuns the program from the beginning, and shows timing.",
-        cmd_break: "Usage: break LINE or break SYMBOL or break list break clear"+
-                  "\n\t\tSets a breakpoint on a line, or on writes to a variable"+
-                  "\n\t\tNote that if you have an array and a symbol with the same"+
-                  "\n\t\tname, it will break on writes to either one.",
-        cmd_clear: "Usage: clear\n\t\tClears the current program and all state (breakpoints, watchpoints, coverage, etc.)"+
-                  "\n\t\tSee also STOP command.",
-        cmd_continue: "Usage: continue\n\t\tContinues, after a breakpoint.",
-        cmd_coverage: "Usage: coverage\n\t\tPrint code coverage report."+
-                     "\n\t\tcoverage on\n\t\tcoverage off\n\t\tcoverage clear\n\t\tcoverage report <save|load|list>",
+        cmd_print: (
+            "Usage: ? expression"
+            "\nEvaluates and prints an expression."
+            "\nNote: You can't print single array variables. Use 'sym'"
+            "\nYou may have wanted the 'help' command."
+        ),
+        cmd_benchmark: (
+            "Usage: benchmark"
+            "\nRuns the program from the beginning, and shows timing."
+        ),
+        cmd_break: (
+            "Usage: break LINE or break SYMBOL or break list break clear"
+            "\nSets a breakpoint on a line, or on writes to a variable"
+            "\nNote that if you have an array and a symbol with the same name, it will break on writes to either one."
+        ),
+        cmd_clear: (
+            "Usage: clear"
+            "\nClears the current program and all state (breakpoints, watchpoints, coverage, etc.)"
+            "\nSee also STOP command."
+        ),
+        cmd_continue: (
+            "Usage: continue"
+            "\nContinues, after a breakpoint."
+        ),
+        cmd_coverage: (
+            "Usage: coverage"
+            "\nPrint code coverage report."
+            "\ncoverage on"
+            "\ncoverage off"
+            "\ncoverage clear"
+            "\ncoverage report <save|load|list>"
+        ),
         cmd_quit: "Usage: quit. Synonym for 'exit'",
-        cmd_format: "Usage: format\n\t\tFormats the program. Does not save it.",
-        cmd_for_stack: "Usage: fors\n\t\tPrints the FOR stack.",
-        cmd_gosub_stack: "Usage: gosubs\n\t\tPrints the FOR stack.",
+        cmd_format: (
+            "Usage: format"
+            "\nFormats the program. Does not save it."
+        ),
+        cmd_for_stack: (
+            "Usage: fors"
+            "\nPrints the FOR stack."
+        ),
+        cmd_gosub_stack: (
+            "Usage: gosubs"
+            "\nPrints the FOR stack."
+        ),
         cmd_help: "Usage: help <command>",
         cmd_list: "Usage: list <start line number> <count>",
         cmd_llvm: "llvm [file]: generate LLVM IR and print to console or save to file",
-        cmd_load: "Usage: load <program>\n\t\tRunning load clears coverage data.",
-        cmd_next: "Usage: next.\n" +
-                 "\t\tExecutes the next line of the program.",
-        cmd_renum: "Usage: renum <start <increment>>\n\t\tRenumbers the program.",
-        cmd_run: "Usage: run <coverage>\n\t\tRuns the program from the beginning.\n"
-                         "\t\tAdding the string 'coverage' will cause code coverage data to be recorded from this run",
-        cmd_save: "Usage: save FILE"+
-                "\n\t\tSaves the current program to a new file.",
-        cmd_stmts: "Usage: stmt <line>\n\t\tPrints the tokenized version of the program." +
-                 "\n\t\tThis is used for debugging TrekBasic.",
-        cmd_stop: "Usage: stop.\n\t\tIf you are running a program, this sets you back to the start. " +
-                 "\n\t\tUnlike clear, which clears the program, breakpoints, etc. This only resets execution.",
-        cmd_symbols: "Usage: sym <symbol> <type>"+
-                "\n\t\tPrints the symbol table, or one entry."+
-                "\n\t\tType is 'variable', 'array' or 'function'. Defaults to 'variable'."+
-                "\n\t\tThis is used for debugging TrekBask.",
+        cmd_load: (
+            "Usage: load <program>"
+            "\nRunning load clears coverage data."
+        ),
+        cmd_next: (
+            "Usage: next."
+            "\nExecutes the next line of the program."
+        ),
+        cmd_renum: (
+            "Usage: renum <start <increment>>"
+            "\nRenumbers the program."
+        ),
+        cmd_run: (
+            "Usage: run <coverage>"
+            "\nRuns the program from the beginning."
+            "\nAdding the string 'coverage' will cause code coverage data to be recorded from this run"
+        ),
+        cmd_save: (
+            "Usage: save FILE"
+            "\nSaves the current program to a new file."
+        ),
+        cmd_stmts: (
+            "Usage: stmt <line>"
+            "\nPrints the tokenized version of the program."
+            "\nThis is used for debugging TrekBasic."
+        ),
+        cmd_stop: (
+            "Usage: stop."
+            "\nIf you are running a program, this sets you back to the start."
+            "\nUnlike clear, which clears the program, breakpoints, etc. This only resets execution."
+        ),
+        cmd_symbols: (
+            "Usage: sym <symbol> <type>"
+            "\nPrints the symbol table, or one entry."
+            "\nType is 'variable', 'array' or 'function'. Defaults to 'variable'."
+            "\nThis is used for debugging TrekBask."
+        ),
     }
     
     commands = {
