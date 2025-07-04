@@ -114,3 +114,6 @@ im BASIC.
 
 ### test_suite
 Now that we have two implementations of BASIC, move all python files out of test_suite, so that project can be shared.
+
+### List Command
+Fix the arguments to the list command. 
