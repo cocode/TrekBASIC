@@ -405,6 +405,9 @@ class BasicShell:
         except BasicRuntimeError as e:
             print("Runtime Error: ", e.message)
             return
+        except BasicSyntaxError as e:
+            print("Syntax Error: ", e.message)
+            return
         if rc == RunStatus.BREAK_CODE:
             print("Breakpoint!")
             self.print_current(None)
