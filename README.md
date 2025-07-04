@@ -18,16 +18,18 @@ python basic.py programs/superstartrek.bas
 
 python tbc.py programs/superstartrek.bas
 
+Note that tbc.py just generates LLVM IR code, and uses clang to compile it. You'll need to have clang installed.
+
 # Justification
 
 I considered simply porting Star Trek to Python, but 
 writing an interpreter sounded like more fun.
 
-## Versions
+# Versions
 
 There are several versions of Star Trek available. 
 
-### Currently Supported
+## Currently Supported
 
 TrekBASIC currently runs only programs/superstartrek.bas
 
@@ -37,12 +39,12 @@ It's not that we don't want to add support for other versions of Star Trek, it's
 require other, incompatible basic interpreters/compilers. It's not a matter of needing more features, it's a matter
 of need different versions of existing features. (e.g. array indexes start at zero instead of one)
 
-### Other Versions
+## Other Versions
 * startrek.bas: http://www.bobsoremweb.com/startrek.html
 * https://github.com/RC2014Z80/RC2014/blob/master/BASIC-Programs/Super%20Startrek/startrek.bas
 * https://github.com/lwiest/BASICCompiler/blob/master/samples/STARTREK.BAS
 
-## Features
+# Features
 
 TrekBASIC actually provides a full basic development environment which has:
 * Code breakpoints 
@@ -55,7 +57,7 @@ TrekBASIC actually provides a full basic development environment which has:
 * Renumbering
 
 # Profiling
-You can profile the interpreters code using python profilers. 
+You can profile the interpreter's code using python profilers. 
 
 I have used cProfile and gprof2dot.py. You'll need to install gprof2dot.py 
 I don't have dot installed, I just found an online version, and used that. 
@@ -63,7 +65,7 @@ I don't have dot installed, I just found an online version, and used that.
     python -m cProfile  -s tottime trek_bot.py 
     python venv/lib/python3.9/site-packages/gprof2dot.py -f pstats test.pstats
 
-## Getting Started
+# Getting Started
 See the documentation directory for more information.
 
 TrekBasic requires python 3
@@ -83,11 +85,6 @@ Use "help" to get available commands, like "load programs/superstartrek.abs" and
 I have not implemented an editor in basic_shell. You can input individual lines, but there is no editing.
 While the old-style line-by-line editing might be nostalgic, modern editors are *so* much better. 
 You can edit in your favorite editor, and paste in changes to the shell, or just run them directly.
-
-## Features
-
-TrekBasic has many features never found in older basics, like data breakpoints and execution traces.
-
 
 ## Terminology
 A LINE is made up of multiple STATEMENTS, each one beginning with a KEYWORD.
