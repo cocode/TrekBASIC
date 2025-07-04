@@ -4,7 +4,7 @@ from basic_parsing import (
     ParsedStatementFor, ParsedStatementNext, ParsedStatementGo,
     ParsedStatementOnGoto, ParsedStatementInput, ParsedStatementDim,
     ParsedStatementThen, ParsedStatementElse, ParsedStatementData,
-    ParsedStatementRead
+    ParsedStatementRead, ParsedStatementRestore
 )
 from basic_expressions import Expression
 from basic_lexer import get_lexer
@@ -154,6 +154,7 @@ class LLVMCodeGenerator:
         
         # DATA/READ infrastructure
         self.data_values = []  # Collect all DATA values at compile time
+        self.data_line_map = {}  # Map line numbers to starting indices in data_values
         self.data_ptr = None   # Global pointer to track current read position
         self._collect_data_values()
 
@@ -474,6 +475,8 @@ class LLVMCodeGenerator:
              self._codegen_data(stmt)
         elif isinstance(stmt, ParsedStatementRead):
              self._codegen_read(stmt)
+        elif isinstance(stmt, ParsedStatementRestore):
+             self._codegen_restore(stmt)
         elif isinstance(stmt, ParsedStatementThen):
              # THEN is a no-op - the IF statement handles the control flow
              pass
@@ -1928,13 +1931,22 @@ class LLVMCodeGenerator:
     def _collect_data_values(self):
         """Collect all DATA values from the program at compile time."""
         for program_line in self.program:
+            line_has_data = False
+            line_start_index = len(self.data_values)
+            
             for stmt in program_line.stmts:
                 if isinstance(stmt, ParsedStatementData):
+                    if not line_has_data:
+                        # Record the starting index for this line's DATA
+                        self.data_line_map[program_line.line] = line_start_index
+                        line_has_data = True
+                    
                     # Add each data value from this DATA statement
                     self.data_values.extend(stmt._values)
         
         if self.debug:
             print(f"DEBUG: Collected {len(self.data_values)} DATA values: {self.data_values}")
+            print(f"DEBUG: DATA line map: {self.data_line_map}")
 
     def _codegen_data(self, stmt):
         """Generate LLVM IR for a DATA statement (no-op since data is collected at compile time)."""
@@ -1958,6 +1970,47 @@ class LLVMCodeGenerator:
         # Read each variable in the READ statement
         for var_name in stmt._variables:
             self._read_data_value(var_name)
+
+    def _codegen_restore(self, stmt):
+        """Generate LLVM IR for a RESTORE statement."""
+        # Initialize data pointer if not already done
+        if self.data_ptr is None:
+            self.data_ptr = ir.GlobalVariable(self.module, ir.IntType(32), name="data_ptr")
+            self.data_ptr.linkage = 'internal'
+            self.data_ptr.global_constant = False
+            self.data_ptr.initializer = ir.Constant(ir.IntType(32), 0)
+        
+        if stmt._line_number is None:
+            # RESTORE without line number - reset to beginning
+            self.builder.store(ir.Constant(ir.IntType(32), 0), self.data_ptr)
+            if self.debug:
+                print(f"DEBUG: RESTORE - reset to beginning")
+        else:
+            # RESTORE with line number - reset to specific line
+            line_number = stmt._line_number
+            
+            if line_number in self.data_line_map:
+                start_index = self.data_line_map[line_number]
+                self.builder.store(ir.Constant(ir.IntType(32), start_index), self.data_ptr)
+                if self.debug:
+                    print(f"DEBUG: RESTORE {line_number} - reset to index {start_index}")
+            else:
+                # Line not found or doesn't contain DATA - generate runtime error
+                error_msg = f"RESTORE {line_number}: Line does not contain DATA\\n\0"
+                c_error_msg = ir.Constant(ir.ArrayType(ir.IntType(8), len(error_msg)), 
+                                        bytearray(error_msg.encode("utf8")))
+                error_msg_name = f"restore_error_msg_{line_number}"
+                if error_msg_name not in self.module.globals:
+                    global_error_msg = ir.GlobalVariable(self.module, c_error_msg.type, name=error_msg_name)
+                    global_error_msg.linkage = 'internal'
+                    global_error_msg.global_constant = True
+                    global_error_msg.initializer = c_error_msg
+                else:
+                    global_error_msg = self.module.get_global(error_msg_name)
+                
+                error_msg_ptr = self.builder.bitcast(global_error_msg, ir.IntType(8).as_pointer())
+                self.builder.call(self.printf, [error_msg_ptr])
+                self.builder.ret(ir.Constant(ir.IntType(32), 1))  # Exit with error
 
     def _create_global_data_array(self):
         """Create a global array containing all DATA values as strings."""
