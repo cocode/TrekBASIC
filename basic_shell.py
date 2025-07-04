@@ -858,7 +858,7 @@ class BasicShell:
         ),
         cmd_gosub_stack: (
             "Usage: gosubs"
-            "\nPrints the FOR stack."
+            "\nPrints the GOSUB stack."
         ),
         cmd_help: "Usage: help <command>",
         cmd_list: "Usage: list <start line number> <count>",
