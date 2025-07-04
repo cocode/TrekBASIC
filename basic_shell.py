@@ -143,7 +143,7 @@ class BasicShell:
         :return:
         """
         function = self.commands[cmd]
-        usage = self.cmd_help_map[function]
+        usage = self.cmd_help_map[function][0]
         print(usage)
 
     def cmd_load(self, filename):
@@ -656,30 +656,18 @@ class BasicShell:
             if args in self.commands:
                 key = args
                 function = self.commands[args]
-                help_text = self.cmd_help_map[function]
+                help_text, _ = self.cmd_help_map[function]
                 lines = help_text.split('\n')
                 print(f"\t{key}: {lines[0]}")
                 pad = ' ' * (8 + len(key) + 1)
                 for line in lines[1:]:
                     print(f"{pad}{line}")
             return
-        print("Commands are:")
-        
-        # Sort commands alphabetically and find the longest command name for alignment
-        sorted_commands = sorted(self.commands.keys())
-        max_cmd_len = max(len(cmd) for cmd in sorted_commands)
-        
-        for key in sorted_commands:
-            function = self.commands[key]
-            padding = " " * (max_cmd_len - len(key) + 1)
-            help_text = self.cmd_help_map[function]
-            lines = help_text.split('\n')
-            print(f"\t{key}:{padding}{lines[0]}")
-            pad = ' ' * (8 + len(key) + 1 + len(padding))
-            for line in lines[1:]:
-                print(f"{pad}{line}")
-        
-        print("Commands can be abbreviated to shortest unique prefix.")
+        print("General Commands:")
+        self._print_help_group("general")
+        print("\nDebug Commands:")
+        self._print_help_group("debug")
+        print("\nCommands can be abbreviated to shortest unique prefix.")
         print("For convenience, 'r' works for 'run', and 'c' for 'continue'")
         print()
         print("BASIC Line Entry:")
@@ -690,6 +678,23 @@ class BasicShell:
         print("\t\t200 FOR I=1 TO 10: PRINT I: NEXT I")
         print("\t\t100                  (deletes line 100)")
         print("\tLine numbers must be 1-65536")
+
+    def _print_help_group(self, category):
+        # Helper to print commands by category
+        group_cmds = [k for k, fn in self.commands.items() if self.cmd_help_map[fn][1] == category]
+        group_cmds.sort()
+        if not group_cmds:
+            return
+        max_cmd_len = max(len(cmd) for cmd in group_cmds)
+        for key in group_cmds:
+            function = self.commands[key]
+            help_text, _ = self.cmd_help_map[function]
+            padding = " " * (max_cmd_len - len(key) + 1)
+            lines = help_text.split('\n')
+            print(f"\t{key}:{padding}{lines[0]}")
+            pad = ' ' * (8 + len(key) + 1 + len(padding))
+            for line in lines[1:]:
+                print(f"{pad}{line}")
 
     def cmd_stmts(self, args):
         if not self.executor:
@@ -813,7 +818,8 @@ class BasicShell:
             "Usage: ? expression"
             "\nEvaluates and prints an expression."
             "\nNote: You can't print single array variables. Use 'sym'"
-            "\nYou may have wanted the 'help' command."
+            "\nYou may have wanted the 'help' command.",
+            "general"
         ),
         cmd_benchmark: (
             "Usage: benchmark"
@@ -895,7 +901,21 @@ class BasicShell:
             "\nThis is used for debugging TrekBask."
         ),
     }
-    
+
+    # Add category flags programmatically so we don't have to edit every entry by hand
+    _debug_cmds_set = {cmd_break, cmd_for_stack, cmd_gosub_stack, cmd_coverage, cmd_stmts, cmd_symbols}
+    for _func, _val in list(cmd_help_map.items()):
+        # If already tuple with 2 elements, assume it's (text, category) and skip
+        if isinstance(_val, tuple) and len(_val) == 2:
+            continue
+        # Extract help text (might be tuple of one element or string)
+        if isinstance(_val, tuple):
+            _text = _val[0]
+        else:
+            _text = _val
+        _cat = "debug" if _func in _debug_cmds_set else "general"
+        cmd_help_map[_func] = (_text, _cat)
+
     commands = {
         "?": cmd_print,
         "benchmark": cmd_benchmark,
