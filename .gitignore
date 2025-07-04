@@ -7,4 +7,5 @@ tracefile.txt
 *.pdf
 *.pstats
 *.ll
+.DS_Store
 
