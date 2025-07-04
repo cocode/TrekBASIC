@@ -11,7 +11,8 @@ Looks like Dartmouth basic uses READ instead of INPUT. We could add that without
 same, we could just alias.
 
 ### Escaped quotes
-Should I support \" in Strings? I don't recall older basics doing that.
+Should I support \" in Strings? I don't recall older basics doing that. 
+No, i. taking thst out. 
 
 ### Benchmark timing for llvm code.
 Don't want to count startup time.
@@ -20,7 +21,8 @@ Don't want to count startup time.
 In basic loading. I think it's been rethrown twice.
 And has the wrong line number. (file line)
 
-# When single stepping in basic_shell, the list
+# Done. 
+When single stepping in basic_shell, the list
 command should indicate the next instruction
 with a "*" or something
 
@@ -42,19 +44,23 @@ recommended:  watchdog library
   - Use `copy.deepcopy()` and modify attributes
 - Files affected: `basic_parsing.py` lines ~230 and ~280 
 
-### Support more built-in functions: LOG10. We can now add more functions easily in basic_functions.py
+### Support more built-in functions
+fir example: LOG10. We can now add more functions easily in basic_functions.py
 Do this on an as-needed basis, don't just throw everything in.
 
 ### Warn on Exit if Edited
 Now that we can add/replace lines in the shell, we should warn before exiting, if the program was modified.
 
-### Support "OPTION BASE"
+### Done
+Support "OPTION BASE"
 Add OPTION BASE statement to set the starting index of array variables as either 0 or 1
 Found in GWBASIC
 
 ### Refactor Program
-Convert the list[ProgramLine] to a "Program" class.
+Convert the list[ProgramLine] to a "Program" class. Done. 
 
+
+### Fix This
 COMMAND ^DTraceback (most recent call last):
   File "/Users/tomhill/PycharmProjects/TrekBasic/basic_interpreter.py", line 152, in run_program
     execution_function(self, s)
@@ -92,6 +98,11 @@ Move all remaining tests in ./* to approriate test dir
 ### Make basic.py and tbc.py runnable
 Add shebang line
 
-### Publish to pypy
+### Publish to pypi
 
-### Put a limit on the size of all dymnamic objects, strings, arrays. What else?
+### Put a limit on the size of all dymnamic objects, strings, arrays. What else? these should be settable in doskect.py
+
+### Call
+Add a call statement, to invoke other basic prograns. This will give us some
+modularity. orgerwise everything is global
+im BASIC. 
