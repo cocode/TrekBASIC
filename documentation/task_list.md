@@ -100,9 +100,17 @@ Add shebang line
 
 ### Publish to pypi
 
-### Put a limit on the size of all dymnamic objects, strings, arrays. What else? these should be settable in doskect.py
+### Limits
+Put a limit on the size of all dymnamic objects, strings, arrays. What else? these should be settable in doskect.py
 
 ### Call
 Add a call statement, to invoke other basic prograns. This will give us some
 modularity. orgerwise everything is global
 im BASIC. 
+
+### Put a limit on the size of all dymnamic objects, strings, arrays. What else?
+
+### Every rethrown exception should have "from e"
+
+### test_suite
+Now that we have two implementations of BASIC, move all python files out of test_suite, so that project can be shared.
