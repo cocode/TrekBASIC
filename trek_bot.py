@@ -156,7 +156,9 @@ class RandomStrategy(Strategy):
         return str(random.randrange(0,10)-2)
 
     def _cmd_computer(self, player):
-        return str(random.randrange(0, 10) - 2)
+        # super star trek has a bug here. It can handle negative numbers,
+        # and returns an error, but anything larger than 5 and it will crash.
+        return str(random.randrange(0, 7) - 2)
 
     def _cmd_course(self, player):
         return str(random.randrange(0, 10) - 2)
@@ -423,7 +425,7 @@ class CheatStrategy(RandomStrategy):
             target = self.find_something(extract_bases, Q1, Q2)
             if target is None:
                 print("No starbases found!!")
-                return super().get_command(player)
+                return self.random_command()
             if target == (Q1, Q2):
                 # We have a starbase in this quadrant, need to dock.
                 print("Need to dock")
