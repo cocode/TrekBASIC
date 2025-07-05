@@ -250,6 +250,8 @@ def stmt_input(executor, stmt):
         result = executor.do_input()
         if result is None:
             print("Bad response from trekbot")
+            raise BasicRuntimeError(F"Bad response from trekbot")   # TODO This should not be in the core program,
+                                                                    # TrekBot should be transparent
         result = result.split(",")
         if len(result) != len(stmt._input_vars):
             print(F"Mismatched number of inputs. Expected {len(stmt._input_vars)} got {len(result)}. Try Again.")
