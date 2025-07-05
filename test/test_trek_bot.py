@@ -86,4 +86,43 @@ class TestCheatStrategy(TestCase):
         self.assertEqual(1, x)
         self.assertEqual(2, y)
 
+    def test_find_something_current_quadrant(self):
+        # Create a galaxy where the current quadrant already contains a Klingon (value >=100)
+        galaxy = [[0 for _ in range(8)] for _ in range(8)]
+        Q1, Q2 = 2, 3
+        galaxy[Q1][Q2] = 100  # one Klingon
+        self._strategy._galaxy = galaxy
+
+        result = self._strategy.find_something(trek_bot.klingon_count, Q1, Q2)
+        self.assertEqual((Q1, Q2), result, "Should find Klingon in current quadrant")
+
+    def test_find_something_scan(self):
+        # Galaxy with a Klingon located at a different quadrant than the Enterprise
+        galaxy = [[0 for _ in range(8)] for _ in range(8)]
+        target_x, target_y = 5, 1
+        galaxy[target_x][target_y] = 100
+        Q1, Q2 = 0, 0  # Enterprise starting quadrant (no Klingons here)
+        self._strategy._galaxy = galaxy
+
+        result = self._strategy.find_something(trek_bot.klingon_count, Q1, Q2)
+        self.assertEqual((target_x, target_y), result, "Should scan galaxy and find first Klingon")
+
+    def test_find_me_a_target(self):
+        # Place the Enterprise at (1,1) and a Klingon at (2,2)
+        galaxy = [[0 for _ in range(8)] for _ in range(8)]
+        galaxy[2][2] = 100
+        Q1, Q2 = 1, 1
+        self._strategy._galaxy = galaxy
+
+        cmd = self._strategy.find_me_a_target(Q1, Q2)
+        # Expect navigation command
+        self.assertEqual("NAV", cmd, "find_me_a_target should request NAV command")
+
+        # Check that course and distance were computed correctly
+        expected_dx, expected_dy = 1, 1
+        expected_course = compute_course(expected_dx, expected_dy)
+        self.assertEqual(expected_course, self._strategy._course, "Incorrect course calculated")
+        from math import sqrt as _sqrt
+        self.assertAlmostEqual(_sqrt(2), self._strategy._distance, places=5, msg="Incorrect distance calculated")
+
 
