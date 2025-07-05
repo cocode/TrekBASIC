@@ -79,7 +79,7 @@ class Strategy:
         :param player:
         :return:
         """
-        last_output = player._program_output[-1]
+        last_output = player._program_output[-1].rstrip()
         if last_output == "COMMAND":
             return self._cmd_main(player)
         elif last_output == "SHIELD CONTROL INOPERABLE": # I don;t think this can happen. It always prints "COMMAND" after an error
@@ -93,7 +93,7 @@ class Strategy:
             return self._cmd_course(player)
         elif last_output.endswith("NUMBER OF UNITS TO SHIELDS"):
             return self._cmd_shield_units(player)
-        elif last_output == "WARP FACTOR (0-8)" or last_output == 'WARP FACTOR (0-0.2)':
+        elif last_output == "WARP FACTOR (0-8)?" or last_output == 'WARP FACTOR (0-0.2)?':
             return self._cmd_warp(player)
         elif last_output == '  INITIAL COORDINATES (X,Y)' or last_output == '  FINAL COORDINATES (X,Y)':
             return self._cmd_coords(player)
@@ -103,8 +103,14 @@ class Strategy:
             return self._cmd_aye(player)
         elif last_output == "WILL YOU AUTHORIZE THE REPAIR ORDER (Y/N)":
             return self._cmd_repair(player)
+        elif last_output.startswith("ENERGY AVAILABLE = "):
+            energy_start = last_output[19:]
+            energy_end = energy_start.find(" ")
+            energy_value = int(energy_start[:energy_end+1])
+            return self.cmd_energy(energy_value)
 
         raise Exception(F"Unknown prompt in trek_bot: '{last_output}'")
+
 
 
 class RandomStrategy(Strategy):
@@ -170,6 +176,11 @@ class RandomStrategy(Strategy):
             return "Y"
         else:
             return "N"
+
+    def cmd_energy(self, energy_value):
+        rand_num = random.randint(1, energy_value)
+        return str(rand_num)
+
 
     def get_command(self, player):
         """
@@ -390,20 +401,22 @@ class CheatStrategy(RandomStrategy):
 
         # If there are no klingons in the section
         if self._state == CheatState.HUNT:
-            target = self.find_something(klingon_count, Q1, Q2)
-            if target is None:
-                print("ERROR: No more Klingons but game is not over.")
-                return super().get_command()
-            # Save course to set in next command
-            dx = (target[0])-Q1
-            dy = (target[1])-Q2
-            print(F"HUNT: From: {Q1}, {Q2} to {target[0]}, {target[1]}. Delta {dx}, {dy}")
-            self._course = compute_course(dx, dy)
-            self._distance = sqrt(dx*dx + dy*dy) # this is overshooting, somehow.
-            return "NAV"
-
+            return self.find_me_a_target(Q1, Q2)
 
         return self.random_command()
+
+    def find_me_a_target(self, Q1, Q2):
+        target = self.find_something(klingon_count, Q1, Q2)
+        if target is None:
+            print("ERROR: No more Klingons but game is not over.")
+            return super().get_command()
+        # Save course to set in next command
+        dx = (target[0]) - Q1
+        dy = (target[1]) - Q2
+        print(F"HUNT: From: {Q1}, {Q2} to {target[0]}, {target[1]}. Delta {dx}, {dy}")
+        self._course = compute_course(dx, dy)
+        self._distance = sqrt(dx * dx + dy * dy)  # this is overshooting, somehow.
+        return "NAV"
 
     # def _cmd_computer(self, player):
     #     pass
