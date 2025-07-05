@@ -271,17 +271,24 @@ def generate_html_coverage_report(coverage, program, filename="coverage_report.h
         .program-line:hover {{
             background-color: rgba(0,0,0,0.05);
         }}
-        .program-line.covered {{
+        .stmt-covered {{
             background-color: #d4edda;
-            border-left: 4px solid #28a745;
+            padding: 2px 4px;
+            border-radius: 3px;
+            margin: 0 2px;
+            border: 1px solid #28a745;
+            display: inline-block;
         }}
-        .program-line.partial {{
-            background-color: #fff3cd;
-            border-left: 4px solid #ffc107;
-        }}
-        .program-line.uncovered {{
+        .stmt-uncovered {{
             background-color: #f8d7da;
-            border-left: 4px solid #dc3545;
+            padding: 2px 4px;
+            border-radius: 3px;
+            margin: 0 2px;
+            border: 1px solid #dc3545;
+            display: inline-block;
+        }}
+        .program-line {{
+            border-left: 4px solid #e0e0e0;
         }}
         .line-number {{
             min-width: 60px;
@@ -298,15 +305,7 @@ def generate_html_coverage_report(coverage, program, filename="coverage_report.h
             white-space: pre-wrap;
             word-break: break-all;
         }}
-        .program-line.covered .line-number {{
-            color: #155724;
-        }}
-        .program-line.partial .line-number {{
-            color: #856404;
-        }}
-        .program-line.uncovered .line-number {{
-            color: #721c24;
-        }}
+
         @media (max-width: 768px) {{
             .charts-container {{
                 grid-template-columns: 1fr;
@@ -375,13 +374,13 @@ def generate_html_coverage_report(coverage, program, filename="coverage_report.h
          
          <div class="uncovered-section">
              <h2>📋 Complete Program Listing</h2>
-             <p>Full program with coverage visualization: <span style="color: #28a745;">■ Covered</span> | <span style="color: #ffc107;">■ Partial</span> | <span style="color: #dc3545;">■ Uncovered</span></p>
+             <p>Full program with statement-level coverage visualization: <span style="background-color: #d4edda; padding: 2px 4px; border-radius: 3px;">Covered Statement</span> | <span style="background-color: #f8d7da; padding: 2px 4px; border-radius: 3px;">Uncovered Statement</span></p>
              
              <div class="program-listing">
                  {"".join([f'''
-                 <div class="program-line {'covered' if line.line in coverage and len([i for i, j in enumerate(line.stmts) if i not in coverage[line.line]]) == 0 else 'partial' if line.line in coverage else 'uncovered'}">
+                 <div class="program-line">
                      <div class="line-number">{line.line}</div>
-                     <div class="line-code">{html.escape(line.source)}</div>
+                     <div class="line-code">{"".join([f'<span class="stmt-{("covered" if line.line in coverage and i in coverage[line.line] else "uncovered")}">{html.escape(str(stmt))}</span>{" : " if i < len(line.stmts) - 1 else ""}' for i, stmt in enumerate(line.stmts)])}</div>
                  </div>
                  ''' for line in program])}
              </div>
