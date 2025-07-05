@@ -64,6 +64,367 @@ def print_coverage_report(coverage, program, lines):
                     print(F"{l.line}: {left} of {slist}")
 
 
+def generate_html_coverage_report(coverage, program, filename="coverage_report.html"):
+    """
+    Generate a beautiful HTML coverage report with pie charts and visual code display
+    
+    :param coverage: Coverage data dict {line_number: set of executed stmt indices}
+    :param program: Program object containing all program lines
+    :param filename: Output HTML filename
+    """
+    import html
+    from datetime import datetime
+    
+    # Calculate coverage statistics
+    total_lines = len(program)
+    total_stmts = 0
+    for p in program:
+        total_stmts += len(p.stmts)
+
+    if total_stmts == 0:
+        print("Program is empty.")
+        return
+
+    executed_lines = len(coverage)
+    executed_stmts = 0
+    for s in coverage.values():
+        executed_stmts += len(s)
+    
+    line_coverage_percent = (executed_lines / total_lines) * 100
+    stmt_coverage_percent = (executed_stmts / total_stmts) * 100
+    
+    # Collect uncovered lines data
+    uncovered_lines = []
+    partially_covered_lines = []
+    
+    for line in program:
+        if line.line not in coverage:
+            # Completely uncovered line
+            stmt_indices = [i for i, j in enumerate(line.stmts)]
+            uncovered_lines.append({
+                'line_number': line.line,
+                'source': line.source,
+                'uncovered_stmts': stmt_indices,
+                'total_stmts': len(line.stmts)
+            })
+        else:
+            # Check if partially covered
+            stmt_indices = [i for i, j in enumerate(line.stmts)]
+            uncovered_stmts = [i for i, j in enumerate(line.stmts) if i not in coverage[line.line]]
+            if len(uncovered_stmts) > 0:
+                partially_covered_lines.append({
+                    'line_number': line.line,
+                    'source': line.source,
+                    'uncovered_stmts': uncovered_stmts,
+                    'total_stmts': len(line.stmts)
+                })
+    
+    # Generate HTML
+    html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BASIC Code Coverage Report</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {{
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }}
+        .container {{
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            padding: 30px;
+        }}
+        .header {{
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }}
+        .header h1 {{
+            color: #333;
+            margin: 0;
+            font-size: 2.5em;
+        }}
+        .header .timestamp {{
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }}
+        .stats-overview {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }}
+        .stat-card {{
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #007bff;
+        }}
+        .stat-card h3 {{
+            margin: 0;
+            color: #333;
+            font-size: 1.2em;
+        }}
+        .stat-card .number {{
+            font-size: 2em;
+            font-weight: bold;
+            color: #007bff;
+            margin: 10px 0;
+        }}
+        .stat-card .detail {{
+            color: #666;
+            font-size: 0.9em;
+        }}
+        .charts-container {{
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }}
+        .chart-card {{
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }}
+        .chart-card h3 {{
+            margin: 0 0 20px 0;
+            color: #333;
+        }}
+        .chart-wrapper {{
+            position: relative;
+            height: 300px;
+            margin: 0 auto;
+        }}
+        .uncovered-section {{
+            margin-top: 30px;
+        }}
+        .uncovered-section h2 {{
+            color: #333;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+        }}
+        .code-block {{
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }}
+        .code-header {{
+            background: #e9ecef;
+            padding: 8px 15px;
+            border-bottom: 1px solid #e0e0e0;
+            font-weight: bold;
+            color: #495057;
+        }}
+        .code-line {{
+            padding: 8px 15px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background: #fff;
+            border-left: 4px solid #dc3545;
+        }}
+        .code-line.partial {{
+            border-left: 4px solid #ffc107;
+        }}
+        .uncovered-stmt {{
+            background: #ffe6e6;
+            padding: 2px 4px;
+            border-radius: 3px;
+            margin: 0 2px;
+            font-weight: bold;
+        }}
+        .coverage-excellent {{ border-left-color: #28a745; }}
+        .coverage-good {{ border-left-color: #007bff; }}
+        .coverage-fair {{ border-left-color: #ffc107; }}
+        .coverage-poor {{ border-left-color: #dc3545; }}
+        @media (max-width: 768px) {{
+            .charts-container {{
+                grid-template-columns: 1fr;
+            }}
+            .stats-overview {{
+                grid-template-columns: 1fr;
+            }}
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 BASIC Code Coverage Report</h1>
+            <div class="timestamp">Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
+        </div>
+        
+        <div class="stats-overview">
+            <div class="stat-card coverage-{'excellent' if line_coverage_percent >= 90 else 'good' if line_coverage_percent >= 75 else 'fair' if line_coverage_percent >= 50 else 'poor'}">
+                <h3>Line Coverage</h3>
+                <div class="number">{line_coverage_percent:.1f}%</div>
+                <div class="detail">{executed_lines} of {total_lines} lines</div>
+            </div>
+            <div class="stat-card coverage-{'excellent' if stmt_coverage_percent >= 90 else 'good' if stmt_coverage_percent >= 75 else 'fair' if stmt_coverage_percent >= 50 else 'poor'}">
+                <h3>Statement Coverage</h3>
+                <div class="number">{stmt_coverage_percent:.1f}%</div>
+                <div class="detail">{executed_stmts} of {total_stmts} statements</div>
+            </div>
+            <div class="stat-card">
+                <h3>Uncovered Lines</h3>
+                <div class="number">{len(uncovered_lines)}</div>
+                <div class="detail">Completely uncovered</div>
+            </div>
+            <div class="stat-card">
+                <h3>Partially Covered</h3>
+                <div class="number">{len(partially_covered_lines)}</div>
+                <div class="detail">Some statements missed</div>
+            </div>
+        </div>
+        
+        <div class="charts-container">
+            <div class="chart-card">
+                <h3>Line Coverage</h3>
+                <div class="chart-wrapper">
+                    <canvas id="lineChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>Statement Coverage</h3>
+                <div class="chart-wrapper">
+                    <canvas id="statementChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="uncovered-section">
+            <h2>🔍 Uncovered Lines</h2>
+            <p>The following lines were never executed during testing:</p>
+            
+            {"<p><em>🎉 All lines were executed!</em></p>" if len(uncovered_lines) == 0 else ""}
+            
+            {"".join([f'''
+            <div class="code-block">
+                <div class="code-header">
+                    Line {line['line_number']} - {line['total_stmts']} statement(s) uncovered
+                </div>
+                <div class="code-line">
+                    {html.escape(line['source'])}
+                </div>
+            </div>
+            ''' for line in uncovered_lines])}
+        </div>
+        
+        <div class="uncovered-section">
+            <h2>⚠️ Partially Covered Lines</h2>
+            <p>The following lines have some statements that were never executed:</p>
+            
+            {"<p><em>🎉 No partially covered lines!</em></p>" if len(partially_covered_lines) == 0 else ""}
+            
+            {"".join([f'''
+            <div class="code-block">
+                <div class="code-header">
+                    Line {line['line_number']} - Statement(s) {line['uncovered_stmts']} of {list(range(line['total_stmts']))} uncovered
+                </div>
+                <div class="code-line partial">
+                    {html.escape(line['source'])}
+                </div>
+            </div>
+            ''' for line in partially_covered_lines])}
+        </div>
+    </div>
+    
+    <script>
+        // Line Coverage Chart
+        const lineCtx = document.getElementById('lineChart').getContext('2d');
+        const lineChart = new Chart(lineCtx, {{
+            type: 'doughnut',
+            data: {{
+                labels: ['Covered', 'Uncovered'],
+                datasets: [{{
+                    data: [{executed_lines}, {total_lines - executed_lines}],
+                    backgroundColor: ['#28a745', '#dc3545'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }}]
+            }},
+            options: {{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {{
+                    legend: {{
+                        position: 'bottom'
+                    }},
+                    tooltip: {{
+                        callbacks: {{
+                            label: function(context) {{
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                const total = {total_lines};
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return `${{label}}: ${{value}} (${{percentage}}%)`;
+                            }}
+                        }}
+                    }}
+                }}
+            }}
+        }});
+        
+        // Statement Coverage Chart
+        const stmtCtx = document.getElementById('statementChart').getContext('2d');
+        const statementChart = new Chart(stmtCtx, {{
+            type: 'doughnut',
+            data: {{
+                labels: ['Covered', 'Uncovered'],
+                datasets: [{{
+                    data: [{executed_stmts}, {total_stmts - executed_stmts}],
+                    backgroundColor: ['#007bff', '#ffc107'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }}]
+            }},
+            options: {{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {{
+                    legend: {{
+                        position: 'bottom'
+                    }},
+                    tooltip: {{
+                        callbacks: {{
+                            label: function(context) {{
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                const total = {total_stmts};
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return `${{label}}: ${{value}} (${{percentage}}%)`;
+                            }}
+                        }}
+                    }}
+                }}
+            }}
+        }});
+    </script>
+</body>
+</html>"""
+
+    # Write HTML file
+    with open(filename, 'w', encoding='utf-8') as f:
+        f.write(html_content)
+    
+    print(f"HTML coverage report generated: {filename}")
+    print(f"Line coverage: {line_coverage_percent:.1f}% ({executed_lines}/{total_lines})")
+    print(f"Statement coverage: {stmt_coverage_percent:.1f}% ({executed_stmts}/{total_stmts})")
+
+
 class BasicShell:
     def __init__(self, program_file=None):
         self._program_file = program_file
@@ -170,15 +531,15 @@ class BasicShell:
         Called coverage because we want "continue" to be a single character command.
         I'd name it "coverage", but I don't want to conflict with "continue"
 
-        :param args: None, "load" or "save", "lines". Saving and loading allow you to do multiple runs, to see if you
-        can get to 100% coverage.
+        :param args: None, "load" or "save", "lines", "html". Saving and loading allow you to do multiple runs, to see if you
+        can get to 100% coverage. "html" generates a beautiful HTML report.
         :return:
         """
         if not self.executor:
             print("No program loaded.")
             return
             
-        cmds = ["save", "load", "lines"]
+        cmds = ["save", "load", "lines", "html"]
         if args is not None:
             if args not in cmds:
                 self.usage("coverage")
@@ -187,7 +548,12 @@ class BasicShell:
         coverage = self.executor._coverage
         if coverage is None:
             print("Coverage was not enabled for the last / current run.")
-        print_coverage_report(self.executor._coverage, self.executor._program, args=='lines')
+            return
+            
+        if args == "html":
+            generate_html_coverage_report(self.executor._coverage, self.executor._program, "coverage_report.html")
+        else:
+            print_coverage_report(self.executor._coverage, self.executor._program, args=='lines')
 
 
     def print_current(self, args):
@@ -821,12 +1187,11 @@ class BasicShell:
             "\nContinues, after a breakpoint."
         ),
         cmd_coverage: (
-            "Usage: coverage"
+            "Usage: coverage [lines|html]"
             "\nPrint code coverage report."
-            "\ncoverage on"
-            "\ncoverage off"
-            "\ncoverage clear"
-            "\ncoverage report <save|load|list>"
+            "\ncoverage lines - Show uncovered lines details"
+            "\ncoverage html  - Generate beautiful HTML report"
+            "\nNote: Coverage must be enabled with 'run coverage' first"
         ),
         cmd_quit: "Usage: quit. Synonym for 'exit'",
         cmd_format: (

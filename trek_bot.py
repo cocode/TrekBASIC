@@ -18,7 +18,7 @@ energy_pattern = re.compile("[0-9]+")
 
 from basic_interpreter import Executor
 from basic_loading import load_program
-from basic_shell import print_coverage_report
+from basic_shell import print_coverage_report, generate_html_coverage_report
 
 
 class TestExecutor(Executor):
@@ -614,4 +614,5 @@ if __name__ == "__main__":
         print(F"Game {game_round} completed with a status of {rc}. Time: {time.perf_counter() - game_time}")
     total_time = time.perf_counter() - total_time
     print_coverage_report(player.executor._coverage, player.executor._program, lines=True)
+    generate_html_coverage_report(player.executor._coverage, player.executor._program, "trek_coverage_report.html")
     print(F"Elapsed time {total_time:10.1f}s. Average: {total_time/count:10.1f}s")
