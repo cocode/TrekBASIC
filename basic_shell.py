@@ -30,7 +30,6 @@ from basic_interpreter import Executor
 from basic_loading import load_program, tokenize, tokenize_line
 from basic_statements import eval_expression
 from basic_types import RunStatus
-from llvm.codegen import generate_llvm_ir
 
 
 def print_coverage_report(coverage, program, lines):
@@ -585,26 +584,6 @@ class BasicShell:
         if verbose:
             print(F"Renumbered {len(old_program)} lines, and {st_count} statements to {len(new_program)} lines")
 
-    def cmd_llvm(self, args):
-        """
-        Generate LLVM IR for the loaded program.
-        :param args: Optional filename to save the IR to.
-        :return:
-        """
-        if not self.executor or not self.executor._program:
-            print("No program has been loaded yet.")
-            return
-
-        ir_code = generate_llvm_ir(self.executor._program)
-
-        if args:
-            filename = args.strip()
-            with open(filename, "w") as f:
-                f.write(ir_code)
-            print(f"LLVM IR saved to {filename}")
-        else:
-            print(ir_code)
-
     def cmd_break(self, args):
         """
         set a breakpoint. Breakpoints happen after the current LINE completes.
@@ -864,7 +843,6 @@ class BasicShell:
         ),
         cmd_help: "Usage: help <command>",
         cmd_list: "Usage: list <start line number> <count>",
-        cmd_llvm: "llvm [file]: generate LLVM IR and print to console or save to file",
         cmd_load: (
             "Usage: load <program>"
             "\nRunning load clears coverage data."
@@ -931,7 +909,6 @@ class BasicShell:
         "gosubs": cmd_gosub_stack,
         "help": cmd_help,
         "list": cmd_list,
-        "llvm": cmd_llvm,
         "load": cmd_load,
         "next": cmd_next,
         "quit": cmd_quit,
