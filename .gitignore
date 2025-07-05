@@ -8,4 +8,5 @@ tracefile.txt
 *.pstats
 *.ll
 .DS_Store
+trek_coverage_report.html
 
