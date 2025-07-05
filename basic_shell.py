@@ -47,9 +47,9 @@ def print_coverage_report(coverage, program, lines):
     for s in coverage.values():
         executed_stmts += len(s)
     column = 20
-    print(F'{"Total":>{column}} {"Executed":>{column}} {"Percent":>{column}}')
-    print(F"{total_lines:{column}} {executed_lines:{column}} {100 * executed_lines / total_lines:{column}.1f}%")
-    print(F"{total_stmts:{column}} {executed_stmts:{column}} {100 * executed_stmts / total_stmts:{column}.1f}%")
+    print(F'            {"Total":>{column}} {"Executed":>{column}} {"Percent":>{column}}')
+    print(F"Lines.....: {total_lines:{column}} {executed_lines:{column}} {100 * executed_lines / total_lines:{column}.1f}%")
+    print(F"Statements: {total_stmts:{column}} {executed_stmts:{column}} {100 * executed_stmts / total_stmts:{column}.1f}%")
     # To start with, just print LINEs that have not been executed at all. Later we can get to statements.
     if lines:
         for l in program:
