@@ -250,12 +250,80 @@ def generate_html_coverage_report(coverage, program, filename="coverage_report.h
         .coverage-good {{ border-left-color: #007bff; }}
         .coverage-fair {{ border-left-color: #ffc107; }}
         .coverage-poor {{ border-left-color: #dc3545; }}
+        .program-listing {{
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            max-height: 600px;
+            overflow-y: auto;
+            margin: 20px 0;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }}
+        .program-line {{
+            display: flex;
+            align-items: center;
+            padding: 4px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            transition: background-color 0.2s ease;
+        }}
+        .program-line:hover {{
+            background-color: rgba(0,0,0,0.05);
+        }}
+        .program-line.covered {{
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+        }}
+        .program-line.partial {{
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }}
+        .program-line.uncovered {{
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }}
+        .line-number {{
+            min-width: 60px;
+            padding: 0 15px;
+            text-align: right;
+            color: #666;
+            font-weight: bold;
+            background-color: rgba(255,255,255,0.7);
+            border-right: 1px solid #ddd;
+        }}
+        .line-code {{
+            padding: 0 15px;
+            flex: 1;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }}
+        .program-line.covered .line-number {{
+            color: #155724;
+        }}
+        .program-line.partial .line-number {{
+            color: #856404;
+        }}
+        .program-line.uncovered .line-number {{
+            color: #721c24;
+        }}
         @media (max-width: 768px) {{
             .charts-container {{
                 grid-template-columns: 1fr;
             }}
             .stats-overview {{
                 grid-template-columns: 1fr;
+            }}
+            .program-listing {{
+                max-height: 400px;
+            }}
+            .line-number {{
+                min-width: 50px;
+                padding: 0 10px;
+            }}
+            .line-code {{
+                padding: 0 10px;
+                font-size: 12px;
             }}
         }}
     </style>
@@ -303,25 +371,39 @@ def generate_html_coverage_report(coverage, program, filename="coverage_report.h
                     <canvas id="statementChart"></canvas>
                 </div>
             </div>
-        </div>
-        
-        <div class="uncovered-section">
-            <h2>🔍 Uncovered Lines</h2>
-            <p>The following lines were never executed during testing:</p>
-            
-            {"<p><em>🎉 All lines were executed!</em></p>" if len(uncovered_lines) == 0 else ""}
-            
-            {"".join([f'''
-            <div class="code-block">
-                <div class="code-header">
-                    Line {line['line_number']} - {line['total_stmts']} statement(s) uncovered
-                </div>
-                <div class="code-line">
-                    {html.escape(line['source'])}
-                </div>
-            </div>
-            ''' for line in uncovered_lines])}
-        </div>
+                 </div>
+         
+         <div class="uncovered-section">
+             <h2>📋 Complete Program Listing</h2>
+             <p>Full program with coverage visualization: <span style="color: #28a745;">■ Covered</span> | <span style="color: #ffc107;">■ Partial</span> | <span style="color: #dc3545;">■ Uncovered</span></p>
+             
+             <div class="program-listing">
+                 {"".join([f'''
+                 <div class="program-line {'covered' if line.line in coverage and len([i for i, j in enumerate(line.stmts) if i not in coverage[line.line]]) == 0 else 'partial' if line.line in coverage else 'uncovered'}">
+                     <div class="line-number">{line.line}</div>
+                     <div class="line-code">{html.escape(line.source)}</div>
+                 </div>
+                 ''' for line in program])}
+             </div>
+         </div>
+         
+         <div class="uncovered-section">
+             <h2>🔍 Uncovered Lines</h2>
+             <p>The following lines were never executed during testing:</p>
+             
+             {"<p><em>🎉 All lines were executed!</em></p>" if len(uncovered_lines) == 0 else ""}
+             
+             {"".join([f'''
+             <div class="code-block">
+                 <div class="code-header">
+                     Line {line['line_number']} - {line['total_stmts']} statement(s) uncovered
+                 </div>
+                 <div class="code-line">
+                     {html.escape(line['source'])}
+                 </div>
+             </div>
+             ''' for line in uncovered_lines])}
+         </div>
         
         <div class="uncovered-section">
             <h2>⚠️ Partially Covered Lines</h2>
