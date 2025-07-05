@@ -4,6 +4,7 @@ This module acts as a player in the Star Trek game, for testing and code coverag
 Its actions are random, not strategic, to hit more of the code - but it turns out it never wins,
 so it never hits the 'win' code. It might need some changes.
 """
+import os
 import random
 import re
 import time
@@ -11,7 +12,7 @@ from enum import Enum, auto
 from math import atan2, pi, sqrt
 
 from basic_dialect import ARRAY_OFFSET
-from basic_types import SymbolType
+from basic_types import SymbolType, Program
 
 energy_pattern = re.compile("[0-9]+")
 
@@ -37,6 +38,7 @@ class TestExecutor(Executor):
 
     def do_input(self):
         response = self._player.game_input()
+        assert response is not None
         return response
 
 
@@ -72,6 +74,18 @@ class Strategy:
         pass
 
     def get_command(self, player):
+        command = self.get_command2(player)
+        if command is not None:
+            return command
+
+        last_output = player._program_output[-1].rstrip()
+        print("Last output:", last_output)
+        command = self.get_command2(player)
+
+        os.sys.exit(99)
+
+
+    def get_command2(self, player):
         """
         Gets the next command for the game. In theory, we only need to see the program's output, but
         I am passing in player, in case I want to write a bot that cheats by looking at variables.
@@ -157,10 +171,12 @@ class RandomStrategy(Strategy):
 
     def _cmd_warp(self, player):
         last_output = player._program_output[-1]
-        if last_output == "WARP FACTOR (0-8)":
+        if last_output == "WARP FACTOR (0-8)? ":
             return str(random.randrange(0, 12) - 2)
-        elif last_output == "WARP FACTOR (0-0.2)":  # This happens when warp engines are damaged
+        elif last_output == "WARP FACTOR (0-0.2)? ":  # This happens when warp engines are damaged
             return str(random.random()/ 4)
+        else:
+            raise Exception(F"Unknown warp prompt in trek_bot: '{last_output}'")
 
     def _cmd_coords(self, player):
         return str(random.randrange(0, 12) - 2) + "," + str(random.randrange(0, 12) - 2)
@@ -279,6 +295,8 @@ class CheatStrategy(RandomStrategy):
     def __init__(self):
         self._galaxy = None
         self._state = CheatState.SHIELDS
+        self._warp_damaged = False  # remembers if engines were reported damaged
+        self._warp_retry = False
 
     def _setup(self, player):
         self._galaxy = player.executor.get_symbol_value("G", SymbolType.ARRAY)
@@ -290,6 +308,23 @@ class CheatStrategy(RandomStrategy):
         self._S2 = int(player.executor.get_symbol_value("S2", SymbolType.VARIABLE)) - ARRAY_OFFSET
         self._K3 = int(player.executor.get_symbol_value("K3", SymbolType.VARIABLE))
         self._sector = player.executor.get_symbol_value("Q$", SymbolType.VARIABLE)
+        # Device damage array (1-based in BASIC). <0 means inoperable
+        try:
+            self._device_damage = player.executor.get_symbol_value("D", SymbolType.ARRAY)
+            # Adjust for BASIC 1-based indexing using ARRAY_OFFSET
+            phaser_idx = 4 - ARRAY_OFFSET
+            torp_idx = 5 - ARRAY_OFFSET
+            self._phasers_disabled = self._device_damage[phaser_idx] < 0
+            self._torps_disabled = self._device_damage[torp_idx] < 0
+        except Exception:
+            # Fallback: assume operational if array not available (unit tests)
+            self._phasers_disabled = False
+            self._torps_disabled = False
+        # Also consider no torpedoes remaining
+        try:
+            self._torps_disabled = self._torps_disabled or player.executor.get_symbol_value("P", SymbolType.VARIABLE) <= 0
+        except Exception:
+            pass
 
     def random_command(self):
         commands = ["NAV", "SRS","LRS","PHA","TOR","SHE","DAM","COM","HLP","XXX"]
@@ -322,6 +357,12 @@ class CheatStrategy(RandomStrategy):
     def _cmd_main(self, player):
         last_output = player._program_output[-1]
         before_last = player._program_output[-2]
+        # Detect engine-damage message from previous line
+        if before_last.startswith("WARP ENGINES ARE DAMAGED"):
+            self._warp_damaged = True
+        # Detect chief engineer warp refusal message
+        if before_last.strip().startswith("CHIEF ENGINEER SCOTT REPORTS") and "ENGINES WON'T TAKE WARP" in before_last:
+            self._warp_retry = True
         Q1 = self._Q1
         Q2 = self._Q2
         if Q1 < 0 or Q1 > 7 or Q2 < 0 or Q2 > 7:
@@ -335,7 +376,12 @@ class CheatStrategy(RandomStrategy):
         print("Value for current quadrant: ", sector_value)
         print_galaxy(self._galaxy, Q1, Q2)
 
-        if self._shields < 500 and self._energy > 3 * self._shields and before_last != "SHIELD CONTROL INOPERABLE":
+        if self._warp_damaged:
+            # primary goal: reach starbase for repairs
+            self._state = CheatState.BASE
+        elif self._phasers_disabled and self._torps_disabled:
+            self._state = CheatState.BASE
+        elif self._shields < 500 and self._energy > 3 * self._shields and before_last != "SHIELD CONTROL INOPERABLE":
             self._state = CheatState.SHIELDS
         elif self._energy < 1000:
             self._state = CheatState.BASE
@@ -357,6 +403,15 @@ class CheatStrategy(RandomStrategy):
 
         # If there are klingons in the section, kill.
         if self._state == CheatState.KILL:
+            # Prefer available weapon
+            if self._phasers_disabled and not self._torps_disabled:
+                return "TOR"
+            if self._torps_disabled and not self._phasers_disabled:
+                return "PHA"
+            if self._phasers_disabled and self._torps_disabled:
+                # Shouldn't happen due to state override, but safe guard
+                return self.find_me_a_target(Q1, Q2)
+            # both available – random choice
             if random.random() < 0.5:
                 return "TOR"
             return "PHA"
@@ -424,12 +479,22 @@ class CheatStrategy(RandomStrategy):
     def _cmd_course(self, player):
         course = self._course
         self._course = None
-        if course is None or random.random() < 0.5:
+        if course is None or random.random() < 0.05:
             return super()._cmd_course(player)
         return str(course)
 
     def _cmd_warp(self, player):
-        # TODO need to handle WARP ENGINES ARE DAMAGED.  MAXIUM SPEED = WARP 0.2
+        if self._warp_retry:
+            # Choose a safe random warp 0-8
+            self._warp_retry = False
+            print("random is ", random)
+            print("round is ", round)
+            print("str is ", str)
+            return str(round(random.uniform(0, 8), 2))
+        # If engines were damaged, only allow 0.2 and clear the flag
+        if self._warp_damaged:
+            self._warp_damaged = False
+            return "0.2"
         if player._program_output[-1] == "WARP FACTOR (0-0.2)":
             return "0.2"
         distance = self._distance
@@ -463,7 +528,7 @@ class CheatStrategy(RandomStrategy):
         x, y = find_in_sector(self._sector, "+K+")
         dx = x - self._S1
         dy = y - self._S2
-        course = compute_course(dx , dy)
+        course = compute_course(dy, dx)
         print(F"Enterprise at ({self._S1}, {self._S2}) Klingon at: ({x}, {y}), Delta: ({dx}, {dy}) course: {course}")
         return str(course)
 
@@ -473,7 +538,7 @@ class CheatStrategy(RandomStrategy):
 
 
 class Player:
-    def __init__(self, program:list[str], strategy:Strategy, display:bool=False):
+    def __init__(self, program:Program, strategy:Strategy, display:bool=False):
         """
 
         :param program: The basic program to execute
@@ -511,6 +576,7 @@ class Player:
         strategy = self._strategy
         # Pass the player to the strategies get_command
         command = strategy.get_command(self)
+        assert command is not None
         if self._display:
             print("<<", command)
         if command is None:
@@ -538,12 +604,12 @@ if __name__ == "__main__":
     random.seed(127)
     random.seed(128)
     count = 10
-    for round in range(1,count+1):
-        print(F"Game {round} begins.")
+    for game_round in range(1, count + 1):
+        print(F"Game {game_round} begins.")
         game_time = time.perf_counter()
 
         rc = player.play_one_game()
-        print(F"Game {round} completed with a status of {rc}. Time: {time.perf_counter() - game_time}")
+        print(F"Game {game_round} completed with a status of {rc}. Time: {time.perf_counter() - game_time}")
     total_time = time.perf_counter() - total_time
     print_coverage_report(player.executor._coverage, player.executor._program, lines=True)
     print(F"Elapsed time {total_time:10.1f}s. Average: {total_time/count:10.1f}s")
