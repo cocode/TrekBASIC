@@ -14,24 +14,12 @@ def print_coverage_report(coverage, program, lines):
     for s in coverage.values():
         executed_stmts += len(s)
     column = 20
+    print("Code Coverage Report")
     print(F'            {"Total":>{column}} {"Executed":>{column}} {"Percent":>{column}}')
     print \
         (F"Lines.....: {total_lines:{column}} {executed_lines:{column}} {100 * executed_lines / total_lines:{column}.1f}%")
     print \
         (F"Statements: {total_stmts:{column}} {executed_stmts:{column}} {100 * executed_stmts / total_stmts:{column}.1f}%")
-    # To start with, just print LINEs that have not been executed at all. Later we can get to statements.
-    if lines:
-        for l in program:
-            if l.line not in coverage:
-                slist = [i for i, j in enumerate(l.stmts)]
-                print(F"{l.line}: {slist}")
-            else:
-                # Line has had SOME of its statements executed.
-                slist = [i for i, j in enumerate(l.stmts)]
-                left = [i for i, j in enumerate(l.stmts) if i not in coverage[l.line]]
-                if len(left) != 0:
-                    print(F"{l.line}: {left} of {slist}")
-
 
 def generate_html_coverage_report(coverage, program, filename="coverage_report.html"):
     """
@@ -426,6 +414,7 @@ def generate_html_coverage_report(coverage, program, filename="coverage_report.h
     with open(filename, 'w', encoding='utf-8') as f:
         f.write(html_content)
 
+    print()
     print(f"HTML coverage report generated: {filename}")
     print(f"Line coverage: {line_coverage_percent:.1f}% ({executed_lines}/{total_lines})")
     print(f"Statement coverage: {stmt_coverage_percent:.1f}% ({executed_stmts}/{total_stmts})")
