@@ -611,7 +611,7 @@ if __name__ == "__main__":
         game_time = time.perf_counter()
 
         rc = player.play_one_game()
-        print(F"Game {game_round} completed with a status of {rc}. Time: {time.perf_counter() - game_time}")
+        print(F"Game {game_round} completed with a status of {rc}. Time: {time.perf_counter() - game_time:.2f} seconds.")
     total_time = time.perf_counter() - total_time
     print_coverage_report(player.executor._coverage, player.executor._program, lines=True)
     generate_html_coverage_report(player.executor._coverage, player.executor._program, "trek_coverage_report.html")
