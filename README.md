@@ -52,7 +52,7 @@ TrekBASIC actually provides a full basic development environment which has:
 * Single stepping
 * Execution timing 
 * Execution tracing
-* Code coverage reports
+* [Code coverage reports][images/coverage.png]
 * Reformatting
 * Renumbering
 
