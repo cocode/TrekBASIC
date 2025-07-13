@@ -1,6 +1,6 @@
 
 
-# <img src="images/logo_t3.png" alt="Alt text" width="50" height="25"> TrekBasic
+# <img src="images/logo_t3.png" alt="Logo" width="50" height="25"> TrekBasic
 
 
 TrekBASIC is now both a full BASIC interpreter, written in Python, and a BASIC compiler, via LLVM.
@@ -10,6 +10,16 @@ My goal was to be able to play the old Star Trek game, which was written in BASI
     https://en.wikipedia.org/wiki/Star_Trek_(1971_video_game). 
 
 I have achieved that goal.
+
+## TrekBasic Family
+TrekBasic is part of the TrekBasic family of BASIC code tools.
+
+    TrekBasic - Python version
+    TrekBasicJ - Java Version
+    BasicRS - Rust version
+    BasicTestSuite - A test suite of BASIC Programs
+    TrekBot - A tool to exercise the superstartrek program
+
 
 ## To play:
 
