@@ -11,7 +11,7 @@ which was written in BASIC.
 I have achieved that goal.
 
 ## TrekBasic Family
-TrekBasic is part of the TrekBasic family of BASIC code. 
+TrekBasic is part of the TrekBasic family of BASIC programming tools. 
 * TrekBasic - Python version
 * TrekBasicJ - Java Version
 * BasicRS - Rust version
