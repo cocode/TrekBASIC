@@ -31,6 +31,7 @@ There are so many of them:
 https://github.com/JohnBlood/awesome-basic?tab=readme-ov-file
 
 ##  BASIC Language references
+1. http://cini.classiccmp.org/pdf/Microsoft/mbasic.pdf - nicely detailed. About what we are aiming for.  
  1. https://madexp.com/wp-content/uploads/2018/02/Microsoft_Basic_8086Xenix_Reference.pdf
  1. http://www.classiccmp.org/cini/pdf/Apple/AppleSoft%20II%20Basic%20Programming%20Manual.PDF
 1. https://robhagemans.github.io/pcbasic/
@@ -55,3 +56,5 @@ https://forum.vcfed.org/index.php?threads/tektronix-4051-basic-compiler-concept2
 Why? Because this is the machine I used to play star trek on, in school. 
 Cool, modern (then) vector display with a state-of-the-art storage tube and a great tape drive! :-)
 
+SuperStarTrek
+https://raw.githubusercontent.com/beejjorgensen/Super-Star-Trek-Info/refs/heads/main/sources/sst.bas
