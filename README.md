@@ -11,12 +11,12 @@ which was written in BASIC.
 I have achieved that goal.
 
 ## TrekBasic Family
-TrekBasic is part of the TrekBasic family of BASIC programming tools. 
-* TrekBasic - Python version
-* TrekBasicJ - Java Version
-* BasicRS - Rust version
-* BasicTestSuite - A test suite of BASIC Programs
-* TrekBot - A tool to exercise the superstartrek program
+TrekBasic is part of the TrekBasic family of BASIC programming tools.
+* [TrekBasic](https://github.com/cocode/TrekBASIC) - Python version
+* [TrekBasicJ](https://github.com/cocode/TrekBasicJ) - Java Version
+* [BasicRS](https://github.com/cocode/BasicRS) - Rust version
+* [BasicTestSuite](https://github.com/cocode/BasicTestSuite) - A test suite of BASIC Programs
+* [TrekBot](https://github.com/cocode/TrekBot) - A tool to exercise the superstartrek program
 
 All versions are intended to by byte-by-byte compatible, but are not
 there yet - but they are close. TrekBot and BasicTestSuite are part of
