@@ -19,12 +19,8 @@ TrekBasic is part of the TrekBasic family of BASIC programming tools.
 * [TrekBot](https://github.com/cocode/TrekBot) - A tool to exercise the superstartrek program
 
 All versions are intended to by byte-by-byte compatible, but are not
-there yet - but they are close. TrekBot and BasicTestSuite are part of
-plan to ensure full compabtiblity. 
-
-TrekBasic and TrekBasicJ are also compilers, and the compatibility
-targets are the same for the compiled versions. A compiler for BasicRS is planned.
-
+there yet - but they are close. TrekBot and BasicTestSuite are part of the
+plan to ensure full compatibility.
 
 ## To play:
 
