@@ -1,6 +1,6 @@
 
 
-# <img src="images/logo_t3.png" alt="Logo" width="50" height="25"> TrekBasic
+# <img src="images/TrekBasicLogo.png" alt="Logo" width="50" height="25"> TrekBasic
 
 
 TrekBASIC is now both a full BASIC interpreter, written in Python, and a BASIC compiler, via LLVM.
