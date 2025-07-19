@@ -31,12 +31,11 @@ There are so many of them:
 https://github.com/JohnBlood/awesome-basic?tab=readme-ov-file
 
 ##  BASIC Language references
-1. http://cini.classiccmp.org/pdf/Microsoft/mbasic.pdf - nicely detailed. About what we are aiming for.  
- 1. https://madexp.com/wp-content/uploads/2018/02/Microsoft_Basic_8086Xenix_Reference.pdf
- 1. http://www.classiccmp.org/cini/pdf/Apple/AppleSoft%20II%20Basic%20Programming%20Manual.PDF
-1. https://robhagemans.github.io/pcbasic/
-    1. https://robhagemans.github.io/pcbasic/doc/2.0/PC-BASIC_documentation.pdf
-
+| Description                                                                                                  | URL                                                                                                                    |
+|--------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
+| Basic-80 Reference Manual (Very detailed)                                                                    | [http://cini.classiccmp.org/pdf/Microsoft/mbasic.pdf](http://cini.classiccmp.org/pdf/Microsoft/mbasic.pdf)             |
+| GW-BASIC Manual                                                                                              | [https://www-user.tu-chemnitz.de/~heha/hs/chm/gwbasic.chm/](https://www-user.tu-chemnitz.de/~heha/hs/chm/gwbasic.chm/) |
+| PC_BASIC and GWBASIC Implementation                                                                          | https://robhagemans.github.io/pcbasic/doc/2.0/PC-BASIC_documentation.pdf                                               |
 ## BNF
 Don't worry if you don't know about BNF. It's for future development. 
 In particular, it's for supporting multiple versions of BASIC.
