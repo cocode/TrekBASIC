@@ -1,5 +1,5 @@
 """
-Lexical analysis for the basic intrepreter.
+Lexical analysis for the basic interpreter.
 """
 
 from collections import namedtuple
@@ -7,8 +7,8 @@ from enum import Enum, auto
 from typing import Optional
 
 # Used internally to tokenize unary minus. This simplifies parsing.
-UNARY_MINUS="—"# That's an m-dash.
-ARRAY_ACCESS="@"
+UNARY_MINUS = "—"  # That's an m-dash.
+ARRAY_ACCESS = "@"
 
 lexer_token = namedtuple("Token", "token type")
 
@@ -103,7 +103,7 @@ def assert_syntax(value, message):
 
 def assert_internal(value, message):
     if not value:
-        raise BasicInternalError(F"InternalError: {message}", line_number=-1)
+        raise BasicInternalError(F"InternalError: {message}")
 
 
 # We had been using a lexical token for the operators, but function calls need more data.
@@ -119,27 +119,27 @@ class SymbolType(Enum):
 
 # Records the ending status of the program.
 class RunStatus(Enum):
-    RUN=auto()                  # Running normally
-    END_CMD=auto()              # Hit and END statement. Returns status 0 (success)
-    END_STOP=auto()             # Hit a STOP statement. Returns status 1 (failed)
-    END_OF_PROGRAM=auto()       # Fell of the end of the program. Returns status 0 (success)
-    END_ERROR_SYNTAX=auto()
-    END_ERROR_INTERNAL=auto()
-    END_ERROR_RUNTIME=auto()
-    BREAK_CODE=auto()
-    BREAK_DATA=auto()
-    BREAK_STEP=auto()
+    RUN = auto()                  # Running normally
+    END_CMD = auto()              # Hit and END statement. Returns status 0 (success)
+    END_STOP = auto()             # Hit a STOP statement. Returns status 1 (failed)
+    END_OF_PROGRAM = auto()       # Fell of the end of the program. Returns status 0 (success)
+    END_ERROR_SYNTAX = auto()
+    END_ERROR_INTERNAL = auto()
+    END_ERROR_RUNTIME = auto()
+    BREAK_CODE = auto()
+    BREAK_DATA = auto()
+    BREAK_STEP = auto()
 
 
 NUMBERS = "0123456789]"   # TODO ] is a number? If this value is correct, rename this variable.
 LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 
-def is_valid_identifier(variable:str) -> None:
+def is_valid_identifier(variable: str) -> None:
     """
     Checks if the identifier is a valid variable name to assign to.
     Assumes that spaces have already been removed.
-    Does not recognize internal functions, or user defined functions.
+    Does not recognize internal functions or user defined functions.
     :param variable: The variable name to check.
     :return: None. Raises an exception if the name is not valid.
     """
@@ -155,7 +155,7 @@ def is_valid_identifier(variable:str) -> None:
         return
     assert_syntax(variable[2] == '$', F"Invalid variable name {variable}")
 
-def tokens_to_str(tokens:list[lexer_token]):
+def tokens_to_str(tokens: list[lexer_token]):
     s = ""
     for token in tokens:
         if token.type == "num" and int(token.token) == token.token:
@@ -186,13 +186,16 @@ class Program:
         self._line_to_index = {}
         for i, line in enumerate(self._lines):
             self._line_to_index[line.line] = i
-    
+
+    def get_len(self):
+        return len(self._lines)
+
     def get_line(self, index: int) -> ProgramLine:
         """Get line by index in the program"""
         return self._lines[index]
     
     def get_next_index(self, current_index: int) -> Optional[int]:
-        """Get the index of the next line, or None if at end of program"""
+        """Get the index of the next line, or None if at the end of the program"""
         next_index = current_index + 1
         return next_index if next_index < len(self._lines) else None
     
@@ -205,7 +208,7 @@ class Program:
             current_offset: Current statement offset within the line
             
         Returns:
-            ControlLocation for the next statement, or None if at end of program
+            ControlLocation for the next statement, or None if at the end of program
         """
         next_offset = current_offset + 1
         current_line = self.get_line(current_index)
@@ -214,7 +217,7 @@ class Program:
             # More statements on current line
             return ControlLocation(current_index, next_offset)
         else:
-            # Move to first statement of next line
+            # Move to the first statement of the next line
             next_index = self.get_next_index(current_index)
             if next_index is None:
                 return None  # End of program
@@ -223,22 +226,30 @@ class Program:
     def find_line_index(self, line_number: int) -> int:
         """Find the index for a given line number"""
         if line_number not in self._line_to_index:
-            raise BasicSyntaxError(f"Line {line_number} not found")
+            print(f"Line {line_number} not found")
         return self._line_to_index[line_number]
-    
+
     def get_lines_range(self, start_index: int = 0, count: Optional[int] = None) -> list[str]:
         """Get program lines as strings for display, starting from index"""
         if count is None:
             count = len(self._lines) - start_index
-        
+
         end_index = min(start_index + count, len(self._lines))
         lines = []
-        
+
         for i in range(start_index, end_index):
             lines.append(self._lines[i].source)
-        
+
         return lines
-    
+
+    def get_lines_range2(self, start_index: int, end_index: int) -> list[str]:
+        lines = []
+
+        for i in range(start_index, end_index):   # Basic is inclusive of endpoints
+            lines.append(self._lines[i].source)
+
+        return lines
+
     def insert_or_replace_line(self, new_line: ProgramLine) -> bool:
         """
         Insert a new line or replace an existing line.
