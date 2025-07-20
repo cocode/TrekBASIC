@@ -14,6 +14,7 @@ import pprint
 import argparse
 import time
 import re
+from typing import Optional
 
 from basic_reports import generate_html_coverage_report, print_coverage_report
 from basic_symbols import SymbolTable
@@ -38,8 +39,7 @@ from basic_types import RunStatus
 class BasicShell:
     def __init__(self, program_file=None):
         self._program_file = program_file
-        self.executor = None
-        # TODO Investigate better failure handling
+        self.executor: Optional[Executor] = None        # TODO Investigate better failure handling
         self.load_status = False
         if self._program_file:
             self.load_from_file()
@@ -165,7 +165,6 @@ class BasicShell:
         else:
             print_coverage_report(self.executor._coverage, self.executor._program, args=='lines')
 
-
     def print_current(self, args):
         if not self.executor:
             print("No program has been loaded yet.")
@@ -173,46 +172,56 @@ class BasicShell:
         line = self.executor.get_current_line()
         print(line.source)
 
-    def cmd_list(self, args):
-        count = 10
-        if not self.executor or not self.executor._program:
-            print("No program has been loaded yet.")
-            return
-        if args:
-            args = args.split()
-            args = [arg.strip() for arg in args]
-            if not str.isdigit(args[0]):
-                print(F"Invalid line number {args[0]}")
-                self.usage("list")
-                return
-            start_line_number = int(args[0])
-            try:
-                cl = self.executor.find_line(start_line_number)
-            except BasicSyntaxError as e:
-                cl = self.executor._program[0]
-                return
-            index = cl.index
-
-            if len(args) > 1:
-                if not str.isdigit(args[1]):
-                    print(F"Invalid count {args[1]}")
-                    self.usage("list")
-                    return
-                count = int(args[1])
-        else:
-            index = self.executor.get_current_index()
-            if index is None:
-                # Program has finished running.
-                index = 0
-        current_location =  self.executor.get_current_location()
+    def print_listing(self, start_index, end_index) -> None:
+        current_location = self.executor.get_current_location()  # could be null?
         # Get the lines to list.
-        lines = self.executor.get_program_lines(index, count)
+        lines = self.executor.get_program_lines2(start_index, end_index)
         for local_line_offset, line in enumerate(lines):
-            if local_line_offset + index == current_location.index:
-                print("*",end="")
+            if local_line_offset + start_index == current_location.index:
+                print("*", end="")
             else:
                 print(" ", end="")
             print(line)
+
+    def get_line(self, line_number: str)-> int:
+        if not str.isnumeric(line_number):
+            print(F"Invalid line number {line_number}")
+            self.usage("list")
+            return None
+
+        try:
+            line_index = self.executor._program.find_line_index(int(line_number))
+        except BasicRuntimeError as e:
+            print(F"Invalid line number {line_number}: {e}")
+            self.usage("list")
+            return None
+        return line_index
+
+    def cmd_list(self, args) -> None:
+        if not self.executor or not self.executor.has_program():
+            print("No program has been loaded yet.")
+            return
+
+        si = 0
+        ei = self.executor.program_len()
+
+        if args:
+            arguments = args.replace(" ", "")
+            if (i := arguments.find("-")) != -1:
+                start_line = arguments[:i].strip()
+                end_line = arguments[i+1:].strip()
+                if start_line:
+                    si = self.get_line(start_line)
+                    if si is None:
+                        return
+                if end_line:
+                    ei = self.get_line(end_line)
+                    if ei is None:
+                        return
+
+        self.print_listing(si, ei)
+
+
 
     def format_cl(self, cl):
         program_line = self.executor._program.get_line(cl.index)
