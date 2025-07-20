@@ -548,7 +548,7 @@ class BasicShell:
             return
         # renum start_line, increment.
         # TODO maybe add a "split lines with multiple statements", or just always do it.
-        if args == None:
+        if args is None:
             args = []
         else:
             args = args.split()
@@ -586,7 +586,7 @@ class BasicShell:
             self._data_breakpoints = []
             return
 
-        if args == "list" or args == None:
+        if args == "list" or args is None:
             if self._breakpoints:
                 print("Breakpoints:")
                 for i in self._breakpoints:
