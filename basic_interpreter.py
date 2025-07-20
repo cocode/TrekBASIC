@@ -278,13 +278,13 @@ class Executor:
         """
         assert_syntax(len(self._for_stack) > 0, "NEXT without FOR")
         for_record = self._for_stack[-1]
-        assert_syntax(for_record.var==var, F"Wrong NEXT. Expected {for_record.var}, got {var}")
+        assert_syntax(for_record.var == var.upper(), F"Wrong NEXT. Expected {for_record.var}, got {var}")
         return for_record
 
     def do_next_pop(self, var: str) -> None:
         assert_syntax(len(self._for_stack) > 0, "NEXT without FOR")
         for_record = self._for_stack.pop()
-        assert_syntax(for_record.var==var, F"Wrong NEXT. Expected {for_record.var}, got {var}")
+        assert_syntax(for_record.var==var.upper(), F"Wrong NEXT. Expected {for_record.var}, got {var}")
 
     def get_symbol_count(self) -> int:
         """
@@ -295,7 +295,7 @@ class Executor:
 
     def put_symbol(self, symbol: str, value: Any, symbol_type: SymbolType, arg: Optional[str]) -> None:
         """
-        Adds a symbol to a the current symbol table.
+        Adds a symbol to the current symbol table.
 
         Some versions of basic allow arrays to have the same names as scalar variables. You can tell the difference
         by context. Here we get an explicit type. On get_symbol(), the caller will have to tell us.
@@ -313,7 +313,7 @@ class Executor:
         if symbol in self._data_breakpoints:
             self._run = RunStatus.BREAK_DATA
 
-        self._symbols.put_symbol(symbol, value, symbol_type, arg)
+        self._symbols.put_symbol(symbol.upper(), value, symbol_type, arg)
 
     def put_symbol_element(self, symbol: str, value: Any, subscripts: List[int]) -> None:
         # TODO Maybe check is_valid_variable here? Have to allow user defined functions, and built-ins, though.
@@ -432,7 +432,7 @@ class Executor:
 
     def get_symbol(self, symbol: str, symbol_type: SymbolType = SymbolType.VARIABLE) -> Any:
         # TODO Delete this. use get_symbol_value
-        return self.get_symbol_value(symbol, symbol_type)
+        return self.get_symbol_value(symbol.upper(), symbol_type)
 
     def get_symbol_value(self, symbol: str, symbol_type: SymbolType = SymbolType.VARIABLE) -> Any:
         """
@@ -440,7 +440,7 @@ class Executor:
         :param symbol_type: Arrays, functions and Scalars all have their own namespaces
         :return:
         """
-        return self._symbols.get_symbol_value(symbol, symbol_type)
+        return self._symbols.get_symbol_value(symbol.upper(), symbol_type)
 
     def get_symbol_type(self, symbol: str, symbol_type: SymbolType = SymbolType.VARIABLE) -> SymbolType:
         """
