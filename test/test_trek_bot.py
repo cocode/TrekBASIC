@@ -155,8 +155,8 @@ class TestCheatStrategy(TestCase):
         self.assertEqual("0.2", response)
         self.assertFalse(strat._warp_damaged)
 
-    @unittest.skip("Complex mocking required; behaviour covered in integration runs")
-    def test_state_base_when_weapons_disabled(self):
-        pass
+    # @unittest.skip("Complex mocking required; behaviour covered in integration runs")
+    # def test_state_base_when_weapons_disabled(self):
+    #     pass
 
 
