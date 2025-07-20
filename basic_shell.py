@@ -34,8 +34,6 @@ from basic_statements import eval_expression
 from basic_types import RunStatus
 
 
-
-
 class BasicShell:
     def __init__(self, program_file=None):
         self._program_file = program_file
@@ -79,7 +77,7 @@ class BasicShell:
         executor = Executor(program)
         self.executor = executor
 
-    def load_from_file(self, coverage:bool=False) -> None:
+    def load_from_file(self, coverage: bool=False) -> None:
         self.load_status = False
 
         if not os.path.exists(self._program_file):
@@ -106,13 +104,13 @@ class BasicShell:
         self.load_status = True
         return
 
-    def usage(self, cmd):
+    def usage(self, cmd_str: str):
         """
         Print usage for one command.
-        :param cmd:
+        :param cmd_str: The command get get usage information for
         :return:
         """
-        function = self.commands[cmd]
+        function = self.commands[cmd_str]
         usage = self.cmd_help_map[function][0]
         print(usage)
 
@@ -479,7 +477,7 @@ class BasicShell:
     def renumber(self, old_program: Program, line_map: dict[int:int], start_line: int, increment: int):
         new_program_lines: list[ProgramLine] = []
         cur_line = start_line
-        for index, line in enumerate(old_program):
+        for index, line in enumerate(old_program._lines):
             stmts: list[ParsedStatement] = []
             for statement in line.stmts:
                 ps = statement.renumber(line_map)
@@ -498,13 +496,14 @@ class BasicShell:
         :return:
         """
         new_program_lines: list[ProgramLine] = []
-        # Make a dummy, identity map. We are renumbering to the same numbers.
+        # Make a dummy identity map. We are renumbering to the same numbers.
         line_map = {line.line:line.line for line in old_program}
         for line in old_program:
             new_statements = []
             for statement in line.stmts:
                 ps = statement.renumber(line_map)
-                new_statements.append(ps)
+                statement_formatted = ps.format()
+                new_statements.append(statement_formatted)
             string_statements = ":".join([str(stmt) for stmt in new_statements])
             program_line = ProgramLine(line.line, new_statements, str(line.line)+" " +
                                        str(string_statements))
@@ -514,6 +513,7 @@ class BasicShell:
     def cmd_format(self, args):
         """
         Canonically formats the program.
+
         Does a "renumber" to the same lines, cleaning up in the process.
 
         :param args: Nothing.
@@ -606,7 +606,7 @@ class BasicShell:
                 offset = 0
             else:
                 if not args[0].isdigit():
-                    self.usage()
+                    self.usage("break")
                     return
                 offset = int(args[1])
             # Note this is not a ControlLocation, that's index, offset. We are working with line_number, offset

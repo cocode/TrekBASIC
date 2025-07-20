@@ -38,6 +38,9 @@ class ParsedStatement:
     def renumber(self, line_map: Dict[int, int]) -> 'ParsedStatement':
         return copy.copy(self)
 
+    def format(self) -> 'ParsedStatement':
+        return copy.copy(self)
+
     def __str__(self) -> str:
         """
         This generates syntactically valid, nicely formatted versions of the statement.
@@ -112,8 +115,18 @@ class ParsedStatementFor(ParsedStatement):
         else:
             self._step_clause = args[step+4:].strip()
 
+    def get_args(self) -> str:
+        args = F"{self._index_clause} = {self._start_clause} TO {self._to_clause}"
+        # TODO Only include step if not 1? Or if no explicity step clause.
+        args += " STEP " + self._step_clause
+        return args
+
+
+    def format(self):
+        return ParsedStatementFor(self.keyword, self.get_args())
+
     def __str__(self) -> str:
-        s = F"{self.keyword.name} {self._index_clause} = {self._start_clause} TO {self._to_clause}"
+        s = F"{self.keyword.name} {self.get_args()}"
         if self._step_clause != '1':
             s += F" step {self._step_clause}"
         return s
