@@ -135,7 +135,7 @@ class Expression:
                 break
                 
             # Apply left associativity: equal precedence operators are evaluated left-to-right
-            if get_precedence(top_operator) >= get_precedence(current_token):
+            if get_precedence(lexer_token(top_operator.token, top_operator.type)) >= get_precedence(current_token):
                 self.one_op(op_stack, data_stack)
             else:
                 break
