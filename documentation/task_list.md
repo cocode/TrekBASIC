@@ -6,13 +6,17 @@ I don't believe that two ELSEs on one line work.
 ### stmts command
 The 'stmts' command prints an extra : before the goto on something simple like "100 if x=1 then goto 100"
 
+### format command
+Only basic support. For statement supports format, nothing else does.
+Need a format_expression command. Should put spaces around everything.
+could we just parse the __str__ output?
 ### READ vs INPUT
 Looks like Dartmouth basic uses READ instead of INPUT. We could add that without conflict. If the semantics are the
 same, we could just alias.
 
 ### Escaped quotes
 Should I support \" in Strings? I don't recall older basics doing that. 
-No, i. taking thst out. 
+No, I taking that out, as that's a python convention, not a BASIC convention. 
 
 ### Benchmark timing for llvm code.
 Don't want to count startup time.
@@ -96,12 +100,12 @@ Move all remaining tests in ./* to approriate test dir
 ### Fix all TODOs
 
 ### Make basic.py and tbc.py runnable
-Add shebang line
+Add shebang line. But it still won't be runnable outside of the venv.
 
 ### Publish to pypi
 
 ### Limits
-Put a limit on the size of all dymnamic objects, strings, arrays. What else? these should be settable in doskect.py
+Put a limit on the size of all dynamic objects, strings, arrays. What else? these should be settable in doskect.py
 
 ### Call
 Add a call statement, to invoke other basic prograns. This will give us some
