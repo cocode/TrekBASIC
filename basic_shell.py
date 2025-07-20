@@ -218,6 +218,8 @@ class BasicShell:
                     ei = self.get_line(end_line)
                     if ei is None:
                         return
+                    # This gets the index of the last line. If we loop to this in python, this won't be inclusive.
+                    ei += 1
 
         self.print_listing(si, ei)
 
