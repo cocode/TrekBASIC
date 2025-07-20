@@ -105,15 +105,13 @@ Put a limit on the size of all dymnamic objects, strings, arrays. What else? the
 
 ### Call
 Add a call statement, to invoke other basic prograns. This will give us some
-modularity. orgerwise everything is global
-im BASIC. 
+modularity, Otherwise everything is global in BASIC. 
 
 ### Put a limit on the size of all dymnamic objects, strings, arrays. What else?
 
 ### Every rethrown exception should have "from e"
 
 ### test_suite
-Now that we have two implementations of BASIC, move all python files out of test_suite, so that project can be shared.
+Test suite is now a standalone project, but we still point to our local copy. We need to merge
+all the individual tests suites in TrekBasic, TrekBasicJ BasicRS into the test suite project.
 
-### List Command
-Fix the arguments to the list command. 
