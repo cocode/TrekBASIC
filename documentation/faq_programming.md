@@ -66,6 +66,17 @@ This document describes the compatibility issues between various versions of BAS
  https://files.eric.ed.gov/fulltext/ED083819.pdf
 
 
+## Terminology
+A LINE is made up of multiple STATEMENTS, each one beginning with a KEYWORD.
+
+### LINE
+    100 PRINT X:GOTO 200
+### STATEMENTS
+    "PRINT X" and "GOTO 100"
+### KEYWORDS
+    "PRINT", and "GOTO"
+
+
 ## Is there more information available?
 We built this off information I found on the web, so, yes.
 See the file references.md, there's a lot.

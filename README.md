@@ -100,13 +100,4 @@ I have not implemented an editor in basic_shell. You can input individual lines,
 While the old-style line-by-line editing might be nostalgic, modern editors are *so* much better. 
 You can edit in your favorite editor, and paste in changes to the shell, or just run them directly.
 
-## Terminology
-A LINE is made up of multiple STATEMENTS, each one beginning with a KEYWORD.
-
-### LINE
-    100 PRINT X:GOTO 200
-### STATEMENTS
-    "PRINT X" and "GOTO 100"
-### KEYWORDS
-    "PRINT", and "GOTO"
 
