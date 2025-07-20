@@ -95,7 +95,13 @@ class Executor:
 
         random.seed(1)
 
-    def run_program(self, breaklist: Optional[List[Tuple[int, int]]] = None, 
+    def has_program(self) -> bool:
+        return self._program is not None
+
+    def program_len(self) -> int:
+        return self._program.get_len()
+
+    def run_program(self, breaklist: Optional[List[Tuple[int, int]]] = None,
                    data_breakpoints: Optional[List[str]] = None, 
                    single_step: bool = False) -> RunStatus:
         """
@@ -216,6 +222,13 @@ class Executor:
         :return: list[str]
         """
         return self._program.get_lines_range(start, count)
+
+    def get_program_lines2(self, start: int, end_index: int) -> List[str]:
+        """
+        Returns a range of source lines. Used to implement the LIST command
+        :return: list[str]
+        """
+        return self._program.get_lines_range2(start, end_index)
 
     def get_current_stmt(self):  # Return type depends on statement types, keeping as is for now
         return self._program.get_line(self._location.index).stmts[self._location.offset]
