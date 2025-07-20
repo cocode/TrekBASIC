@@ -1,4 +1,5 @@
 .idea
+.cursor
 sample_output.txt
 venv
 __pycache__
