@@ -6,11 +6,8 @@ from basic_parsing import (
     ParsedStatementThen, ParsedStatementElse, ParsedStatementData,
     ParsedStatementRead, ParsedStatementRestore
 )
-from basic_expressions import Expression
 from basic_lexer import get_lexer
-from basic_utils import smart_split
-from basic_types import lexer_token, BasicSyntaxError, assert_syntax, OP_TOKEN, UNARY_MINUS, SymbolType, UndefinedSymbol
-from basic_operators import get_op_def, get_precedence
+from basic_operators import get_precedence
 from basic_dialect import UPPERCASE_INPUT
 
 
@@ -26,110 +23,114 @@ class LLVMCodeGenerator:
         # External functions
         printf_type = ir.FunctionType(ir.IntType(32), [ir.IntType(8).as_pointer()], var_arg=True)
         self.printf = ir.Function(self.module, printf_type, name="printf")
-        
+
         # Declare sprintf function for string formatting
-        sprintf_type = ir.FunctionType(ir.IntType(32), [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer()], var_arg=True)
+        sprintf_type = ir.FunctionType(ir.IntType(32), [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer()],
+                                       var_arg=True)
         self.sprintf = ir.Function(self.module, sprintf_type, name="sprintf")
-        
+
         # Declare sscanf function for parsing strings
-        sscanf_type = ir.FunctionType(ir.IntType(32), [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer()], var_arg=True)
+        sscanf_type = ir.FunctionType(ir.IntType(32), [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer()],
+                                      var_arg=True)
         self.sscanf = ir.Function(self.module, sscanf_type, name="sscanf")
-        
+
         # Declare scanf function for input
         scanf_type = ir.FunctionType(ir.IntType(32), [ir.IntType(8).as_pointer()], var_arg=True)
         self.scanf = ir.Function(self.module, scanf_type, name="scanf")
-        
+
         # Declare fgets function for reading lines (better for string input)
-        fgets_type = ir.FunctionType(ir.IntType(8).as_pointer(), 
-                                   [ir.IntType(8).as_pointer(), ir.IntType(32), ir.IntType(8).as_pointer()])
+        fgets_type = ir.FunctionType(ir.IntType(8).as_pointer(),
+                                     [ir.IntType(8).as_pointer(), ir.IntType(32), ir.IntType(8).as_pointer()])
         self.fgets = ir.Function(self.module, fgets_type, name="fgets")
-        
+
         # Declare getchar function for reading single characters
         getchar_type = ir.FunctionType(ir.IntType(32), [])
         self.getchar = ir.Function(self.module, getchar_type, name="getchar")
 
         # Declare strcat for string concatenation
-        strcat_type = ir.FunctionType(ir.IntType(8).as_pointer(), 
-                                     [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer()])
+        strcat_type = ir.FunctionType(ir.IntType(8).as_pointer(),
+                                      [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer()])
         self.strcat = ir.Function(self.module, strcat_type, name="strcat")
-        
+
         # Declare malloc for dynamic memory allocation
         malloc_type = ir.FunctionType(ir.IntType(8).as_pointer(), [ir.IntType(64)])
         self.malloc = ir.Function(self.module, malloc_type, name="malloc")
-        
+
         # Declare strlen for string length
         strlen_type = ir.FunctionType(ir.IntType(64), [ir.IntType(8).as_pointer()])
         self.strlen = ir.Function(self.module, strlen_type, name="strlen")
-        
+
         # Declare strcmp for string comparison
         strcmp_type = ir.FunctionType(ir.IntType(32), [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer()])
         self.strcmp = ir.Function(self.module, strcmp_type, name="strcmp")
-        
+
         # Declare strchr for finding characters in strings
         strchr_type = ir.FunctionType(ir.IntType(8).as_pointer(), [ir.IntType(8).as_pointer(), ir.IntType(32)])
         self.strchr = ir.Function(self.module, strchr_type, name="strchr")
-        
+
         # Declare strncpy for copying strings with length limit
-        strncpy_type = ir.FunctionType(ir.IntType(8).as_pointer(), [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer(), ir.IntType(64)])
+        strncpy_type = ir.FunctionType(ir.IntType(8).as_pointer(),
+                                       [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer(), ir.IntType(64)])
         self.strncpy = ir.Function(self.module, strncpy_type, name="strncpy")
-        
+
         # Declare strcpy for copying strings
-        strcpy_type = ir.FunctionType(ir.IntType(8).as_pointer(), [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer()])
+        strcpy_type = ir.FunctionType(ir.IntType(8).as_pointer(),
+                                      [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer()])
         self.strcpy = ir.Function(self.module, strcpy_type, name="strcpy")
-        
+
         # Declare math functions
         sin_type = ir.FunctionType(ir.DoubleType(), [ir.DoubleType()])
         self.sin = ir.Function(self.module, sin_type, name="sin")
-        
+
         cos_type = ir.FunctionType(ir.DoubleType(), [ir.DoubleType()])
         self.cos = ir.Function(self.module, cos_type, name="cos")
-        
+
         sqrt_type = ir.FunctionType(ir.DoubleType(), [ir.DoubleType()])
         self.sqrt = ir.Function(self.module, sqrt_type, name="sqrt")
-        
+
         exp_type = ir.FunctionType(ir.DoubleType(), [ir.DoubleType()])
         self.exp = ir.Function(self.module, exp_type, name="exp")
-        
+
         log_type = ir.FunctionType(ir.DoubleType(), [ir.DoubleType()])
         self.log = ir.Function(self.module, log_type, name="log")
-        
+
         fabs_type = ir.FunctionType(ir.DoubleType(), [ir.DoubleType()])
         self.fabs = ir.Function(self.module, fabs_type, name="fabs")
-        
+
         # Declare pow function for exponentiation
         pow_type = ir.FunctionType(ir.DoubleType(), [ir.DoubleType(), ir.DoubleType()])
         self.pow = ir.Function(self.module, pow_type, name="pow")
-        
+
         # Declare rand function for random numbers
         rand_type = ir.FunctionType(ir.IntType(32), [])
         self.rand = ir.Function(self.module, rand_type, name="rand")
-        
+
         # Declare srand function for seeding random number generator
         srand_type = ir.FunctionType(ir.VoidType(), [ir.IntType(32)])
         self.srand = ir.Function(self.module, srand_type, name="srand")
-        
+
         # Declare time function for seeding
         time_type = ir.FunctionType(ir.IntType(64), [ir.IntType(64).as_pointer()])
         self.time = ir.Function(self.module, time_type, name="time")
-        
+
         # Declare INT function
         int_type = ir.FunctionType(ir.DoubleType(), [ir.DoubleType()])
         self.int_func = ir.Function(self.module, int_type, name="floor")
-        
+
         # Declare string functions
         asc_type = ir.FunctionType(ir.IntType(32), [ir.IntType(8).as_pointer()])
         self.asc = ir.Function(self.module, asc_type, name="asc")
-        
+
         chr_type = ir.FunctionType(ir.IntType(8), [ir.IntType(32)])
         self.chr = ir.Function(self.module, chr_type, name="chr")
-        
+
         # Declare toupper function for converting strings to uppercase
         toupper_type = ir.FunctionType(ir.IntType(32), [ir.IntType(32)])
         self.toupper = ir.Function(self.module, toupper_type, name="toupper")
-        
+
         # For now, we'll implement these as simple stubs that return reasonable defaults
         # A full implementation would need more complex string handling
-        
+
         # Create a single global variable for float format string
         fmt = "%f\n\0"
         c_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(fmt)), bytearray(fmt.encode("utf8")))
@@ -137,7 +138,7 @@ class LLVMCodeGenerator:
         self.global_fmt_float.linkage = 'internal'
         self.global_fmt_float.global_constant = True
         self.global_fmt_float.initializer = c_fmt
-        
+
         self.builder = None
         self.symbol_table = {}
         self.array_info = {}  # Track array dimensions and storage
@@ -145,23 +146,23 @@ class LLVMCodeGenerator:
         self.loop_stack = []  # Track nested FOR loops
         self.return_stack = []  # Track GOSUB return addresses
         self.current_line_index = 0
-        
+
         # Runtime return address stack
         self.return_stack_size = 100  # Maximum depth
         self.return_stack_ptr = None
         self.return_stack_top = None
         self.newline_counter = 0
-        
+
         # DATA/READ infrastructure
         self.data_values = []  # Collect all DATA values at compile time
         self.data_line_map = {}  # Map line numbers to starting indices in data_values
-        self.data_ptr = None   # Global pointer to track current read position
+        self.data_ptr = None  # Global pointer to track current read position
         self._collect_data_values()
 
         # User-defined functions: map name to LLVM function
         self.user_functions = {}
         self.user_function_defs = []  # Store DEF statements for later processing
-        
+
         # First pass: scan for user-defined functions and create declarations only
         for program_line in self.program:
             for stmt in program_line.stmts:
@@ -176,16 +177,16 @@ class LLVMCodeGenerator:
                     llvm_fn = ir.Function(self.module, fn_type, name=fn_name)
                     self.user_functions[fn_name] = llvm_fn
                     self.user_function_defs.append(stmt)
-        
+
         if self.debug:
             print(f"DEBUG: Created {len(self.user_functions)} user functions: {list(self.user_functions.keys())}")
-        
+
         # Note: Function bodies will be generated later in generate_ir() after variables are allocated
 
     def generate_ir(self):
         main_func_type = ir.FunctionType(ir.IntType(32), [])
         main_func = ir.Function(self.module, main_func_type, name="main")
-        
+
         entry_block = main_func.append_basic_block(name="entry")
         self.builder = ir.IRBuilder(entry_block)
 
@@ -194,10 +195,10 @@ class LLVMCodeGenerator:
 
         # Allocate variables
         self._allocate_variables()
-        
+
         # Initialize string variables at runtime
         self._initialize_string_variables()
-        
+
         # Seed random number generator once at program start
         self._seed_random_generator()
 
@@ -208,7 +209,7 @@ class LLVMCodeGenerator:
         for line in self.program:
             block = main_func.append_basic_block(name=f"line_{line.line}")
             self.line_blocks[line.line] = block
-        
+
         # Branch to first line
         if self.program:
             self.builder.branch(self.line_blocks[self.program[0].line])
@@ -219,33 +220,33 @@ class LLVMCodeGenerator:
         for i, line in enumerate(self.program):
             self.builder.position_at_end(self.line_blocks[line.line])
             self.current_line_index = i  # Track current line index for GOSUB
-            
+
             # Add optional trace output to show which line is being executed
             if self.trace:
                 debug_str = f"Executing line {line.line}\\n"
                 debug_str_global_name = f"debug_str_{line.line}"
                 if debug_str_global_name not in self.module.globals:
-                    debug_str_global = ir.GlobalVariable(self.module, ir.ArrayType(ir.IntType(8), len(debug_str)), 
-                                                       name=debug_str_global_name)
+                    debug_str_global = ir.GlobalVariable(self.module, ir.ArrayType(ir.IntType(8), len(debug_str)),
+                                                         name=debug_str_global_name)
                     debug_str_global.linkage = 'internal'
                     debug_str_global.global_constant = True
-                    debug_str_global.initializer = ir.Constant(ir.ArrayType(ir.IntType(8), len(debug_str)), 
-                                                             bytearray(debug_str.encode("utf-8")))
+                    debug_str_global.initializer = ir.Constant(ir.ArrayType(ir.IntType(8), len(debug_str)),
+                                                               bytearray(debug_str.encode("utf-8")))
                 else:
                     debug_str_global = self.module.get_global(debug_str_global_name)
                 debug_str_ptr = self.builder.bitcast(debug_str_global, ir.PointerType(ir.IntType(8)))
                 self.builder.call(self.printf, [debug_str_ptr])
-            
+
             # Check if this basic block is empty (no instructions yet) 
             trace_instructions = 2 if self.trace else 0
             block_was_empty = len(self.builder.block.instructions) <= trace_instructions
-            
+
             self._generate_line_statements(line.stmts)
-            
+
             # If block is still empty after processing statements, add a no-op
             # But only if the block doesn't already have a terminator instruction
-            if (block_was_empty and len(self.builder.block.instructions) <= trace_instructions and 
-                not self.builder.block.is_terminated):
+            if (block_was_empty and len(self.builder.block.instructions) <= trace_instructions and
+                    not self.builder.block.is_terminated):
                 # Add a simple no-op to prevent empty basic blocks
                 temp_val = ir.Constant(ir.DoubleType(), 0.0)
                 if "noop_var" not in self.module.globals:
@@ -256,14 +257,14 @@ class LLVMCodeGenerator:
                 else:
                     noop_global = self.module.get_global("noop_var")
                 self.builder.store(temp_val, noop_global)
-            
+
             # Branch to next line if not a branching statement
             if not self.builder.block.is_terminated:
                 if i + 1 < len(self.program):
-                     next_line_num = self.program[i + 1].line
-                     self.builder.branch(self.line_blocks[next_line_num])
+                    next_line_num = self.program[i + 1].line
+                    self.builder.branch(self.line_blocks[next_line_num])
                 else:
-                     self.builder.ret(ir.Constant(ir.IntType(32), 0))
+                    self.builder.ret(ir.Constant(ir.IntType(32), 0))
 
         return str(self.module)
 
@@ -274,8 +275,9 @@ class LLVMCodeGenerator:
         self.return_stack_ptr = ir.GlobalVariable(self.module, return_stack_type, name="return_stack")
         self.return_stack_ptr.linkage = 'internal'
         self.return_stack_ptr.global_constant = False
-        self.return_stack_ptr.initializer = ir.Constant(return_stack_type, [ir.Constant(ir.IntType(32), 0)] * self.return_stack_size)
-        
+        self.return_stack_ptr.initializer = ir.Constant(return_stack_type,
+                                                        [ir.Constant(ir.IntType(32), 0)] * self.return_stack_size)
+
         # Create global variable for stack top
         self.return_stack_top = ir.GlobalVariable(self.module, ir.IntType(32), name="return_stack_top")
         self.return_stack_top.linkage = 'internal'
@@ -286,7 +288,7 @@ class LLVMCodeGenerator:
         var_names = set()
         string_var_names = set()
         array_names = set()
-        
+
         def extract_vars_from_tokens(tokens):
             """Extract variable names from a list of tokens"""
             if not tokens:
@@ -298,7 +300,7 @@ class LLVMCodeGenerator:
                         string_var_names.add(var_name)
                     else:
                         var_names.add(var_name)
-        
+
         for line in self.program:
             for stmt in line.stmts:
                 if isinstance(stmt, ParsedStatementLet):
@@ -308,12 +310,12 @@ class LLVMCodeGenerator:
                         base_var = var_name[:var_name.find('(')].strip()
                     else:
                         base_var = var_name
-                    
+
                     if base_var.endswith('$'):
                         string_var_names.add(base_var)
                     else:
                         var_names.add(base_var)
-                    
+
                     # Also extract variables from the expression tokens
                     extract_vars_from_tokens(stmt._tokens)
                 elif isinstance(stmt, ParsedStatementFor):
@@ -321,11 +323,11 @@ class LLVMCodeGenerator:
                 elif isinstance(stmt, ParsedStatementDim):
                     for name, dimensions in stmt._dimensions:
                         array_names.add(name)
-                
+
                 # Extract variables from any statement that has tokens
                 if hasattr(stmt, '_tokens') and stmt._tokens:
                     extract_vars_from_tokens(stmt._tokens)
-        
+
         # Allocate regular variables (numeric) - ALL as global variables (BASIC semantics)
         for var_name in var_names:
             global_var = ir.GlobalVariable(self.module, ir.DoubleType(), name=f"global_{var_name}")
@@ -333,7 +335,7 @@ class LLVMCodeGenerator:
             global_var.global_constant = False
             global_var.initializer = ir.Constant(ir.DoubleType(), 0.0)
             self.symbol_table[var_name] = global_var
-        
+
         # Allocate string variables (pointers to strings) - ALL as global variables (BASIC semantics)
         for var_name in string_var_names:
             # Initialize with empty string
@@ -344,7 +346,7 @@ class LLVMCodeGenerator:
             global_empty.linkage = 'internal'
             global_empty.global_constant = True
             global_empty.initializer = c_empty
-            
+
             # Allocate global pointer to store string address
             global_var = ir.GlobalVariable(self.module, ir.IntType(8).as_pointer(), name=f"global_{var_name}")
             global_var.linkage = 'internal'
@@ -352,7 +354,7 @@ class LLVMCodeGenerator:
             # Initialize with constant null pointer (will be set to empty string at runtime)
             global_var.initializer = ir.Constant(ir.IntType(8).as_pointer(), None)
             self.symbol_table[var_name] = global_var
-        
+
         # Process all DIM statements to allocate arrays
         for line in self.program:
             for stmt in line.stmts:
@@ -364,28 +366,31 @@ class LLVMCodeGenerator:
         j = 0
         while j < len(stmts):
             stmt = stmts[j]
-            
+
             # Check if this is a GOSUB statement in a compound line
             if isinstance(stmt, ParsedStatementGo) and stmt.keyword.name == "GOSUB" and j + 1 < len(stmts):
                 # This is a GOSUB with remaining statements on the same line
                 # Create a continuation block for statements after GOSUB
                 func = self.builder.block.function
-                continuation_block = func.append_basic_block(name=f"gosub_cont_{self.program[self.current_line_index].line}_{j}")
-                
+                continuation_block = func.append_basic_block(
+                    name=f"gosub_cont_{self.program[self.current_line_index].line}_{j}")
+
                 # Store continuation block as return address for this GOSUB
-                continuation_line_num = self.program[self.current_line_index].line * 1000 + j + 1  # Unique ID for continuation
+                continuation_line_num = self.program[
+                                            self.current_line_index].line * 1000 + j + 1  # Unique ID for continuation
                 self.line_blocks[continuation_line_num] = continuation_block
                 self._push_return_address(continuation_line_num)
-                
+
                 # Generate the GOSUB
                 target_line = int(stmt.destination)
                 if self.debug:
-                    print(f"DEBUG: GOSUB from line {self.program[self.current_line_index].line} to {target_line}, return to continuation {continuation_line_num}")
+                    print(
+                        f"DEBUG: GOSUB from line {self.program[self.current_line_index].line} to {target_line}, return to continuation {continuation_line_num}")
                 self.builder.branch(self.line_blocks[target_line])
-                
+
                 # Switch to continuation block for remaining statements
                 self.builder.position_at_end(continuation_block)
-                
+
                 # Continue with remaining statements
                 j += 1
                 continue
@@ -397,11 +402,11 @@ class LLVMCodeGenerator:
             else:
                 # Normal statement
                 self._generate_statement_ir(stmt, line_stmts=stmts, stmt_index=j)
-                
+
                 # If this statement terminated the block, stop processing
                 if self.builder.block.is_terminated:
                     break
-                    
+
                 j += 1
 
     def _initialize_string_variables(self):
@@ -430,17 +435,17 @@ class LLVMCodeGenerator:
             arg_name = stmt._function_arg
             body_tokens = stmt._tokens
             llvm_fn = self.user_functions[fn_name]
-            
+
             # Create function body
             entry_block = llvm_fn.append_basic_block('entry')
             builder = ir.IRBuilder(entry_block)
-            
+
             # Set up a local symbol table that includes both argument and global variables
             local_vars = dict(self.symbol_table)  # Copy global symbol table
             arg_ptr = builder.alloca(ir.DoubleType(), name=arg_name)
             builder.store(llvm_fn.args[0], arg_ptr)
             local_vars[arg_name] = arg_ptr  # Override with local argument
-            
+
             # Evaluate the body expression
             result = self._codegen_expr(body_tokens, local_vars=local_vars, builder=builder)
             builder.ret(result)
@@ -451,38 +456,38 @@ class LLVMCodeGenerator:
         elif isinstance(stmt, ParsedStatementPrint):
             self._codegen_print(stmt)
         elif isinstance(stmt, ParsedStatementGo):
-             self._codegen_goto(stmt)
+            self._codegen_goto(stmt)
         elif isinstance(stmt, ParsedStatementFor):
-             self._codegen_for(stmt)
+            self._codegen_for(stmt)
         elif isinstance(stmt, ParsedStatementNext):
-             self._codegen_next(stmt)
+            self._codegen_next(stmt)
         elif isinstance(stmt, ParsedStatementIf):
-             self._codegen_if_simple(stmt, line_stmts, stmt_index)
+            self._codegen_if_simple(stmt, line_stmts, stmt_index)
         elif isinstance(stmt, ParsedStatementDim):
-             # DIM statements are already processed during variable allocation
-             pass
+            # DIM statements are already processed during variable allocation
+            pass
         elif stmt.keyword.name == "END":
-             self.builder.ret(ir.Constant(ir.IntType(32), 0))
+            self.builder.ret(ir.Constant(ir.IntType(32), 0))
         elif stmt.keyword.name == "STOP":
-             self.builder.ret(ir.Constant(ir.IntType(32), 1))  # Error exit code
+            self.builder.ret(ir.Constant(ir.IntType(32), 1))  # Error exit code
         elif stmt.keyword.name == "RETURN":
-             self._codegen_return(stmt)
+            self._codegen_return(stmt)
         elif isinstance(stmt, ParsedStatementInput):
-             self._codegen_input(stmt)
+            self._codegen_input(stmt)
         elif isinstance(stmt, ParsedStatementOnGoto):
-             self._codegen_on_goto(stmt)
+            self._codegen_on_goto(stmt)
         elif isinstance(stmt, ParsedStatementData):
-             self._codegen_data(stmt)
+            self._codegen_data(stmt)
         elif isinstance(stmt, ParsedStatementRead):
-             self._codegen_read(stmt)
+            self._codegen_read(stmt)
         elif isinstance(stmt, ParsedStatementRestore):
-             self._codegen_restore(stmt)
+            self._codegen_restore(stmt)
         elif isinstance(stmt, ParsedStatementThen):
-             # THEN is a no-op - the IF statement handles the control flow
-             pass
+            # THEN is a no-op - the IF statement handles the control flow
+            pass
         elif isinstance(stmt, ParsedStatementElse):
-             # ELSE should jump to next line (ending the THEN block)
-             self._codegen_else(stmt)
+            # ELSE should jump to next line (ending the THEN block)
+            self._codegen_else(stmt)
         # Add other statements here
         else:
             if stmt.keyword.name == "REM":
@@ -520,49 +525,49 @@ class LLVMCodeGenerator:
             global_var.initializer = ir.Constant(ir.DoubleType(), 0.0)
             self.symbol_table[loop_var] = global_var
             var_ptr = global_var
-        
+
         # Parse and evaluate start, end, and step expressions
         lexer = get_lexer()
         start_tokens = lexer.lex(stmt._start_clause)
         end_tokens = lexer.lex(stmt._to_clause)
         step_tokens = lexer.lex(stmt._step_clause)
-        
+
         start_val = self._codegen_expr(start_tokens)
         end_val = self._codegen_expr(end_tokens)
         step_val = self._codegen_expr(step_tokens)
-        
+
         # Store initial value
         self.builder.store(start_val, var_ptr)
-        
+
         # Create loop blocks
         func = self.builder.block.function
         cond_block = func.append_basic_block(name=f"for_{loop_var}_cond")
         body_block = func.append_basic_block(name=f"for_{loop_var}_body")
         after_block = func.append_basic_block(name=f"for_{loop_var}_after")
-        
+
         # Branch to condition block
         self.builder.branch(cond_block)
-        
+
         # Condition block
         self.builder.position_at_end(cond_block)
         current_val = self.builder.load(var_ptr, name=f"load_{loop_var}")
-        
+
         # Compare current value with end value
         # For positive step: current <= end
         # For negative step: current >= end
         zero = ir.Constant(ir.DoubleType(), 0.0)
         step_positive = self.builder.fcmp_ordered(">=", step_val, zero, name="step_positive")
-        
+
         # Create conditional comparison
         cmp_positive = self.builder.fcmp_ordered("<=", current_val, end_val, name="cmp_positive")
         cmp_negative = self.builder.fcmp_ordered(">=", current_val, end_val, name="cmp_negative")
-        
+
         # Select the appropriate comparison based on step sign
         condition = self.builder.select(step_positive, cmp_positive, cmp_negative, name="loop_condition")
-        
+
         # Branch based on condition
         self.builder.cbranch(condition, body_block, after_block)
-        
+
         # Push loop context onto stack
         self.loop_stack.append({
             'var': loop_var,
@@ -571,7 +576,7 @@ class LLVMCodeGenerator:
             'cond_block': cond_block,
             'after_block': after_block
         })
-        
+
         # Position builder at start of body block
         self.builder.position_at_end(body_block)
 
@@ -579,22 +584,22 @@ class LLVMCodeGenerator:
         """Generate LLVM IR for a NEXT statement"""
         if not self.loop_stack:
             raise Exception("NEXT without corresponding FOR")
-        
+
         loop_context = self.loop_stack.pop()
         loop_var = stmt.loop_var
-        
+
         if loop_var != loop_context['var']:
             raise Exception(f"NEXT variable {loop_var} doesn't match FOR variable {loop_context['var']}")
-        
+
         # Increment the loop variable
         current_val = self.builder.load(loop_context['var_ptr'], name=f"load_{loop_var}")
         new_val = self.builder.fadd(current_val, loop_context['step_val'], name=f"inc_{loop_var}")
         self.builder.store(new_val, loop_context['var_ptr'])
-        
+
         # Branch back to condition block (only if current block is not terminated)
         if not self.builder.block.is_terminated:
             self.builder.branch(loop_context['cond_block'])
-        
+
         # Position builder at after block for any code that follows
         self.builder.position_at_end(loop_context['after_block'])
 
@@ -606,11 +611,11 @@ class LLVMCodeGenerator:
             prompt = stmt._prompt.strip()
             if prompt.startswith('"') and prompt.endswith('"'):
                 prompt = prompt[1:-1]
-            
+
             # Create format string for prompt with space after it (BASIC convention)
             prompt_fmt = prompt + " \0"
-            c_prompt_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(prompt_fmt)), 
-                                     bytearray(prompt_fmt.encode("utf8")))
+            c_prompt_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(prompt_fmt)),
+                                       bytearray(prompt_fmt.encode("utf8")))
             prompt_fmt_name = f"input_prompt_{hash(prompt)}"
             if prompt_fmt_name not in self.module.globals:
                 global_prompt_fmt = ir.GlobalVariable(self.module, c_prompt_fmt.type, name=prompt_fmt_name)
@@ -619,10 +624,10 @@ class LLVMCodeGenerator:
                 global_prompt_fmt.initializer = c_prompt_fmt
             else:
                 global_prompt_fmt = self.module.get_global(prompt_fmt_name)
-            
+
             prompt_fmt_ptr = self.builder.bitcast(global_prompt_fmt, ir.IntType(8).as_pointer())
             self.builder.call(self.printf, [prompt_fmt_ptr])
-        
+
         for var_name in stmt._input_vars:
             if var_name.endswith('$'):
                 # String variable - read string input
@@ -633,20 +638,20 @@ class LLVMCodeGenerator:
                     global_var.global_constant = False
                     global_var.initializer = ir.Constant(ir.IntType(8).as_pointer(), None)
                     self.symbol_table[var_name] = global_var
-                
+
                 # Allocate buffer for string input (256 characters max)
                 buffer_size = ir.Constant(ir.IntType(64), 256)
                 input_buffer = self.builder.call(self.malloc, [buffer_size], name=f"input_buffer_{var_name}")
-                
+
                 # Initialize buffer to empty string
                 null_char = ir.Constant(ir.IntType(8), 0)
                 self.builder.store(null_char, input_buffer)
-                
+
                 # Use scanf with format that handles empty input
                 # %[^\n] reads everything up to newline, allows empty input
                 line_fmt = "%[^\n]\0"
-                c_line_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(line_fmt)), 
-                                       bytearray(line_fmt.encode("utf8")))
+                c_line_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(line_fmt)),
+                                         bytearray(line_fmt.encode("utf8")))
                 line_fmt_name = f"line_input_fmt_{var_name}"
                 if line_fmt_name not in self.module.globals:
                     global_line_fmt = ir.GlobalVariable(self.module, c_line_fmt.type, name=line_fmt_name)
@@ -655,60 +660,60 @@ class LLVMCodeGenerator:
                     global_line_fmt.initializer = c_line_fmt
                 else:
                     global_line_fmt = self.module.get_global(line_fmt_name)
-                
+
                 line_fmt_ptr = self.builder.bitcast(global_line_fmt, ir.IntType(8).as_pointer())
-                
+
                 # Call scanf to read the line (may be empty)
                 scanf_result = self.builder.call(self.scanf, [line_fmt_ptr, input_buffer])
-                
+
                 # Consume the newline character left by scanf
                 self.builder.call(self.getchar, [])
-                
+
                 # Convert string to uppercase if UPPERCASE_INPUT is enabled
                 if UPPERCASE_INPUT:
                     # Create a loop to iterate through the string and convert each character
                     func = self.builder.block.function
                     loop_block = func.append_basic_block(name=f"uppercase_loop_{var_name}")
                     after_loop_block = func.append_basic_block(name=f"after_uppercase_{var_name}")
-                    
+
                     # Initialize loop counter
                     counter_var = self.builder.alloca(ir.IntType(32), name=f"counter_{var_name}")
                     self.builder.store(ir.Constant(ir.IntType(32), 0), counter_var)
                     self.builder.branch(loop_block)
-                    
+
                     # Loop to convert each character
                     self.builder.position_at_end(loop_block)
                     counter = self.builder.load(counter_var, name="counter")
-                    
+
                     # Get current character
                     char_ptr = self.builder.gep(input_buffer, [counter], name="char_ptr")
                     current_char = self.builder.load(char_ptr, name="current_char")
-                    
+
                     # Check if we've reached null terminator
                     null_char = ir.Constant(ir.IntType(8), 0)
                     is_null = self.builder.icmp_signed("==", current_char, null_char)
-                    
+
                     # Create block for character conversion
                     convert_block = func.append_basic_block(name=f"convert_char_{var_name}")
                     self.builder.cbranch(is_null, after_loop_block, convert_block)
-                    
+
                     # Convert character to uppercase
                     self.builder.position_at_end(convert_block)
                     char_as_int = self.builder.zext(current_char, ir.IntType(32))
                     upper_char_int = self.builder.call(self.toupper, [char_as_int])
                     upper_char = self.builder.trunc(upper_char_int, ir.IntType(8))
-                    
+
                     # Store the uppercase character back
                     self.builder.store(upper_char, char_ptr)
-                    
+
                     # Increment counter and continue loop
                     next_counter = self.builder.add(counter, ir.Constant(ir.IntType(32), 1))
                     self.builder.store(next_counter, counter_var)
                     self.builder.branch(loop_block)
-                    
+
                     # After loop - position builder at the after block
                     self.builder.position_at_end(after_loop_block)
-                
+
                 # Store the buffer pointer in the variable
                 self.builder.store(input_buffer, self.symbol_table[var_name])
             else:
@@ -720,19 +725,19 @@ class LLVMCodeGenerator:
                     global_var.global_constant = False
                     global_var.initializer = ir.Constant(ir.DoubleType(), 0.0)
                     self.symbol_table[var_name] = global_var
-                
+
                 # Allocate buffer for line input (same approach as string input)
                 buffer_size = ir.Constant(ir.IntType(64), 256)
                 input_buffer = self.builder.call(self.malloc, [buffer_size], name=f"numeric_input_buffer_{var_name}")
-                
+
                 # Initialize buffer to empty string
                 null_char = ir.Constant(ir.IntType(8), 0)
                 self.builder.store(null_char, input_buffer)
-                
+
                 # Read entire line (same as string input)
                 line_fmt = "%[^\n]\0"
-                c_line_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(line_fmt)), 
-                                       bytearray(line_fmt.encode("utf8")))
+                c_line_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(line_fmt)),
+                                         bytearray(line_fmt.encode("utf8")))
                 line_fmt_name = f"numeric_line_input_fmt_{var_name}"
                 if line_fmt_name not in self.module.globals:
                     global_line_fmt = ir.GlobalVariable(self.module, c_line_fmt.type, name=line_fmt_name)
@@ -741,19 +746,19 @@ class LLVMCodeGenerator:
                     global_line_fmt.initializer = c_line_fmt
                 else:
                     global_line_fmt = self.module.get_global(line_fmt_name)
-                
+
                 line_fmt_ptr = self.builder.bitcast(global_line_fmt, ir.IntType(8).as_pointer())
-                
+
                 # Call scanf to read the line (may be empty)
                 scanf_result = self.builder.call(self.scanf, [line_fmt_ptr, input_buffer])
-                
+
                 # Consume the newline character left by scanf
                 self.builder.call(self.getchar, [])
-                
+
                 # Now parse the number from the string using sscanf
                 double_fmt = "%lf\0"
-                c_double_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(double_fmt)), 
-                                         bytearray(double_fmt.encode("utf8")))
+                c_double_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(double_fmt)),
+                                           bytearray(double_fmt.encode("utf8")))
                 double_fmt_name = f"double_parse_fmt_{var_name}"
                 if double_fmt_name not in self.module.globals:
                     global_double_fmt = ir.GlobalVariable(self.module, c_double_fmt.type, name=double_fmt_name)
@@ -762,9 +767,9 @@ class LLVMCodeGenerator:
                     global_double_fmt.initializer = c_double_fmt
                 else:
                     global_double_fmt = self.module.get_global(double_fmt_name)
-                
+
                 double_fmt_ptr = self.builder.bitcast(global_double_fmt, ir.IntType(8).as_pointer())
-                
+
                 # Use sscanf to parse the number from the string
                 var_ptr = self.symbol_table[var_name]
                 self.builder.call(self.sscanf, [input_buffer, double_fmt_ptr, var_ptr])
@@ -773,38 +778,38 @@ class LLVMCodeGenerator:
         """Generate LLVM IR for an ON...GOTO or ON...GOSUB statement"""
         if not stmt._target_lines or len(stmt._target_lines) == 0:
             return
-            
+
         # Evaluate the expression to get the index
         lexer = get_lexer()
         expr_tokens = lexer.lex(stmt._expression)
         index_value = self._codegen_expr(expr_tokens)
-        
+
         # Convert to integer index (1-based in BASIC)
         index_int = self.builder.fptosi(index_value, ir.IntType(32), name="on_index")
-        
+
         # Create blocks for each target and a default block
         func = self.builder.block.function
         target_blocks = []
         for i, target_line in enumerate(stmt._target_lines):
-            block_name = f"on_{stmt._op.lower()}_{i+1}_{target_line}"
+            block_name = f"on_{stmt._op.lower()}_{i + 1}_{target_line}"
             target_blocks.append(func.append_basic_block(name=block_name))
-        
+
         # Create default block (for index <= 0 or index > number of targets)
         default_block = func.append_basic_block(name=f"on_{stmt._op.lower()}_default")
-        
+
         # Create switch statement
         switch_inst = self.builder.switch(index_int, default_block)
-        
+
         # Add cases for each target (1-based indexing)
         for i, target_line in enumerate(stmt._target_lines):
             case_value = ir.Constant(ir.IntType(32), i + 1)
             switch_inst.add_case(case_value, target_blocks[i])
-        
+
         # Generate code for each target block
         for i, target_line in enumerate(stmt._target_lines):
             self.builder.position_at_end(target_blocks[i])
             target_line_num = int(target_line)
-            
+
             if stmt._op == "GOTO":
                 # Simple GOTO
                 if target_line_num in self.line_blocks:
@@ -818,13 +823,13 @@ class LLVMCodeGenerator:
                 if self.current_line_index + 1 < len(self.program):
                     next_line = self.program[self.current_line_index + 1].line
                     self._push_return_address(next_line)
-                
+
                 if target_line_num in self.line_blocks:
                     self.builder.branch(self.line_blocks[target_line_num])
                 else:
                     # Target not found, go to default
                     self.builder.branch(default_block)
-        
+
         # Default block - generate runtime error for out-of-range index
         self.builder.position_at_end(default_block)
         # Create error message for out-of-range ON...GOTO/GOSUB
@@ -840,27 +845,27 @@ class LLVMCodeGenerator:
         stack_top = self.builder.load(self.return_stack_top, name="stack_top")
         zero = ir.Constant(ir.IntType(32), 0)
         stack_empty = self.builder.icmp_signed("==", stack_top, zero)
-        
+
         # Create blocks for error and normal return
         func = self.builder.block.function
         error_block = func.append_basic_block(name=f"return_error_{self.builder.block.name}")
         return_block = func.append_basic_block(name=f"return_normal_{self.builder.block.name}")
-        
+
         # Branch based on stack emptiness
         self.builder.cbranch(stack_empty, error_block, return_block)
-        
+
         # Error block: raise exception (for now, just return)
         self.builder.position_at_end(error_block)
         self.builder.ret(ir.Constant(ir.IntType(32), 1))  # Error return code
-        
+
         # Normal return block
         self.builder.position_at_end(return_block)
-        
+
         # Pop return address from stack
         line_number = self._pop_return_address()
         if self.debug:
             print(f"DEBUG: RETURN to line {line_number}")
-        
+
         # Use a switch statement to branch to the correct block
         default_block = func.append_basic_block(name="return_invalid")
         switch_inst = self.builder.switch(line_number, default_block)
@@ -872,20 +877,20 @@ class LLVMCodeGenerator:
 
     def _codegen_let(self, stmt):
         var_name = stmt._variable.strip()
-        
+
         # Check if this is an array assignment by parsing the variable name
         if '(' in var_name:
             # Parse array name and indices from the variable name
             array_name = var_name[:var_name.find('(')].strip()  # Strip whitespace from array name
-            indices_str = var_name[var_name.find('(')+1:var_name.rfind(')')]
+            indices_str = var_name[var_name.find('(') + 1:var_name.rfind(')')]
             indices = [self._codegen_expr(get_lexer().lex(idx.strip())) for idx in indices_str.split(',')]
-            
+
             # Get array element pointer
             element_ptr = self._codegen_array_access(array_name, indices)
-            
+
             # Store the value
             value = self._codegen_expr(stmt._tokens)
-            
+
             # Array assignment
             self.builder.store(value, element_ptr)
         elif var_name in self.array_info:
@@ -903,7 +908,7 @@ class LLVMCodeGenerator:
                     global_empty.linkage = 'internal'
                     global_empty.global_constant = True
                     global_empty.initializer = c_empty
-                    
+
                     var_ptr = self.builder.alloca(ir.IntType(8).as_pointer(), name=f"{var_name}_scalar")
                     empty_ptr = self.builder.bitcast(global_empty, ir.IntType(8).as_pointer())
                     self.builder.store(empty_ptr, var_ptr)
@@ -912,7 +917,7 @@ class LLVMCodeGenerator:
                     # Numeric variable
                     var_ptr = self.builder.alloca(ir.DoubleType(), name=f"{var_name}_scalar")
                     self.symbol_table[f"{var_name}_scalar"] = var_ptr
-            
+
             value = self._codegen_expr(stmt._tokens)
             self.builder.store(value, var_ptr)
         else:
@@ -929,7 +934,7 @@ class LLVMCodeGenerator:
                     global_empty.linkage = 'internal'
                     global_empty.global_constant = True
                     global_empty.initializer = c_empty
-                    
+
                     global_var = ir.GlobalVariable(self.module, ir.IntType(8).as_pointer(), name=f"global_{var_name}")
                     global_var.linkage = 'internal'
                     global_var.global_constant = False
@@ -947,15 +952,15 @@ class LLVMCodeGenerator:
                     global_var.initializer = ir.Constant(ir.DoubleType(), 0.0)
                     self.symbol_table[var_name] = global_var
                     var_ptr = global_var
-            
+
             value = self._codegen_expr(stmt._tokens)
-            
+
             # Normal assignment
             self.builder.store(value, var_ptr)
 
     def _codegen_print(self, stmt: ParsedStatementPrint):
         lexer = get_lexer()
-        
+
         # Normal print
         self._do_print(stmt, lexer)
 
@@ -1049,7 +1054,7 @@ class LLVMCodeGenerator:
                         global_fmt_num = self.module.get_global("fmt_num_spaced")
                     fmt_ptr = self.builder.bitcast(global_fmt_num, ir.IntType(8).as_pointer())
                     self.builder.call(self.printf, [fmt_ptr, val])
-        
+
         # Add newline at the end of the PRINT statement (unless it ends with semicolon)
         if not stmt._no_cr:
             newline_fmt = "\n\0"
@@ -1092,7 +1097,7 @@ class LLVMCodeGenerator:
             token = tokens[i]
             if self.debug:
                 print(f"DEBUG: Token: {token.type} = '{token.token}'")  # Debug output
-            
+
             if token.type == 'num':
                 data_stack.append(ir.Constant(ir.DoubleType(), float(token.token)))
                 is_unary_context = False
@@ -1107,9 +1112,10 @@ class LLVMCodeGenerator:
                     print(f"DEBUG: id token encountered: '{token.token}' at index {i}")
                 # Check if this is followed by parentheses
                 if i + 1 < len(tokens) and tokens[i + 1].token == '(':
-                    # This could be function call or array access
+                    # This could be a function call or array access
                     identifier = token.token
-                    known_functions = ["SIN", "COS", "SQR", "EXP", "LOG", "ABS", "ASC", "CHR$", "SPACE$", "STR$", "LEN", "LEFT$", "RIGHT$", "MID$", "INT", "RND", "TAB"]
+                    known_functions = ["SIN", "COS", "SQR", "EXP", "LOG", "ABS", "ASC", "CHR$", "SPACE$", "STR$", "LEN",
+                                       "LEFT$", "RIGHT$", "MID$", "INT", "RND", "TAB"]
                     if identifier in known_functions or identifier in self.user_functions:
                         # This is a function call
                         if self.debug:
@@ -1168,7 +1174,8 @@ class LLVMCodeGenerator:
                             elif tokens[i].token == ',' and paren_count == 0:
                                 # This comma separates array indices
                                 if index_tokens:
-                                    index_value = self._codegen_expr(index_tokens, local_vars=local_vars, builder=builder)
+                                    index_value = self._codegen_expr(index_tokens, local_vars=local_vars,
+                                                                     builder=builder)
                                     indices.append(index_value)
                                     index_tokens = []
                             else:
@@ -1191,9 +1198,11 @@ class LLVMCodeGenerator:
                         if scalar_name in self.symbol_table:
                             # Load the scalar version
                             if token.token.endswith('$'):
-                                data_stack.append(builder.load(self.symbol_table[scalar_name], name=f"load_{scalar_name}"))
+                                data_stack.append(
+                                    builder.load(self.symbol_table[scalar_name], name=f"load_{scalar_name}"))
                             else:
-                                data_stack.append(builder.load(self.symbol_table[scalar_name], name=f"load_{scalar_name}"))
+                                data_stack.append(
+                                    builder.load(self.symbol_table[scalar_name], name=f"load_{scalar_name}"))
                         else:
                             # Initialize scalar version to 0 if not found
                             if token.token.endswith('$'):
@@ -1205,7 +1214,7 @@ class LLVMCodeGenerator:
                                 global_empty.linkage = 'internal'
                                 global_empty.global_constant = True
                                 global_empty.initializer = c_empty
-                                
+
                                 var_ptr = builder.alloca(ir.IntType(8).as_pointer(), name=scalar_name)
                                 empty_ptr = builder.bitcast(global_empty, ir.IntType(8).as_pointer())
                                 builder.store(empty_ptr, var_ptr)
@@ -1226,10 +1235,12 @@ class LLVMCodeGenerator:
                             # Global variable
                             if token.token.endswith('$'):
                                 # String variable - load the string pointer
-                                data_stack.append(builder.load(self.symbol_table[token.token], name=f"load_{token.token}"))
+                                data_stack.append(
+                                    builder.load(self.symbol_table[token.token], name=f"load_{token.token}"))
                             else:
                                 # Numeric variable
-                                data_stack.append(builder.load(self.symbol_table[token.token], name=f"load_{token.token}"))
+                                data_stack.append(
+                                    builder.load(self.symbol_table[token.token], name=f"load_{token.token}"))
                         else:
                             # Undefined variable - initialize to 0
                             var_ptr = builder.alloca(ir.DoubleType(), name=token.token)
@@ -1244,16 +1255,17 @@ class LLVMCodeGenerator:
                     # This is a simplification. A better way would be a specific unary minus op.
                     data_stack.append(ir.Constant(ir.DoubleType(), 0.0))
 
-                while op_stack and op_stack[-1].token != '(' and get_precedence(op_stack[-1]) >= get_precedence(current_op_token):
+                while op_stack and op_stack[-1].token != '(' and get_precedence(op_stack[-1]) >= get_precedence(
+                        current_op_token):
                     self._one_op(op_stack, data_stack, builder)
-                
+
                 if current_op_token.token == ')':
-                    op_stack.pop() # Pop '('
+                    op_stack.pop()  # Pop '('
                 else:
                     op_stack.append(current_op_token)
-                
+
                 is_unary_context = (current_op_token.token != ')')
-            
+
             i += 1
 
         while op_stack:
@@ -1270,20 +1282,20 @@ class LLVMCodeGenerator:
         # Get lengths of both strings
         left_len = self.builder.call(self.strlen, [left])
         right_len = self.builder.call(self.strlen, [right])
-        
+
         # Allocate memory for result (left_len + right_len + 1 for null terminator)
         total_len = self.builder.add(left_len, right_len)
         one = ir.Constant(ir.IntType(64), 1)
         alloc_size = self.builder.add(total_len, one)
-        
+
         result_ptr = self.builder.call(self.malloc, [alloc_size])
-        
+
         # Copy first string to result
         self.builder.call(self.strcat, [result_ptr, left])
-        
+
         # Concatenate second string
         self.builder.call(self.strcat, [result_ptr, right])
-        
+
         return result_ptr
 
     def _create_string_constant(self, str_val):
@@ -1348,15 +1360,15 @@ class LLVMCodeGenerator:
             if len(args) != 1:
                 raise Exception("STR$ requires exactly 1 argument")
             number = args[0]
-            
+
             # Allocate buffer for the string result (enough for a double)
             buffer_size = ir.Constant(ir.IntType(64), 32)  # Should be enough for any double
             result_ptr = builder.call(self.malloc, [buffer_size], name="str_result")
-            
+
             # Create format string for sprintf ("%g" for general format)
             str_fmt = "%g\0"
-            c_str_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(str_fmt)), 
-                                   bytearray(str_fmt.encode("utf8")))
+            c_str_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(str_fmt)),
+                                    bytearray(str_fmt.encode("utf8")))
             str_fmt_name = f"str_fmt_global"
             if str_fmt_name not in self.module.globals:
                 global_str_fmt = ir.GlobalVariable(self.module, c_str_fmt.type, name=str_fmt_name)
@@ -1365,12 +1377,12 @@ class LLVMCodeGenerator:
                 global_str_fmt.initializer = c_str_fmt
             else:
                 global_str_fmt = self.module.get_global(str_fmt_name)
-            
+
             str_fmt_ptr = builder.bitcast(global_str_fmt, ir.IntType(8).as_pointer())
-            
+
             # Call sprintf to convert number to string
             builder.call(self.sprintf, [result_ptr, str_fmt_ptr, number])
-            
+
             return result_ptr
         elif func_name == "LEN":
             # LEN(string) - return length of string
@@ -1386,13 +1398,13 @@ class LLVMCodeGenerator:
                 raise Exception("LEFT$ requires exactly 2 arguments")
             string_ptr = args[0]
             length = args[1]
-            
+
             # Convert length from double to integer
             length_int = builder.fptosi(length, ir.IntType(64), name="left_length")
-            
+
             # Get string length
             str_len = builder.call(self.strlen, [string_ptr], name="str_length")
-            
+
             # Clamp length to string length (use min of requested length and actual length)
             actual_length = builder.select(
                 builder.icmp_unsigned("<", length_int, str_len),
@@ -1400,35 +1412,35 @@ class LLVMCodeGenerator:
                 str_len,
                 name="actual_left_length"
             )
-            
+
             # Allocate memory for result (length + 1 for null terminator)
             one = ir.Constant(ir.IntType(64), 1)
             alloc_size = builder.add(actual_length, one, name="left_alloc_size")
             result_ptr = builder.call(self.malloc, [alloc_size], name="left_result")
-            
+
             # Copy the left portion of the string
             builder.call(self.strncpy, [result_ptr, string_ptr, actual_length])
-            
+
             # Add null terminator
             null_pos = builder.gep(result_ptr, [actual_length], name="null_pos")
             null_char = ir.Constant(ir.IntType(8), 0)
             builder.store(null_char, null_pos)
-            
+
             return result_ptr
-            
+
         elif func_name == "RIGHT$":
             # RIGHT$(string, n) - return right n characters  
             if len(args) != 2:
                 raise Exception("RIGHT$ requires exactly 2 arguments")
             string_ptr = args[0]
             length = args[1]
-            
+
             # Convert length from double to integer
             length_int = builder.fptosi(length, ir.IntType(64), name="right_length")
-            
+
             # Get string length
             str_len = builder.call(self.strlen, [string_ptr], name="str_length")
-            
+
             # Clamp length to string length
             actual_length = builder.select(
                 builder.icmp_unsigned("<", length_int, str_len),
@@ -1436,26 +1448,26 @@ class LLVMCodeGenerator:
                 str_len,
                 name="actual_right_length"
             )
-            
+
             # Calculate start position (str_len - actual_length)
             start_pos = builder.sub(str_len, actual_length, name="right_start_pos")
             start_ptr = builder.gep(string_ptr, [start_pos], name="right_start_ptr")
-            
+
             # Allocate memory for result
             one = ir.Constant(ir.IntType(64), 1)
             alloc_size = builder.add(actual_length, one, name="right_alloc_size")
             result_ptr = builder.call(self.malloc, [alloc_size], name="right_result")
-            
+
             # Copy the right portion of the string
             builder.call(self.strncpy, [result_ptr, start_ptr, actual_length])
-            
+
             # Add null terminator
             null_pos = builder.gep(result_ptr, [actual_length], name="null_pos")
             null_char = ir.Constant(ir.IntType(8), 0)
             builder.store(null_char, null_pos)
-            
+
             return result_ptr
-            
+
         elif func_name == "MID$":
             # MID$(string, start, length) - return substring starting at position start with given length
             if len(args) != 3:
@@ -1463,16 +1475,16 @@ class LLVMCodeGenerator:
             string_ptr = args[0]
             start = args[1]
             length = args[2]
-            
+
             # Convert arguments from double to integer (BASIC uses 1-based indexing)
             start_int = builder.fptosi(start, ir.IntType(64), name="mid_start")
             length_int = builder.fptosi(length, ir.IntType(64), name="mid_length")
-            
+
             # Convert to 0-based indexing
             one = ir.Constant(ir.IntType(64), 1)
             zero = ir.Constant(ir.IntType(64), 0)
             start_zero_based = builder.sub(start_int, one, name="mid_start_zero")
-            
+
             # Clamp start to be >= 0
             actual_start = builder.select(
                 builder.icmp_signed("<", start_zero_based, zero),
@@ -1480,16 +1492,16 @@ class LLVMCodeGenerator:
                 start_zero_based,
                 name="actual_mid_start"
             )
-            
+
             # Get string length
             str_len = builder.call(self.strlen, [string_ptr], name="str_length")
-            
+
             # Check if start is beyond string length
             start_ptr = builder.gep(string_ptr, [actual_start], name="mid_start_ptr")
-            
+
             # Calculate remaining length from start position
             remaining_len = builder.sub(str_len, actual_start, name="remaining_length")
-            
+
             # Clamp length to remaining length
             actual_length = builder.select(
                 builder.icmp_unsigned("<", length_int, remaining_len),
@@ -1497,7 +1509,7 @@ class LLVMCodeGenerator:
                 remaining_len,
                 name="actual_mid_length"
             )
-            
+
             # Handle case where start is beyond string (return empty string)
             actual_length = builder.select(
                 builder.icmp_unsigned(">=", actual_start, str_len),
@@ -1505,19 +1517,19 @@ class LLVMCodeGenerator:
                 actual_length,
                 name="final_mid_length"
             )
-            
+
             # Allocate memory for result
             alloc_size = builder.add(actual_length, one, name="mid_alloc_size")
             result_ptr = builder.call(self.malloc, [alloc_size], name="mid_result")
-            
+
             # Copy the substring
             builder.call(self.strncpy, [result_ptr, start_ptr, actual_length])
-            
+
             # Add null terminator
             null_pos = builder.gep(result_ptr, [actual_length], name="null_pos")
             null_char = ir.Constant(ir.IntType(8), 0)
             builder.store(null_char, null_pos)
-            
+
             return result_ptr
         elif func_name == "TAB":
             # TAB(n) - return string with n spaces for print formatting
@@ -1544,24 +1556,24 @@ class LLVMCodeGenerator:
         op = op_stack.pop()
         if self.debug:
             print(f"DEBUG: Processing operator: {op.token}")
-        
+
         if op.token == '@':  # ARRAY_ACCESS operator
             # Array access: pop array name and indices, return element value
             indices = data_stack.pop()
             array_name = data_stack.pop()
-            
+
             # For now, handle simple 1D array access
             # In a full implementation, we'd need to parse the array name and indices properly
             # This is a simplified version
             if array_name in self.array_info:
                 array_info = self.array_info[array_name]
                 array_storage = array_info['storage']
-                
+
                 # Convert index to 0-based
                 index_val = self.builder.fptoui(indices, ir.IntType(32))
                 one = ir.Constant(ir.IntType(32), 1)
                 zero_based_index = self.builder.sub(index_val, one)
-                
+
                 # Get element pointer and load value
                 element_ptr = self.builder.gep(array_storage, [ir.Constant(ir.IntType(32), 0), zero_based_index])
                 result = self.builder.load(element_ptr, name="array_element")
@@ -1578,7 +1590,7 @@ class LLVMCodeGenerator:
                 # Check if either operand is a string pointer type
                 left_is_string = (hasattr(left, 'type') and left.type == ir.IntType(8).as_pointer())
                 right_is_string = (hasattr(right, 'type') and right.type == ir.IntType(8).as_pointer())
-                
+
                 if left_is_string or right_is_string:
                     # String concatenation - use strcat
                     result = self._concatenate_strings(left, right)
@@ -1688,20 +1700,18 @@ class LLVMCodeGenerator:
                 result = builder.call(self.pow, [left, right], name="pow_result")
             else:
                 raise NotImplementedError(f"Operator {op.token} not implemented")
-            
+
             data_stack.append(result)
-
-
 
     def _codegen_if_simple(self, stmt, line_stmts=None, stmt_index=None):
         """Simple IF codegen that works like the Python interpreter"""
         # Evaluate the condition
         condition_val = self._codegen_expr(stmt._tokens)
-        
+
         # Compare to zero to get boolean condition
         zero = ir.Constant(ir.DoubleType(), 0.0)
         condition = self.builder.fcmp_ordered("!=", condition_val, zero, name="if_condition")
-        
+
         # Find where the ELSE statement is on this line (if any)
         else_stmt_index = None
         if line_stmts and stmt_index is not None:
@@ -1709,7 +1719,7 @@ class LLVMCodeGenerator:
                 if isinstance(line_stmts[i], ParsedStatementElse):
                     else_stmt_index = i
                     break
-        
+
         # Create blocks
         func = self.builder.block.function
         true_block = func.append_basic_block(name=f"if_true_{stmt_index}_{self.current_line_index}")
@@ -1718,11 +1728,11 @@ class LLVMCodeGenerator:
         else:
             false_block = func.append_basic_block(name=f"if_false_{stmt_index}_{self.current_line_index}")
         after_block = func.append_basic_block(name=f"if_after_{stmt_index}_{self.current_line_index}")
-        
+
         # Branch based on condition
         if not self.builder.block.is_terminated:
             self.builder.cbranch(condition, true_block, false_block)
-        
+
         # TRUE block: execute THEN statements
         self.builder.position_at_end(true_block)
         if line_stmts and stmt_index is not None:
@@ -1732,11 +1742,11 @@ class LLVMCodeGenerator:
                 if self.builder.block.is_terminated:
                     break
                 k += 1
-        
+
         # Branch to after block if not terminated
         if not self.builder.block.is_terminated:
             self.builder.branch(after_block)
-        
+
         # FALSE block: execute ELSE statements or jump to after
         self.builder.position_at_end(false_block)
         if else_stmt_index is not None:
@@ -1747,11 +1757,11 @@ class LLVMCodeGenerator:
                 if self.builder.block.is_terminated:
                     break
                 k += 1
-        
+
         # Branch to after block if not terminated
         if not self.builder.block.is_terminated:
             self.builder.branch(after_block)
-        
+
         # Continue execution from after block
         self.builder.position_at_end(after_block)
 
@@ -1760,7 +1770,7 @@ class LLVMCodeGenerator:
         if target_line in self.line_blocks:
             # Check if this is GOSUB or GOTO
             is_gosub = stmt.keyword.name == "GOSUB"
-            
+
             # Normal unconditional GOTO/GOSUB (only if current block is not terminated)
             if not self.builder.block.is_terminated:
                 if is_gosub:
@@ -1771,8 +1781,9 @@ class LLVMCodeGenerator:
                         next_line = self.program[self.current_line_index + 1].line
                         self._push_return_address(next_line)
                         if self.debug:
-                            print(f"DEBUG: GOSUB from line {self.program[self.current_line_index].line} to {target_line}, return to {next_line}")
-                    
+                            print(
+                                f"DEBUG: GOSUB from line {self.program[self.current_line_index].line} to {target_line}, return to {next_line}")
+
                     self.builder.branch(self.line_blocks[target_line])
                 else:
                     # Normal GOTO
@@ -1794,11 +1805,11 @@ class LLVMCodeGenerator:
         """Push a return address onto the runtime stack"""
         # Load current stack top
         stack_top = self.builder.load(self.return_stack_top, name="stack_top")
-        
+
         # Store line number at stack[top]
         stack_ptr = self.builder.gep(self.return_stack_ptr, [ir.Constant(ir.IntType(32), 0), stack_top])
         self.builder.store(ir.Constant(ir.IntType(32), line_number), stack_ptr)
-        
+
         # Increment stack top
         new_top = self.builder.add(stack_top, ir.Constant(ir.IntType(32), 1))
         self.builder.store(new_top, self.return_stack_top)
@@ -1809,11 +1820,11 @@ class LLVMCodeGenerator:
         stack_top = self.builder.load(self.return_stack_top, name="stack_top")
         new_top = self.builder.sub(stack_top, ir.Constant(ir.IntType(32), 1))
         self.builder.store(new_top, self.return_stack_top)
-        
+
         # Load line number from stack[top-1]
         stack_ptr = self.builder.gep(self.return_stack_ptr, [ir.Constant(ir.IntType(32), 0), new_top])
         line_number = self.builder.load(stack_ptr, name="return_line")
-        
+
         return line_number
 
     def _codegen_dim(self, stmt):
@@ -1843,31 +1854,33 @@ class LLVMCodeGenerator:
                 default_value = ir.Constant(element_type, 0.0)
 
             array_type = ir.ArrayType(element_type, total_size)
-            
+
             # Create global array (BASIC semantics - all arrays are global)
             array_init = ir.Constant(array_type, [default_value] * total_size)
-            
+
             global_array = ir.GlobalVariable(self.module, array_type, name=f"global_array_{name}")
             global_array.linkage = 'internal'
             global_array.global_constant = False
             global_array.initializer = array_init
-            
+
             # For string arrays, we need to initialize at runtime
             if is_string_array:
                 # Create empty string constant
                 empty_str_val = "\0"
-                c_empty_str = ir.Constant(ir.ArrayType(ir.IntType(8), len(empty_str_val)), bytearray(empty_str_val.encode("utf8")))
+                c_empty_str = ir.Constant(ir.ArrayType(ir.IntType(8), len(empty_str_val)),
+                                          bytearray(empty_str_val.encode("utf8")))
                 global_empty_str = ir.GlobalVariable(self.module, c_empty_str.type, name=f"empty_str_{name}")
                 global_empty_str.linkage = 'internal'
                 global_empty_str.global_constant = True
                 global_empty_str.initializer = c_empty_str
-                
+
                 # Initialize array elements to point to empty string at runtime
                 empty_ptr = self.builder.bitcast(global_empty_str, element_type)
                 for i in range(total_size):
-                    element_ptr = self.builder.gep(global_array, [ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), i)])
+                    element_ptr = self.builder.gep(global_array,
+                                                   [ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), i)])
                     self.builder.store(empty_ptr, element_ptr)
-            
+
             # Store array info for access
             # Convert dimension expressions to integers for storage
             int_dimensions = []
@@ -1877,14 +1890,14 @@ class LLVMCodeGenerator:
                 except ValueError:
                     raise Exception(f"Complex expressions in DIM not yet supported in LLVM mode: {dim_expr}")
                 int_dimensions.append(dim)
-            
+
             self.array_info[name] = {
                 'storage': global_array,
                 'dimensions': int_dimensions,
                 'total_size': total_size,
                 'is_string': is_string_array
             }
-            
+
             # Store the array storage directly in symbol table
             self.symbol_table[name] = global_array
 
@@ -1892,58 +1905,57 @@ class LLVMCodeGenerator:
         """Generate LLVM IR for array access"""
         if builder is None:
             builder = self.builder
-            
+
         if array_name not in self.array_info:
             raise Exception(f"Array {array_name} not declared")
-        
+
         array_info = self.array_info[array_name]
         array_storage = array_info['storage']
         dimensions = array_info['dimensions']
-        
+
         # Convert indices to 0-based and calculate offset
         if len(indices) != len(dimensions):
             raise Exception(f"Array {array_name} has {len(dimensions)} dimensions, got {len(indices)} indices")
-        
+
         # Calculate offset: index1 * (dim2+1) * (dim3+1) + index2 * (dim3+1) + index3
         # Since BASIC arrays are 1-based, DIM S(3,3) creates a 4x4 array
         offset = ir.Constant(ir.IntType(32), 0)
         multiplier = 1
-        
+
         for i in range(len(indices) - 1, -1, -1):
             # Convert 1-based index to 0-based
             index_val = builder.fptoui(indices[i], ir.IntType(32))
             one = ir.Constant(ir.IntType(32), 1)
             zero_based_index = builder.sub(index_val, one)
-            
+
             # Add to offset
             index_offset = builder.mul(zero_based_index, ir.Constant(ir.IntType(32), multiplier))
             offset = builder.add(offset, index_offset)
-            
+
             # Update multiplier for next dimension
             if i > 0:
                 multiplier *= (dimensions[i] + 1)
-        
+
         # Get element pointer
         element_ptr = builder.gep(array_storage, [ir.Constant(ir.IntType(32), 0), offset])
         return element_ptr
-
 
     def _collect_data_values(self):
         """Collect all DATA values from the program at compile time."""
         for program_line in self.program:
             line_has_data = False
             line_start_index = len(self.data_values)
-            
+
             for stmt in program_line.stmts:
                 if isinstance(stmt, ParsedStatementData):
                     if not line_has_data:
                         # Record the starting index for this line's DATA
                         self.data_line_map[program_line.line] = line_start_index
                         line_has_data = True
-                    
+
                     # Add each data value from this DATA statement
                     self.data_values.extend(stmt._values)
-        
+
         if self.debug:
             print(f"DEBUG: Collected {len(self.data_values)} DATA values: {self.data_values}")
             print(f"DEBUG: DATA line map: {self.data_line_map}")
@@ -1962,11 +1974,11 @@ class LLVMCodeGenerator:
             self.data_ptr.linkage = 'internal'
             self.data_ptr.global_constant = False
             self.data_ptr.initializer = ir.Constant(ir.IntType(32), 0)
-        
+
         # Create global array of data values (stored as strings for flexibility)
         if "data_values" not in self.module.globals:
             self._create_global_data_array()
-        
+
         # Read each variable in the READ statement
         for var_name in stmt._variables:
             self._read_data_value(var_name)
@@ -1979,7 +1991,7 @@ class LLVMCodeGenerator:
             self.data_ptr.linkage = 'internal'
             self.data_ptr.global_constant = False
             self.data_ptr.initializer = ir.Constant(ir.IntType(32), 0)
-        
+
         if stmt._line_number is None:
             # RESTORE without line number - reset to beginning
             self.builder.store(ir.Constant(ir.IntType(32), 0), self.data_ptr)
@@ -1988,7 +2000,7 @@ class LLVMCodeGenerator:
         else:
             # RESTORE with line number - reset to specific line
             line_number = stmt._line_number
-            
+
             if line_number in self.data_line_map:
                 start_index = self.data_line_map[line_number]
                 self.builder.store(ir.Constant(ir.IntType(32), start_index), self.data_ptr)
@@ -1997,8 +2009,8 @@ class LLVMCodeGenerator:
             else:
                 # Line not found or doesn't contain DATA - generate runtime error
                 error_msg = f"RESTORE {line_number}: Line does not contain DATA\\n\0"
-                c_error_msg = ir.Constant(ir.ArrayType(ir.IntType(8), len(error_msg)), 
-                                        bytearray(error_msg.encode("utf8")))
+                c_error_msg = ir.Constant(ir.ArrayType(ir.IntType(8), len(error_msg)),
+                                          bytearray(error_msg.encode("utf8")))
                 error_msg_name = f"restore_error_msg_{line_number}"
                 if error_msg_name not in self.module.globals:
                     global_error_msg = ir.GlobalVariable(self.module, c_error_msg.type, name=error_msg_name)
@@ -2007,7 +2019,7 @@ class LLVMCodeGenerator:
                     global_error_msg.initializer = c_error_msg
                 else:
                     global_error_msg = self.module.get_global(error_msg_name)
-                
+
                 error_msg_ptr = self.builder.bitcast(global_error_msg, ir.IntType(8).as_pointer())
                 self.builder.call(self.printf, [error_msg_ptr])
                 self.builder.ret(ir.Constant(ir.IntType(32), 1))  # Exit with error
@@ -2016,11 +2028,11 @@ class LLVMCodeGenerator:
         """Create a global array containing all DATA values as strings."""
         if not self.data_values:
             return
-        
+
         # Create array of string pointers
         str_ptr_type = ir.IntType(8).as_pointer()
         array_type = ir.ArrayType(str_ptr_type, len(self.data_values))
-        
+
         # Create global constants for each data value
         data_constants = []
         for i, value in enumerate(self.data_values):
@@ -2029,20 +2041,20 @@ class LLVMCodeGenerator:
             if str_val.startswith('"') and str_val.endswith('"'):
                 str_val = str_val[1:-1]  # Remove quotes
             str_val += "\0"  # Add null terminator
-            
+
             c_str = ir.Constant(ir.ArrayType(ir.IntType(8), len(str_val)), bytearray(str_val.encode("utf8")))
             global_str = ir.GlobalVariable(self.module, c_str.type, name=f"data_str_{i}")
             global_str.linkage = 'internal'
             global_str.global_constant = True
             global_str.initializer = c_str
-            
+
             # Get pointer to the string
             str_ptr = global_str.bitcast(str_ptr_type)
             data_constants.append(str_ptr)
-        
+
         # Create the array initializer
         array_init = ir.Constant(array_type, data_constants)
-        
+
         # Create global variable for the data array
         data_array = ir.GlobalVariable(self.module, array_type, name="data_values")
         data_array.linkage = 'internal'
@@ -2053,25 +2065,25 @@ class LLVMCodeGenerator:
         """Read one data value and assign it to the specified variable."""
         # Get current data pointer value
         current_ptr = self.builder.load(self.data_ptr, name="current_data_ptr")
-        
+
         # Check bounds
         max_index = ir.Constant(ir.IntType(32), len(self.data_values))
         bounds_check = self.builder.icmp_signed("<", current_ptr, max_index, name="bounds_check")
-        
+
         # Create blocks for bounds check
         func = self.builder.block.function
         valid_block = func.append_basic_block(name="valid_data")
         error_block = func.append_basic_block(name="data_error")
         continue_block = func.append_basic_block(name="continue_read")
-        
+
         # Branch based on bounds check
         self.builder.cbranch(bounds_check, valid_block, error_block)
-        
+
         # Error block - print error and exit
         self.builder.position_at_end(error_block)
         error_msg = "I tried to READ, but ran out of data.\\n\0"
-        c_error_msg = ir.Constant(ir.ArrayType(ir.IntType(8), len(error_msg)), 
-                                bytearray(error_msg.encode("utf8")))
+        c_error_msg = ir.Constant(ir.ArrayType(ir.IntType(8), len(error_msg)),
+                                  bytearray(error_msg.encode("utf8")))
         error_msg_name = "read_error_msg"
         if error_msg_name not in self.module.globals:
             global_error_msg = ir.GlobalVariable(self.module, c_error_msg.type, name=error_msg_name)
@@ -2080,31 +2092,31 @@ class LLVMCodeGenerator:
             global_error_msg.initializer = c_error_msg
         else:
             global_error_msg = self.module.get_global(error_msg_name)
-        
+
         error_msg_ptr = self.builder.bitcast(global_error_msg, ir.IntType(8).as_pointer())
         self.builder.call(self.printf, [error_msg_ptr])
         self.builder.ret(ir.Constant(ir.IntType(32), 1))  # Exit with error
-        
+
         # Valid block - get data value
         self.builder.position_at_end(valid_block)
         data_array = self.module.get_global("data_values")
         data_ptr_val = self.builder.gep(data_array, [ir.Constant(ir.IntType(32), 0), current_ptr])
         data_str_ptr = self.builder.load(data_ptr_val, name="data_str_ptr")
-        
+
         # Determine if this is a string or numeric variable
         is_string_var = self._is_string_variable(var_name)
-        
+
         if is_string_var:
             # String variable - assign the string directly
             self._assign_string_variable(var_name, data_str_ptr)
         else:
             # Numeric variable - convert string to number
             self._assign_numeric_variable(var_name, data_str_ptr)
-        
+
         # Increment data pointer
         next_ptr = self.builder.add(current_ptr, ir.Constant(ir.IntType(32), 1), name="next_data_ptr")
         self.builder.store(next_ptr, self.data_ptr)
-        
+
         # Continue to next variable
         self.builder.branch(continue_block)
         self.builder.position_at_end(continue_block)
@@ -2135,7 +2147,7 @@ class LLVMCodeGenerator:
                 global_var.global_constant = False
                 global_var.initializer = ir.Constant(ir.IntType(8).as_pointer(), None)
                 self.symbol_table[var_name] = global_var
-            
+
             var_ptr = self.symbol_table[var_name]
             self.builder.store(str_ptr, var_ptr)
 
@@ -2143,8 +2155,8 @@ class LLVMCodeGenerator:
         """Convert string to number and assign to numeric variable."""
         # Use sscanf to parse the number from the string
         double_fmt = "%lf\0"
-        c_double_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(double_fmt)), 
-                                 bytearray(double_fmt.encode("utf8")))
+        c_double_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(double_fmt)),
+                                   bytearray(double_fmt.encode("utf8")))
         double_fmt_name = "double_parse_fmt"
         if double_fmt_name not in self.module.globals:
             global_double_fmt = ir.GlobalVariable(self.module, c_double_fmt.type, name=double_fmt_name)
@@ -2153,16 +2165,16 @@ class LLVMCodeGenerator:
             global_double_fmt.initializer = c_double_fmt
         else:
             global_double_fmt = self.module.get_global(double_fmt_name)
-        
+
         double_fmt_ptr = self.builder.bitcast(global_double_fmt, ir.IntType(8).as_pointer())
-        
+
         # Allocate temporary variable for parsing
         temp_double = self.builder.alloca(ir.DoubleType(), name="temp_double")
-        
+
         # Parse the string to double
         self.builder.call(self.sscanf, [str_ptr, double_fmt_ptr, temp_double])
         parsed_value = self.builder.load(temp_double, name="parsed_value")
-        
+
         if self._is_array_element(var_name):
             # Array element assignment
             self._assign_array_element(var_name, parsed_value)
@@ -2175,7 +2187,7 @@ class LLVMCodeGenerator:
                 global_var.global_constant = False
                 global_var.initializer = ir.Constant(ir.DoubleType(), 0.0)
                 self.symbol_table[var_name] = global_var
-            
+
             var_ptr = self.symbol_table[var_name]
             self.builder.store(parsed_value, var_ptr)
 
@@ -2189,13 +2201,13 @@ class LLVMCodeGenerator:
         var_clean = var_name.replace(" ", "")
         i = var_clean.find("(")
         j = var_clean.rfind(")")
-        
+
         array_name = var_clean[:i]
-        indices_str = var_clean[i+1:j]
-        
+        indices_str = var_clean[i + 1:j]
+
         # Parse indices (handle multiple dimensions)
         indices = [idx.strip() for idx in indices_str.split(",")]
-        
+
         # Evaluate each index expression
         lexer = get_lexer()
         index_values = []
@@ -2203,14 +2215,14 @@ class LLVMCodeGenerator:
             idx_tokens = lexer.lex(idx)
             idx_value = self._codegen_expr(idx_tokens)
             index_values.append(idx_value)
-        
+
         # Get array storage
         if array_name not in self.array_info:
             raise Exception(f"Array {array_name} not found")
-        
+
         array_info = self.array_info[array_name]
         array_storage = array_info['storage']
-        
+
         # Calculate linear index for multi-dimensional arrays
         if len(index_values) == 1:
             # 1D array
@@ -2224,13 +2236,13 @@ class LLVMCodeGenerator:
             # Since BASIC arrays are 1-based, DIM S(3,3) creates a 4x4 array
             dimensions = array_info['dimensions']
             linear_index = None
-            
+
             for dim_idx, idx_val in enumerate(index_values):
                 # Convert to 0-based
                 idx_int = self.builder.fptoui(idx_val, ir.IntType(32))
                 one = ir.Constant(ir.IntType(32), 1)
                 zero_based_idx = self.builder.sub(idx_int, one)
-                
+
                 if dim_idx == 0:
                     # First dimension
                     if len(dimensions) > 1:
@@ -2245,9 +2257,9 @@ class LLVMCodeGenerator:
                         linear_index = zero_based_idx
                     else:
                         linear_index = self.builder.add(linear_index, zero_based_idx)
-            
+
             zero_based_index = linear_index
-        
+
         # Get element pointer and store value
         element_ptr = self.builder.gep(array_storage, [ir.Constant(ir.IntType(32), 0), zero_based_index])
         self.builder.store(value, element_ptr)
