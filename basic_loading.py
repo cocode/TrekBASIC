@@ -1,6 +1,7 @@
 """
 This module contains the code the load and parse BASIC programs
 """
+from basic_dialect import COMMENT_CHARS
 from basic_find_str_quotes import find_next_str_not_quoted
 from basic_types import ProgramLine, Program, BasicSyntaxError, assert_syntax
 from basic_utils import smart_split
@@ -59,9 +60,9 @@ def tokenize_line(program_line: str) -> ProgramLine:
     Converts the line into a partially digested form. Tokenizing basic is mildly annoying,
     as there may not be a delimiter between the cmd and the args. Example:
 
-    FORI=1TO8:FORJ=1TO8:K3=0:Z(I,J)=0:R1=RND(1)
+    FORI=JTOK:FORJ=1TO8:K3=0:Z(I,J)=0:R1=RND(1)
 
-    The FOR runs right into the I.
+    The FOR runs right into the I. "JTOK" for J TO K.
 
     So we need to prefix search.
     :param program_line:
@@ -111,7 +112,7 @@ def tokenize_remaining_line(partial: str, number: int) -> list:
     Tokenizes the string, but with the line number removed. This allows us to call this function with partial lines.
     """
     # Handle ! and ' comments - strip everything after comment markers (like some BASIC dialects)
-    for comment_char in ["!", "'"]:
+    for comment_char in COMMENT_CHARS:
         comment_pos = find_next_str_not_quoted(partial, comment_char, 0)
         if comment_pos is not None:
             start, end = comment_pos

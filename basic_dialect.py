@@ -34,3 +34,5 @@ ARRAY_OFFSET: int = 1
 # 1 = Convert input to uppercase (traditional BASIC behavior)
 # 0 = Preserve original case of user input
 UPPERCASE_INPUT: int = 1
+
+COMMENT_CHARS = ["!", "'"]
