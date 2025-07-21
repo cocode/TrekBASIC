@@ -329,6 +329,10 @@ class BasicShell:
                 pprint.pprint(self.executor.get_symbol_type(args[0], symbol_type))
             except UndefinedSymbol as us:
                 print(F"The symbol '{args[0]}' is not defined as a {symbol_type}.")
+                if us.line_number is not None:
+                    print(" in line ", us.line_number)
+                if us.statement_index is not None:
+                    print(" in statement ", us.statement_index)
                 print(F"Types are 'variable', 'array' and 'function'. Default is 'variable'")
 
     def cmd_print(self, args):
@@ -397,8 +401,13 @@ class BasicShell:
 
         try:
             rc = self.executor.run_program(self._breakpoints, self._data_breakpoints, single_step=single_step)
+        except UndefinedSymbol as e:
+            print(F"UndefinedSymbol Error: {e.message} in line {e.line_number}")
+            return
         except BasicRuntimeError as e:
             print("Runtime Error: ", e.message)
+            if e.line_number is not None:
+                print(F"in line {e.line_number}")
             return
         except BasicSyntaxError as e:
             print("Syntax Error: ", e.message)

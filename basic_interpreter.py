@@ -7,7 +7,7 @@ from typing import Optional, TextIO, List, Tuple, Dict, Set, Any, Union
 
 import basic_functions
 from basic_parsing import ParsedStatementElse
-from basic_types import ProgramLine, Program, BasicInternalError, assert_syntax, BasicSyntaxError
+from basic_types import ProgramLine, Program, BasicInternalError, assert_syntax, BasicSyntaxError, UndefinedSymbol
 from basic_types import SymbolType, RunStatus, BasicRuntimeError, ControlLocation
 from basic_symbols import SymbolTable
 from basic_utils import TRACE_FILE_NAME
@@ -156,15 +156,16 @@ class Executor:
             execution_function = s.keyword.value.get_exec()
             try:
                 execution_function(self, s)
+            except UndefinedSymbol as ue:
+                self._run = RunStatus.END_ERROR_SYNTAX
+                raise UndefinedSymbol(ue.message, current.line, current.index) from ue
             except BasicSyntaxError as bse:
-                # TODO: This needs a bit more thought. The tests are checking for exceptions,
-                # TODO and don't need the print statement. The user just needs the message printed.
                 self._run = RunStatus.END_ERROR_SYNTAX
                 raise BasicSyntaxError(bse.message, current.line) from bse
                 # TODO what is current.source?  previous had: print(F"Syntax Error in line {current.line}: {bse.message}: {current.source}")
             except BasicRuntimeError as bre:
                 self._run = RunStatus.END_ERROR_RUNTIME
-                raise BasicRuntimeError(str(bre)) from bre
+                raise BasicRuntimeError(str(bre), current_line) from bre
             except Exception as e:
                 self._run = RunStatus.END_ERROR_INTERNAL
                 raise BasicInternalError(F"Internal error in line {current.line}: {e}") from e

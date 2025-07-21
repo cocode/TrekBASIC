@@ -86,9 +86,11 @@ class BasicRuntimeError(BasicError):
         self.line_number = line_number
 
 class UndefinedSymbol(BasicRuntimeError):
-    def __init__(self, message):
-        super(UndefinedSymbol, self).__init__(message)
+    def __init__(self, message, line_number=None, statement_index=None):
+        super(UndefinedSymbol, self).__init__(message, line_number)
         self.message = message
+        self.line_number = line_number
+        self.statement_index = statement_index
 
 
 class BasicInternalError(Exception):
