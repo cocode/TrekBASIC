@@ -95,7 +95,7 @@ class Lexer:
                         continue
 
                     # At this point, we know it's not a variable.
-                    found = self.scan_for_keyword(TEXT_OPERATORS, text[index:])
+                    found = self.scan_for_keyword(TEXT_OPERATORS, text[index:].upper())
                     if not found:
                         # Can't make an operator from it, so much be an ID.
                         yield lexer_token(consume(), "id")
