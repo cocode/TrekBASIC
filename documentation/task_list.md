@@ -119,3 +119,12 @@ modularity, Otherwise everything is global in BASIC.
 Test suite is now a standalone project, but we still point to our local copy. We need to merge
 all the individual tests suites in TrekBasic, TrekBasicJ BasicRS into the test suite project.
 
+### Lexing
+It looks like we lex expression every time we get to them. We should do it on load. 
+
+### PRINT statements 
+I think print statments in BasicRS support , in addition to ; to join outputs, and TrekBasic doesn't.
+Need to pick one. 
+
+### Print statements
+We are failing two tests. Print using, and tabs, which just aren't supported yet. 
