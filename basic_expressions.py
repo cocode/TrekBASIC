@@ -248,9 +248,7 @@ class Expression:
             BasicSyntaxError: On malformed expressions, undefined variables, etc.
             UndefinedSymbol: When referencing undefined variables or functions
         """
-        # Import here to avoid circular dependencies
-        from basic_operators import get_op, get_precedence
-        
+
         # Validate inputs
         if len(tokens) == 0:
             raise BasicSyntaxError("Empty expression")
