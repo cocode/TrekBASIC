@@ -34,7 +34,7 @@ class MonoOp:
         self._return_type = return_type
 
     def check_args(self, stack):
-        assert_syntax(len(stack) >= 1, "Not enough operands for binary operator")
+        assert_syntax(len(stack) >= 1, "Not enough operands for mono operator")
 
     def eval1(self, first, op):
         if self._lambda:
