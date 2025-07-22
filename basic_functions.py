@@ -18,7 +18,8 @@ class PredefinedFunctions:
             "EXP":    bo.MonoOp(lambda x: exp(x)),
             "INT":    bo.MonoOp(lambda x: int(x)),
             "LEFT$":  bo.StrOp(lambda x: x[0][:int(x[1])], "LEFT$", 2),
-            "LEN":    bo.StrOp(lambda x: len(x), "LEN", 1, "num"),  # This needs to return an int, unlike the other str functions.
+            # This needs to return an int, unlike the other str functions.
+            "LEN":    bo.StrOp(lambda x: len(x), "LEN", 1, "num"),
             "LOG":    bo.MonoOp(lambda x: log(x)),
             "MID$":   bo.StrOp(lambda x: x[0][int(x[1]) - 1:int(x[1]) - 1 + int(x[2])], "MID$", 3),
             "RIGHT$": bo.StrOp(lambda x: x[0][-int(x[1]):], "RIGHT$", 2),
