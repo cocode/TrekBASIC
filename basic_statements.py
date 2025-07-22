@@ -29,44 +29,44 @@ def stmt_rem(executor: Executor, stmt):
     executor.goto_next_line()
 
 
-def stmt_print(executor: Executor, stmt:ParsedStatementPrint):
+def stmt_print(executor: Executor, stmt: ParsedStatementPrint) -> None:
     """
-    Prints output.
-    :param executor: The program execution environment. Contains variables in its SymbolTable
-    :param stmt: This print statement, contains parameters to the PRINT command.
-    :return: None
+    Executes a BASIC PRINT statement.
     """
     for i, arg in enumerate(stmt._outputs):
+        if arg == ",":
+            # BASIC comma separator — advance to next tab stop
+            executor.do_print("\t", end='')  # This could be enhanced to simulate 14-column stops
+            continue
+        elif arg == ";":
+            # BASIC semicolon separator — no extra spacing
+            continue
+
+        # Handle value (expression or string or concat group)
         if isinstance(arg, list):
-            # Handle concatenated parts (list of strings/expressions)
+            # Concatenated parts: e.g., "Hello" + A$
             for part in arg:
-                if part.startswith('"') and part.endswith('"'): # quoted string
-                    output = part[1:-1]
-                    executor.do_print(output, end='')
-                else: # Expression
-                    v = eval_expression(executor._symbols, part)
-                    if type(v) in (int, float):
-                        executor.do_print(F" {v:g} ", end='')
-                    else:
-                        executor.do_print(F"{v}", end='')
-        else:
-            # Handle single string or expression
-            if arg.startswith('"') and arg.endswith('"'): # quoted string
-                output = arg[1:-1]
-                executor.do_print(output, end='')
-            else: # Expression
-                v = eval_expression(executor._symbols, arg)
-                if type(v) in (int, float):
-                    executor.do_print(F" {v:g} ", end='') # I'm trying to figure out BASIC's rules for spacing.
-                                              # NO spaces is wrong (see initial print out)
-                                              # Spaces around everything is wrong.
-                                              # Spaces around numbers but not strings seems to work, so far.
+                if part.startswith('"') and part.endswith('"'):
+                    executor.do_print(part[1:-1], end='')
                 else:
-                    executor.do_print(F"{v}", end='')
+                    v = eval_expression(executor._symbols, part)
+                    if isinstance(v, (int, float)):
+                        executor.do_print(f" {v:g} ", end='')  # space around numbers
+                    else:
+                        executor.do_print(str(v), end='')
+        else:
+            # Single string or expression
+            if arg.startswith('"') and arg.endswith('"'):
+                executor.do_print(arg[1:-1], end='')
+            else:
+                v = eval_expression(executor._symbols, arg)
+                if isinstance(v, (int, float)):
+                    executor.do_print(f" {v:g} ", end='')
+                else:
+                    executor.do_print(str(v), end='')
 
     if not stmt._no_cr:
-        executor.do_print("")
-    return None
+        executor.do_print("")  # Final newline unless suppressed
 
 
 def _handle_goto_gosub(executor, stmt: ParsedStatementGo, op_name: str, jump_func):

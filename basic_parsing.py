@@ -411,6 +411,7 @@ def parse_concatenated_parts(arg: str) -> List[str]:
     return parts
 
 
+
 class ParsedStatementPrint(ParsedStatement):
     """
     Handles PRINT statements
@@ -424,12 +425,7 @@ class ParsedStatementPrint(ParsedStatement):
         else:
             self._no_cr = False
         self._outputs: List[Union[str, List[str]]] = []
-        split_one = smart_split(args, split_char=";")
-        args = []
-        for part in split_one:
-            split_two = smart_split(part, split_char=",")
-            args.extend(split_two)
-        
+        args = self.split_print_arguments(args)
         for i, arg in enumerate(args):
             arg = arg.strip()
             if len(arg) == 0:
@@ -450,6 +446,34 @@ class ParsedStatementPrint(ParsedStatement):
                 # Simple expression
                 self._outputs.append(arg)
         return
+
+    def split_print_arguments(self, line: str) -> list[str]:
+        args = []
+        current = ''
+        in_quotes = False
+        paren_depth = 0
+
+        for i, c in enumerate(line):
+            if c == '"':
+                in_quotes = not in_quotes
+                current += c
+            elif c == '(' and not in_quotes:
+                paren_depth += 1
+                current += c
+            elif c == ')' and not in_quotes:
+                paren_depth -= 1
+                current += c
+            elif c in [',', ';'] and not in_quotes and paren_depth == 0:
+                args.append(current.strip())
+                args.append(c)  # keep the separator as its own entry
+                current = ''
+            else:
+                current += c
+
+        if current.strip():
+            args.append(current.strip())
+
+        return args
 
     def __str__(self) -> str:
         output_strs = []
