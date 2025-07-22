@@ -476,18 +476,22 @@ class ParsedStatementPrint(ParsedStatement):
         return args
 
     def __str__(self) -> str:
-        output_strs = []
+        result = [self.keyword.name]  # Start with "PRINT"
+        last_was_sep = False
+
         for output in self._outputs:
-            if isinstance(output, list):
-                # This was a concatenated group - join without separators
-                output_strs.append("".join(output))
+            if output in (";", ","):
+                result.append(output)
+                last_was_sep = True
+            elif isinstance(output, list):
+                result.append((" " if last_was_sep else " ") + "".join(output))
+                last_was_sep = False
             else:
-                output_strs.append(output)
-        
-        c = ";" if self._no_cr else ""
-        return F'{self.keyword.name} {";".join(output_strs)}{c}'
+                result.append((" " if last_was_sep else " ") + output)
+                last_was_sep = False
 
-
+        trailing = ";" if self._no_cr else ""
+        return "".join(result) + trailing
 class ParsedStatementDim(ParsedStatement):
     """
     Handles DIM statements

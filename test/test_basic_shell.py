@@ -43,7 +43,7 @@ class TestBasicShell(TestCase):
         new_program = b.format(b.executor._program)
         output_listing = [line.source for line in new_program]
         expected = """1 GOTO 1
-2 PRINT "A";"B"
+2 PRINT "A"; "B"
 3 DIM A(10)
 """
         self.assertEqual(expected, "\n".join(output_listing)+"\n")
