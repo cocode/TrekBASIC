@@ -1,5 +1,10 @@
 # Task List
 
+### Fix tests.
+We combined test suites, so now that are some tests that aren't passing, as TrekBasic doesn't suport the new
+features yet. 
+DIM(expr) and Print Using, Tab(), and  test_array_access.bas for LLVM only.
+
 ### Else
 I don't believe that two ELSEs on one line work.
 
