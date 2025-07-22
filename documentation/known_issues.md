@@ -90,4 +90,4 @@ farther down the stack. But that should be quite doable.
 ### Exponentiation.
 Exponentiation is currently left associative, as opposed to the more standard right association. We do this because 
 older dialects of basic had it that way, and we are currently emulating older versions.
-This could be handled as a dialog option in basic_dialect.py
+This could be handled as a dialect option in basic_dialect.py
