@@ -165,7 +165,7 @@ class Executor:
                 # TODO what is current.source?  previous had: print(F"Syntax Error in line {current.line}: {bse.message}: {current.source}")
             except BasicRuntimeError as bre:
                 self._run = RunStatus.END_ERROR_RUNTIME
-                raise BasicRuntimeError(str(bre), current_line) from bre
+                raise BasicRuntimeError(str(bre), current.line) from bre
             except Exception as e:
                 self._run = RunStatus.END_ERROR_INTERNAL
                 raise BasicInternalError(F"Internal error in line {current.line}: {e}") from e
@@ -279,13 +279,13 @@ class Executor:
         """
         assert_syntax(len(self._for_stack) > 0, "NEXT without FOR")
         for_record = self._for_stack[-1]
-        assert_syntax(for_record.var == var.upper(), F"Wrong NEXT. Expected {for_record.var}, got {var}")
+        assert_syntax(for_record.var.upper() == var.upper(), F"Wrong NEXT in peek(). Expected{for_record.var.upper()}, got {var.upper()}")
         return for_record
 
     def do_next_pop(self, var: str) -> None:
         assert_syntax(len(self._for_stack) > 0, "NEXT without FOR")
         for_record = self._for_stack.pop()
-        assert_syntax(for_record.var==var.upper(), F"Wrong NEXT. Expected {for_record.var}, got {var}")
+        assert_syntax(for_record.var.upper() == var.upper(), F"Wrong NEXT in pop(). Expected {for_record.var}, got {var}")
 
     def get_symbol_count(self) -> int:
         """
@@ -492,8 +492,7 @@ class Executor:
                 
                 # Check if this is a DATA statement
                 if stmt.keyword.name == 'DATA':
-                    from basic_parsing import ParsedStatementData
-                    # Start from value_index for current statement, 0 for subsequent statements  
+                    # Start from value_index for current statement, 0 for subsequent statements
                     start_value = value_index if (line_index == (self._data_position[0] if self._data_position else 0) and 
                                                  s_index == (self._data_position[1] if self._data_position else 0)) else 0
                     
