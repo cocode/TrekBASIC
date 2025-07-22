@@ -492,8 +492,8 @@ class ParsedStatementDim(ParsedStatement):
             self._dimensions.append((name, dimension_list))
 
     def __str__(self) -> str:
-        all = [name+"("+",".join(dims)+")" for name, dims in self._dimensions]
-        return F"{self.keyword.name} {','.join(all)}"
+        all_names = [name+"("+",".join(dims)+")" for name, dims in self._dimensions]
+        return F"{self.keyword.name} {','.join(all_names)}"
 
 class ParsedStatementTrace(ParsedStatement):
     """
