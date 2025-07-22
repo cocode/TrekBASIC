@@ -4,7 +4,7 @@ that runs the program (Executor)
 """
 from enum import Enum
 
-from basic_dialect import UPPERCASE_INPUT
+from basic_dialect import DIALECT
 from basic_types import BasicSyntaxError, assert_syntax, is_valid_identifier
 from basic_types import SymbolType, RunStatus, BasicRuntimeError
 
@@ -266,7 +266,7 @@ def stmt_input(executor, stmt):
                     print("Invalid number. Try again.")
                     break
             else:
-                if UPPERCASE_INPUT:
+                if DIALECT.UPPERCASE_INPUT:
                     value = value.upper()
 
             executor.put_symbol(var, value, SymbolType.VARIABLE, None)
@@ -406,9 +406,9 @@ def stmt_width(executor, stmt):
 
 
 class KB:
-    def __init__(self, exec, parser_class=ParsedStatement):
+    def __init__(self, execu, parser_class=ParsedStatement):
         self._parser = parser_class
-        self._exec = exec
+        self._exec = execu
 
     def get_parser_class(self):
         return self._parser

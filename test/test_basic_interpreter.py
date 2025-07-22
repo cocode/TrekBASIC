@@ -7,7 +7,7 @@ from unittest import TestCase
 import sys
 from math import e
 
-from basic_dialect import ARRAY_OFFSET
+from basic_dialect import DIALECT
 from basic_interpreter import Executor
 from basic_statements import is_valid_identifier
 from basic_types import SymbolType, RunStatus, lexer_token, BasicSyntaxError, BasicRuntimeError
@@ -320,7 +320,7 @@ class Test(TestCaseBase):
         A = executor.get_symbol("A", SymbolType.ARRAY)
         # It looks like "startrek.bas" expects zero-based arrays, and superstartrek.bas expects 1
         self.assertEqual(0, A[0], 0)  # Check for initialization
-        self.assertEqual(17, A[3-ARRAY_OFFSET])   # Verify assignment.
+        self.assertEqual(17, A[3-DIALECT._ARRAY_OFFSET])   # Verify assignment.
 
     def test_array_assignment2(self):
         listing = [
@@ -331,7 +331,7 @@ class Test(TestCaseBase):
         executor = self.runit(listing)
         A = executor.get_symbol("A", SymbolType.ARRAY)
         self.assertEqual(0, A[0], 0)  # Check for initialization
-        self.assertEqual(7, A[6-ARRAY_OFFSET])   # Verify assignment
+        self.assertEqual(7, A[6-DIALECT._ARRAY_OFFSET])   # Verify assignment
 
     def test_array_assignment3(self):
         listing = [
@@ -349,7 +349,7 @@ class Test(TestCaseBase):
         Z = executor.get_symbol_value("Z", SymbolType.VARIABLE)
 
         self.assertEqual(A[0], 0)  # Check for initialization
-        self.assertEqual(A[3-ARRAY_OFFSET], 7)  # Verify assignment
+        self.assertEqual(A[3-DIALECT._ARRAY_OFFSET], 7)  # Verify assignment
         self.assertEqual(Y, 8)  # Verify element access
         self.assertEqual(B[0][3], 16)  # Verify element access
         self.assertEqual(Z, 19)  # Verify element access
@@ -367,8 +367,9 @@ class Test(TestCaseBase):
         Y = executor.get_symbol("Y", SymbolType.VARIABLE)
         Z = executor.get_symbol("Z", SymbolType.VARIABLE)
         self.assertEqual(0, A[0][0][0])  # Check for initialization
-        self.assertEqual(27, A[1-ARRAY_OFFSET][2-ARRAY_OFFSET][3-ARRAY_OFFSET])  # Verify assignment
-        self.assertEqual(6, A[1-ARRAY_OFFSET][2-ARRAY_OFFSET][1-ARRAY_OFFSET])  # Verify array rows aren't all the same.
+        ao = DIALECT._ARRAY_OFFSET
+        self.assertEqual(27, A[1-ao][2-ao][3-ao])  # Verify assignment
+        self.assertEqual(6, A[1-ao][2-ao][1-ao])  # Verify array rows aren't all the same.
         self.assertEqual(28, Y)  # Verify element access
         self.assertEqual(5, Z)  # Verify element access
 

@@ -8,7 +8,7 @@ Implementation for basic operators, such as add, subtract, etc.
 from collections import namedtuple
 from enum import Enum
 
-from basic_dialect import ARRAY_OFFSET
+from basic_dialect import DIALECT
 from basic_types import lexer_token, assert_syntax, SymbolType, BasicSyntaxError, BasicRuntimeError
 
 import basic_expressions
@@ -132,7 +132,7 @@ class ArrayAccessOp(MonoOp):
 
         if type(first) == list:
             # Multidimensional array access
-            args = [int(arg)-ARRAY_OFFSET for arg in first] # TODO check type and syntax error. No strings, no arrays
+            args = [int(arg)-DIALECT._ARRAY_OFFSET for arg in first] # TODO check type and syntax error. No strings, no arrays
 
             v = variable
             for arg in args:
@@ -144,9 +144,9 @@ class ArrayAccessOp(MonoOp):
         else:
             # TODO should only need the above.
             assert_syntax(int(first) == first, F"Non-integral array subscript {first}'")
-            subscript = int(first) - ARRAY_OFFSET
+            subscript = int(first) - DIALECT._ARRAY_OFFSET
             if subscript >= len(variable) or subscript < 0:
-                raise BasicRuntimeError("Subscript out of range for {variable} {subscript")
+                raise BasicRuntimeError(F"Subscript {subscript} out of range for {variable}")
             return variable[subscript] # TODO This will only work for one dimensional arrays, that don't have expressions as subscripts.
 
     def eval(self, stack, *, op):

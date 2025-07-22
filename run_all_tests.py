@@ -14,6 +14,7 @@ def run_command(cmd, description):
     print("=" * len(description))
     
     try:
+        cmd += " --test-suite-dir /Users/tomhill/source/basic_test_suite"
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=60)
         output = result.stdout + result.stderr
         print(output)
@@ -75,6 +76,8 @@ def main():
                        help='Run only BASIC interpreter test suite')
     parser.add_argument('--llvm-tests', '-l', action='store_true',
                        help='Run only LLVM compiler test suite')
+    parser.add_argument('--test-suite-dir', "-t", type=str, default='test_suite',
+                       help='Path to the BASIC test suite directory (default: test_suite)')
     
     args = parser.parse_args()
     
@@ -134,16 +137,20 @@ def main():
     
     # 2. Run BASIC interpreter test suite
     if run_interpreter:
+        import os
+        test_suite_dir = args.test_suite_dir
+        run_tests_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'run_tests.py')
+        if not os.path.isfile(run_tests_path):
+            print(f"❌ Interpreter test runner not found: {run_tests_path}")
+            sys.exit(1)
         success, output = run_command(
-            "python test_suite/run_tests.py",
+            f"python {run_tests_path} --test-suite-dir {test_suite_dir}",
             "2. Running BASIC interpreter test suite..."
         )
-        
         interpreter_tests = extract_suite_test_count(output)
         interpreter_failures = extract_suite_test_failures(output)
         total_tests += interpreter_tests
         total_failures += interpreter_failures
-        
         if not success or interpreter_failures > 0:
             print(f"❌ Interpreter tests FAILED ({interpreter_failures} failures)")
             if not args.continue_on_failure:
@@ -157,8 +164,16 @@ def main():
     
     # 3. Run LLVM compiler test suite
     if run_llvm:
+        import os
+        test_suite_dir = args.test_suite_dir
+        # run_llvm_tests_path = os.path.join(test_suite_dir, 'run_llvm_tests.py')
+        # Test runner is in project directory, not basic_test_suite directory
+        run_llvm_tests_path = os.path.join('run_llvm_tests.py')
+        if not os.path.isfile(run_llvm_tests_path):
+            print(f"❌ LLVM test runner not found: {run_llvm_tests_path}")
+            sys.exit(1)
         success, output = run_command(
-            "python test_suite/run_llvm_tests.py",
+            f"python {run_llvm_tests_path}",
             "3. Running LLVM compiler test suite..."
         )
         

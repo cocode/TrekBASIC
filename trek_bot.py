@@ -4,22 +4,21 @@ This module acts as a player in the Star Trek game, for testing and code coverag
 Its actions are random, not strategic, to hit more of the code - but it turns out it never wins,
 so it never hits the 'win' code. It might need some changes.
 """
-import os
 import random
 import re
+import sys
 import time
 from enum import Enum, auto
 from math import atan2, pi, sqrt
 
-from basic_dialect import ARRAY_OFFSET
+from basic_dialect import DIALECT
 from basic_types import SymbolType, Program
-
-energy_pattern = re.compile("[0-9]+")
 
 from basic_interpreter import Executor
 from basic_loading import load_program
 from basic_shell import print_coverage_report, generate_html_coverage_report
 
+energy_pattern = re.compile("[0-9]+")
 
 class TestExecutor(Executor):
     """
@@ -33,7 +32,7 @@ class TestExecutor(Executor):
         }
 
     def do_print(self, msg, **kwargs):
-        #print(msg, **kwargs)          # Not needed, just so I can watch the game that TrekBot is playing.
+        # print(msg, **kwargs)          # Not needed, just so I can watch the game that TrekBot is playing.
         self._player.game_print(msg, **kwargs)
 
     def do_input(self):
@@ -82,7 +81,7 @@ class Strategy:
         print("Last output:", last_output)
         command = self.get_command2(player)
 
-        os.sys.exit(99)
+        sys.exit(99)
 
 
     def get_command2(self, player):
@@ -304,18 +303,18 @@ class CheatStrategy(RandomStrategy):
         self._galaxy = player.executor.get_symbol_value("G", SymbolType.ARRAY)
         self._energy = player.executor.get_symbol_value("E", SymbolType.VARIABLE)
         self._shields = player.executor.get_symbol_value("S", SymbolType.VARIABLE)
-        self._Q1 = int(player.executor.get_symbol_value("Q1", SymbolType.VARIABLE)) - ARRAY_OFFSET
-        self._Q2 = int(player.executor.get_symbol_value("Q2", SymbolType.VARIABLE)) - ARRAY_OFFSET
-        self._S1 = int(player.executor.get_symbol_value("S1", SymbolType.VARIABLE)) - ARRAY_OFFSET
-        self._S2 = int(player.executor.get_symbol_value("S2", SymbolType.VARIABLE)) - ARRAY_OFFSET
+        self._Q1 = int(player.executor.get_symbol_value("Q1", SymbolType.VARIABLE)) - DIALECT._ARRAY_OFFSET
+        self._Q2 = int(player.executor.get_symbol_value("Q2", SymbolType.VARIABLE)) - DIALECT._ARRAY_OFFSET
+        self._S1 = int(player.executor.get_symbol_value("S1", SymbolType.VARIABLE)) - DIALECT._ARRAY_OFFSET
+        self._S2 = int(player.executor.get_symbol_value("S2", SymbolType.VARIABLE)) - DIALECT._ARRAY_OFFSET
         self._K3 = int(player.executor.get_symbol_value("K3", SymbolType.VARIABLE))
         self._sector = player.executor.get_symbol_value("Q$", SymbolType.VARIABLE)
         # Device damage array (1-based in BASIC). <0 means inoperable
         try:
             self._device_damage = player.executor.get_symbol_value("D", SymbolType.ARRAY)
             # Adjust for BASIC 1-based indexing using ARRAY_OFFSET
-            phaser_idx = 4 - ARRAY_OFFSET
-            torp_idx = 5 - ARRAY_OFFSET
+            phaser_idx = 4 - DIALECT._ARRAY_OFFSET
+            torp_idx = 5 - DIALECT._ARRAY_OFFSET
             self._phasers_disabled = self._device_damage[phaser_idx] < 0
             self._torps_disabled = self._device_damage[torp_idx] < 0
         except Exception:
@@ -591,15 +590,15 @@ class Player:
         :return:
         """
         self._flush_print_buffer()
-        last_output = player._program_output[-1]
+        last_output = self._program_output[-1]
         command = self.get_command()
         return command
 
 
-if __name__ == "__main__":
+def go():
     program = load_program("programs/superstartrek.bas")
 
-    player_strategy = RandomStrategy()
+    # player_strategy = RandomStrategy()
     player_strategy = CheatStrategy()
     player = Player(program, player_strategy, display=True)
     total_time = time.perf_counter()
@@ -616,3 +615,6 @@ if __name__ == "__main__":
     print_coverage_report(player.executor._coverage, player.executor._program, lines=True)
     generate_html_coverage_report(player.executor._coverage, player.executor._program, "trek_coverage_report.html")
     print(F"Elapsed time {total_time:10.1f}s. Average: {total_time/count:10.1f}s")
+
+if __name__ == "__main__":
+    go()

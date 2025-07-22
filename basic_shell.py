@@ -18,6 +18,7 @@ from typing import Optional
 
 from basic_reports import generate_html_coverage_report, print_coverage_report
 from basic_symbols import SymbolTable
+from basic_dialect import DIALECT
 
 # Add readline for command history and line editing
 try:
@@ -181,8 +182,8 @@ class BasicShell:
                 print(" ", end="")
             print(line)
 
-    def get_line(self, line_number: str)-> int:
-        if not str.isnumeric(line_number):
+    def get_line(self, line_number: str)-> Optional[int]:
+        if not line_number.isnumeric():
             print(F"Invalid line number {line_number}")
             self.usage("list")
             return None
@@ -193,6 +194,7 @@ class BasicShell:
             print(F"Invalid line number {line_number}: {e}")
             self.usage("list")
             return None
+
         return line_index
 
     def cmd_list(self, args) -> None:
@@ -335,6 +337,35 @@ class BasicShell:
                     print(" in statement ", us.statement_index)
                 print(F"Types are 'variable', 'array' and 'function'. Default is 'variable'")
 
+    def cmd_option(self, argstring: str):
+        if not argstring:
+            print(f"Lexer set to {DIALECT._lexer_selected}")
+            print(f"Array base set to {DIALECT._ARRAY_OFFSET}")
+            return
+
+        args = argstring.split()
+        if args[0].upper() == "BASE":
+            if len(args) >= 2:
+                base = args[1]
+                if base == "0":
+                    DIALECT._ARRAY_OFFSET = 0
+                elif base == "1":
+                    DIALECT._ARRAY_OFFSET = 1
+                else:
+                    print("OPTION BASE must be 0 or 1")
+                    return
+            print(f"Array base set to {DIALECT._ARRAY_OFFSET}")
+        elif args[0].upper() == "LEX":
+            if len(args) >= 2:
+                option = args[1].upper()
+                if option not in {"OLD", "NEW"}:
+                    print("OPTION LEX must be OLD or NEW")
+                    return
+                DIALECT._lexer_selected = option
+            print(f"Lexer set to {DIALECT._lexer_selected}")
+        else:
+            print("Unknown argument for OPTION command.")
+
     def cmd_print(self, args):
         if not args:
             self.usage("?")
@@ -386,7 +417,7 @@ class BasicShell:
         self.print_current("")
         self.cmd_continue("step")
 
-    def cmd_continue(self, args):
+    def cmd_continue(self, args:str) -> None:
         """
         Continue execution of a program from its current location.
         :param args: if "step", then single steps the program one step.
@@ -425,8 +456,7 @@ class BasicShell:
         else:
             print(F"Program completed with return of {rc}.")
 
-
-    def cmd_run(self, args):
+    def cmd_run(self, args:str) -> None:
         if not self.executor:
             print("No program has been loaded yet.")
             return
@@ -438,7 +468,7 @@ class BasicShell:
         # Extract program from current executor, then create fresh executor
         program = self.executor._program
         self.executor = Executor(program, coverage=coverage)
-        self.cmd_continue(None)
+        self.cmd_continue("")
 
     def cmd_benchmark(self, args):
         load_start = time.perf_counter()
@@ -846,6 +876,10 @@ class BasicShell:
             "Usage: next."
             "\nExecutes the next line of the program."
         ),
+        cmd_option: (
+            "Usage: option base <1|0>\noption lex <new|old>\n"
+            "Use 'option', 'option base' or 'option lex' to display the current value(s)"
+        ),
         cmd_renum: (
             "Usage: renum <start <increment>>"
             "\nRenumbers the program."
@@ -906,6 +940,7 @@ class BasicShell:
         "list": cmd_list,
         "load": cmd_load,
         "next": cmd_next,
+        "option": cmd_option,
         "quit": cmd_quit,
         "renumber": cmd_renum,
         "run": cmd_run,

@@ -8,7 +8,7 @@ from basic_parsing import (
 )
 from basic_lexer import get_lexer
 from basic_operators import get_precedence
-from basic_dialect import UPPERCASE_INPUT
+from basic_dialect import DIALECT
 
 
 class LLVMCodeGenerator:
@@ -670,7 +670,7 @@ class LLVMCodeGenerator:
                 self.builder.call(self.getchar, [])
 
                 # Convert string to uppercase if UPPERCASE_INPUT is enabled
-                if UPPERCASE_INPUT:
+                if DIALECT.UPPERCASE_INPUT:
                     # Create a loop to iterate through the string and convert each character
                     func = self.builder.block.function
                     loop_block = func.append_basic_block(name=f"uppercase_loop_{var_name}")

@@ -1,14 +1,16 @@
 """
 This module contains the code the load and parse BASIC programs
 """
-from basic_dialect import COMMENT_CHARS
+from typing import Optional
+
+from basic_dialect import DIALECT
 from basic_find_str_quotes import find_next_str_not_quoted
 from basic_types import ProgramLine, Program, BasicSyntaxError, assert_syntax
 from basic_utils import smart_split
 from basic_statements import Keywords
 
 
-def tokenize_statements(commands_text:list[str]):
+def tokenize_statements(commands_text: list[str]):
     """
     Parses individual statements. A line of the program may have multiple statements in it.
 
@@ -55,7 +57,7 @@ def tokenize_statements(commands_text:list[str]):
     return list_of_statements
 
 
-def tokenize_line(program_line: str) -> ProgramLine:
+def tokenize_line(program_line: str) -> Optional[ProgramLine]:
     """
     Converts the line into a partially digested form. Tokenizing basic is mildly annoying,
     as there may not be a delimiter between the cmd and the args. Example:
@@ -64,7 +66,7 @@ def tokenize_line(program_line: str) -> ProgramLine:
 
     The FOR runs right into the I. "JTOK" for J TO K.
 
-    So we need to prefix search.
+    So we need to do a prefix search.
     :param program_line:
     :return:
     """
@@ -89,9 +91,9 @@ def add_colons(partial, target):
     This function adds colons to a string, to simplify parsing.
     """
     offset = 0
-    while (found := find_next_str_not_quoted(partial, target, offset) ) is not None:
+    while (found := find_next_str_not_quoted(partial, target, offset)) is not None:
         start, end = found
-        partial = partial[:start] + ":" + target  + ":" + partial[end:]
+        partial = partial[:start] + ":" + target + ":" + partial[end:]
         offset = end + 1
     return partial
 
@@ -112,7 +114,7 @@ def tokenize_remaining_line(partial: str, number: int) -> list:
     Tokenizes the string, but with the line number removed. This allows us to call this function with partial lines.
     """
     # Handle ! and ' comments - strip everything after comment markers (like some BASIC dialects)
-    for comment_char in COMMENT_CHARS:
+    for comment_char in DIALECT.COMMENT_CHARS:
         comment_pos = find_next_str_not_quoted(partial, comment_char, 0)
         if comment_pos is not None:
             start, end = comment_pos
@@ -137,15 +139,16 @@ def tokenize_remaining_line(partial: str, number: int) -> list:
     return list_of_statements
 
 
-def tokenize(program_lines:list[str]) -> Program:
+def tokenize(program_lines: list[str]) -> Program:
     tokenized_lines = []
-    last_line: str = None
+    last_line: Optional[str] = None
     for line_number, line in enumerate(program_lines):
         tokenized_line = tokenize_line(line)
         if tokenized_line is None:
             continue    # Ignore blank lines.
         if last_line is not None:
-            assert_syntax(tokenized_line.line > last_line, F"Line {tokenized_line.line} is <= the preceding line {line}")
+            assert_syntax(tokenized_line.line > last_line,
+                          F"Line {tokenized_line.line} is <= the preceding line {line}")
         tokenized_lines.append(tokenized_line)
         last_line = tokenized_line.line
 

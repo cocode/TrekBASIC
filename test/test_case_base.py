@@ -8,7 +8,7 @@ from unittest import TestCase
 import sys
 from math import e
 
-from basic_dialect import ARRAY_OFFSET
+from basic_dialect import DIALECT
 from basic_interpreter import Executor
 from basic_statements import is_valid_identifier
 from basic_types import SymbolType, RunStatus, lexer_token, BasicSyntaxError, BasicRuntimeError

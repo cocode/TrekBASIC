@@ -8,31 +8,42 @@ input handling, etc. We expect to add more, as we support more programs.
 
 All constants use UPPER_CASE naming following Python conventions for module-level constants.
 """
+from dataclasses import dataclass
 
-# =============================================================================
-# OPERATOR CONFIGURATION
-# =============================================================================
+@dataclass
+class BasicDialect(object):
 
-# Operator used for exponentiation in mathematical expressions
-# Standard options: '^' (most common) or '**' (requires lexer changes)
-EXPONENTIATION_OPERATOR: str = '^'
+    # =============================================================================
+    # OPERATOR CONFIGURATION
+    # =============================================================================
 
-# =============================================================================
-# ARRAY CONFIGURATION  
-# =============================================================================
+    # Operator used for exponentiation in mathematical expressions
+    # Standard options: '^' (most common) or '**' (requires lexer changes)
+    EXPONENTIATION_OPERATOR: str = '^'
 
-# Base index for array subscripts
-# 0 = Zero-based arrays (like C, Python): A(0) is first element
-# 1 = One-based arrays (traditional BASIC): A(1) is first element
-ARRAY_OFFSET: int = 1
+    # =============================================================================
+    # ARRAY CONFIGURATION
+    # =============================================================================
 
-# =============================================================================
-# INPUT/OUTPUT CONFIGURATION
-# =============================================================================
+    # Base index for array subscripts
+    # 0 = Zero-based arrays (like C, Python): A(0) is first element
+    # 1 = One-based arrays (traditional BASIC): A(1) is first element
+    _ARRAY_OFFSET: int = 1
 
-# Controls whether user input is automatically converted to uppercase
-# 1 = Convert input to uppercase (traditional BASIC behavior)
-# 0 = Preserve original case of user input
-UPPERCASE_INPUT: int = 1
+    # =============================================================================
+    # INPUT/OUTPUT CONFIGURATION
+    # =============================================================================
 
-COMMENT_CHARS = ["!", "'"]
+    # Controls whether user input is automatically converted to uppercase
+    # 1 = Convert input to uppercase (traditional BASIC behavior)
+    # 0 = Preserve the original case of the user input
+    UPPERCASE_INPUT: int = 1
+
+    # Characters that mark comment to the end of the line
+    COMMENT_CHARS = ["!", "'"]
+
+    # Current lexer
+    _lexer_selected = "OLD"  # Default to legacy lexer
+
+
+DIALECT = BasicDialect()
