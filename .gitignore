@@ -11,3 +11,4 @@ tracefile.txt
 .DS_Store
 trek_coverage_report.html
 documentation/gwbasic-manual
+old-test-suite
