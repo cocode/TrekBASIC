@@ -78,7 +78,7 @@ class BasicShell:
         executor = Executor(program)
         self.executor = executor
 
-    def load_from_file(self, coverage: bool=False) -> None:
+    def load_from_file(self, coverage: bool = False) -> None:
         self.load_status = False
 
         if not os.path.exists(self._program_file):
@@ -133,7 +133,6 @@ class BasicShell:
             print(F"Syntax Error in line {bse.line_number}: {bse.message}")
             self._program_file = None
 
-
     def cmd_coverage(self, args):
         """
         Reports on code coverage. Code coverage is initiate by the "run coverage" command.
@@ -162,7 +161,7 @@ class BasicShell:
         if args == "html":
             generate_html_coverage_report(self.executor._coverage, self.executor._program, "coverage_report.html")
         else:
-            print_coverage_report(self.executor._coverage, self.executor._program, args=='lines')
+            print_coverage_report(self.executor._coverage, self.executor._program)
 
     def print_current(self, args):
         if not self.executor:
@@ -223,13 +222,10 @@ class BasicShell:
 
         self.print_listing(si, ei)
 
-
-
     def format_cl(self, cl):
         program_line = self.executor._program.get_line(cl.index)
         offset = cl.offset
         return F"Line: {program_line.line:6}: Clause: {offset}"
-
 
     def cmd_for_stack(self, args):
         """
@@ -475,7 +471,7 @@ class BasicShell:
         self.load_from_file(coverage=False)
         load_time = time.perf_counter() - load_start
         run_start = time.perf_counter()
-        self.cmd_continue(None)
+        self.cmd_continue("")
         run_time = time.perf_counter() - run_start
         # only noting "load time", as this had it: https://archive.org/details/byte-magazine-1981-09/page/n193/mode/2up
         print(F"Load time {load_time:10.3f} sec. Run time: {run_time:10.3f} sec.")
@@ -997,7 +993,8 @@ class BasicShell:
             function(self, args)
 
 
-if __name__ == "__main__":
+
+def go()-> None:
     parser = argparse.ArgumentParser(description='Run BASIC programs.')
     parser.add_argument('program', nargs='?', help="The name of the basic file to run. Will add '.bas' of not found.")
     args = parser.parse_args()
@@ -1005,3 +1002,6 @@ if __name__ == "__main__":
     debugger = BasicShell(args.program)
     debugger.do_command()
     print("TrekBasic: Done")
+
+if __name__ == "__main__":
+    go()
