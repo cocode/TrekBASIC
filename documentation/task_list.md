@@ -142,5 +142,5 @@ More modern syntax requires spaces or word boundaries. So, FORI is bad, but "I=3
 ### Sym command
 We should print all Xs on sym X, not require the user to select the type.
 
-### run test_dim_complex.bas
-We don't handle expression in dim statements.
+# get rid of asserts
+These are fine when developing, but they should now all be exceptions that we handle properly.
