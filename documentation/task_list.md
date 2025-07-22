@@ -127,4 +127,15 @@ I think print statments in BasicRS support , in addition to ; to join outputs, a
 Need to pick one. 
 
 ### Print statements
-We are failing two tests. Print using, and tabs, which just aren't supported yet. 
+We are failing two tests. Print using, and tabs, which just aren't supported yet.
+
+### Lexing modern Basic
+We currently parse the star trek version of basic and that means "FORI=ATOBSTEPC" is valid,
+
+More modern syntax requires spaces or word boundaries. So, FORI is bad, but "I=3"
+
+### Sym command
+We should print all Xs on sym X, not require the user to select the type.
+
+### run test_dim_complex.bas
+We don't handle expression in dim statements.
