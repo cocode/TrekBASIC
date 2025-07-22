@@ -22,7 +22,7 @@ FN_OPERATORS=["FN"+chr(c) for c in range(ord("A"), ord("Z"))]
 TEXT_OPERATORS=BOOLEAN_OPERATORS + BUILT_IN_FUNCTIONS + FN_OPERATORS
 
 
-class Lexer:
+class LexerOldStyle:
     def __init__(self):
         pass
 
