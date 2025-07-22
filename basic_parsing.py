@@ -419,12 +419,16 @@ class ParsedStatementPrint(ParsedStatement):
         super().__init__(keyword, "")
 
         args = args.strip()
-        if args.endswith(";"):
+        if args.endswith(";") or args.endswith(","):
             self._no_cr = True
         else:
             self._no_cr = False
         self._outputs: List[Union[str, List[str]]] = []
-        args = smart_split(args, split_char=";")
+        split_one = smart_split(args, split_char=";")
+        args = []
+        for part in split_one:
+            split_two = smart_split(part, split_char=",")
+            args.extend(split_two)
         
         for i, arg in enumerate(args):
             arg = arg.strip()
