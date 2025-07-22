@@ -183,6 +183,10 @@ class LLVMCodeGenerator:
 
         # Note: Function bodies will be generated later in generate_ir() after variables are allocated
 
+        # Declare SGN as a function (stub, for completeness; actual logic is in codegen)
+        sgn_type = ir.FunctionType(ir.DoubleType(), [ir.DoubleType()])
+        self.sgn = ir.Function(self.module, sgn_type, name="sgn")
+
     def generate_ir(self):
         main_func_type = ir.FunctionType(ir.IntType(32), [])
         main_func = ir.Function(self.module, main_func_type, name="main")
@@ -1115,7 +1119,7 @@ class LLVMCodeGenerator:
                     # This could be a function call or array access
                     identifier = token.token
                     known_functions = ["SIN", "COS", "SQR", "EXP", "LOG", "ABS", "ASC", "CHR$", "SPACE$", "STR$", "LEN",
-                                       "LEFT$", "RIGHT$", "MID$", "INT", "RND", "TAB"]
+                                       "LEFT$", "RIGHT$", "MID$", "INT", "RND", "TAB", "SGN"]
                     if identifier in known_functions or identifier in self.user_functions:
                         # This is a function call
                         if self.debug:
@@ -1538,6 +1542,17 @@ class LLVMCodeGenerator:
         elif func_name in self.user_functions:
             # User-defined function call
             return builder.call(self.user_functions[func_name], [args[0]], name=f"{func_name.lower()}_result")
+        elif func_name == "SGN":
+            # SGN(x): 1 if x > 0, 0 if x == 0, -1 if x < 0
+            x = args[0]
+            zero = ir.Constant(ir.DoubleType(), 0.0)
+            one = ir.Constant(ir.DoubleType(), 1.0)
+            minus_one = ir.Constant(ir.DoubleType(), -1.0)
+            is_gt = builder.fcmp_ordered('>', x, zero, name="sgn_gt")
+            is_lt = builder.fcmp_ordered('<', x, zero, name="sgn_lt")
+            gt_val = builder.select(is_gt, one, zero, name="sgn_gt_val")
+            sgn_val = builder.select(is_lt, minus_one, gt_val, name="sgn_result")
+            return sgn_val
         else:
             raise NotImplementedError(f"Function {func_name} not implemented")
 
@@ -1828,78 +1843,130 @@ class LLVMCodeGenerator:
         return line_number
 
     def _codegen_dim(self, stmt):
-        """Generate LLVM IR for a DIM statement - create global arrays (BASIC semantics)"""
+        """Generate LLVM IR for a DIM statement - create global or dynamic arrays (BASIC semantics)"""
+        lexer = get_lexer()
         for name, dimensions in stmt._dimensions:
-            # Calculate total size needed
-            total_size = 1
+            # Try to parse all dimensions as constants
+            all_constant = True
+            const_dims = []
+            dim_tokens_list = []
             for dim_expr in dimensions:
-                # Evaluate dimension expression to get integer value
-                # For now, handle simple cases (constant integers)
+                tokens = lexer.lex(dim_expr)
+                dim_tokens_list.append(tokens)
                 try:
-                    dim = int(dim_expr.strip())
-                except ValueError:
-                    # If it's not a simple integer, we need to evaluate the expression
-                    # For now, raise an error - complex expressions in DIM not supported in LLVM mode
-                    raise Exception(f"Complex expressions in DIM not yet supported in LLVM mode: {dim_expr}")
-                total_size *= (dim + 1)  # +1 because BASIC arrays are 1-based
+                    # Only allow integer constants
+                    if len(tokens) == 1 and tokens[0].type == 'num':
+                        dim = int(float(tokens[0].token))
+                        const_dims.append(dim)
+                    else:
+                        all_constant = False
+                        const_dims.append(None)
+                except Exception:
+                    all_constant = False
+                    const_dims.append(None)
 
-            # Determine array type based on name
             is_string_array = name.endswith("$")
-            if is_string_array:
-                element_type = ir.IntType(8).as_pointer()
-                # Initialize with null pointers (will be set to empty strings at runtime)
-                default_value = ir.Constant(element_type, None)
+            element_type = ir.IntType(8).as_pointer() if is_string_array else ir.DoubleType()
+
+            if all_constant:
+                # Static allocation as before
+                total_size = 1
+                for dim in const_dims:
+                    total_size *= (dim + 1)
+                array_type = ir.ArrayType(element_type, total_size)
+                default_value = ir.Constant(element_type, None) if is_string_array else ir.Constant(element_type, 0.0)
+                array_init = ir.Constant(array_type, [default_value] * total_size)
+                global_array = ir.GlobalVariable(self.module, array_type, name=f"global_array_{name}")
+                global_array.linkage = 'internal'
+                global_array.global_constant = False
+                global_array.initializer = array_init
+                # For string arrays, initialize to empty string at runtime
+                if is_string_array:
+                    empty_str_val = "\0"
+                    c_empty_str = ir.Constant(ir.ArrayType(ir.IntType(8), len(empty_str_val)),
+                                              bytearray(empty_str_val.encode("utf8")))
+                    global_empty_str = ir.GlobalVariable(self.module, c_empty_str.type, name=f"empty_str_{name}")
+                    global_empty_str.linkage = 'internal'
+                    global_empty_str.global_constant = True
+                    global_empty_str.initializer = c_empty_str
+                    empty_ptr = self.builder.bitcast(global_empty_str, element_type)
+                    for i in range(total_size):
+                        element_ptr = self.builder.gep(global_array,
+                                                       [ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), i)])
+                        self.builder.store(empty_ptr, element_ptr)
+                self.array_info[name] = {
+                    'storage': global_array,
+                    'dimensions': const_dims,
+                    'total_size': total_size,
+                    'is_string': is_string_array,
+                    'dynamic': False
+                }
+                self.symbol_table[name] = global_array
             else:
-                element_type = ir.DoubleType()
-                default_value = ir.Constant(element_type, 0.0)
-
-            array_type = ir.ArrayType(element_type, total_size)
-
-            # Create global array (BASIC semantics - all arrays are global)
-            array_init = ir.Constant(array_type, [default_value] * total_size)
-
-            global_array = ir.GlobalVariable(self.module, array_type, name=f"global_array_{name}")
-            global_array.linkage = 'internal'
-            global_array.global_constant = False
-            global_array.initializer = array_init
-
-            # For string arrays, we need to initialize at runtime
-            if is_string_array:
-                # Create empty string constant
-                empty_str_val = "\0"
-                c_empty_str = ir.Constant(ir.ArrayType(ir.IntType(8), len(empty_str_val)),
-                                          bytearray(empty_str_val.encode("utf8")))
-                global_empty_str = ir.GlobalVariable(self.module, c_empty_str.type, name=f"empty_str_{name}")
-                global_empty_str.linkage = 'internal'
-                global_empty_str.global_constant = True
-                global_empty_str.initializer = c_empty_str
-
-                # Initialize array elements to point to empty string at runtime
-                empty_ptr = self.builder.bitcast(global_empty_str, element_type)
-                for i in range(total_size):
-                    element_ptr = self.builder.gep(global_array,
-                                                   [ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), i)])
-                    self.builder.store(empty_ptr, element_ptr)
-
-            # Store array info for access
-            # Convert dimension expressions to integers for storage
-            int_dimensions = []
-            for dim_expr in dimensions:
-                try:
-                    dim = int(dim_expr.strip())
-                except ValueError:
-                    raise Exception(f"Complex expressions in DIM not yet supported in LLVM mode: {dim_expr}")
-                int_dimensions.append(dim)
-
-            self.array_info[name] = {
-                'storage': global_array,
-                'dimensions': int_dimensions,
-                'total_size': total_size,
-                'is_string': is_string_array
-            }
-
-            # Store the array storage directly in symbol table
-            self.symbol_table[name] = global_array
+                # Dynamic allocation at runtime
+                # Evaluate each dimension expression at runtime
+                dim_vals = []
+                for tokens in dim_tokens_list:
+                    val = self._codegen_expr(tokens)
+                    # Convert to integer
+                    val_int = self.builder.fptoui(val, ir.IntType(32))
+                    dim_vals.append(val_int)
+                # Compute total size = product of (dim + 1) for each dimension
+                total_size = ir.Constant(ir.IntType(32), 1)
+                for dim in dim_vals:
+                    plus_one = self.builder.add(dim, ir.Constant(ir.IntType(32), 1))
+                    total_size = self.builder.mul(total_size, plus_one)
+                # Allocate array with malloc
+                elem_size = ir.Constant(ir.IntType(64), 8) if is_string_array else ir.Constant(ir.IntType(64), 8)
+                # For double and pointer, both 8 bytes on 64-bit
+                total_bytes = self.builder.zext(total_size, ir.IntType(64))
+                total_bytes = self.builder.mul(total_bytes, elem_size)
+                arr_ptr = self.builder.call(self.malloc, [total_bytes], name=f"dyn_array_{name}")
+                # Cast to appropriate pointer type
+                arr_ptr_cast = self.builder.bitcast(arr_ptr, element_type.as_pointer())
+                # Store pointer in a global variable
+                global_ptr = ir.GlobalVariable(self.module, element_type.as_pointer(), name=f"dyn_array_ptr_{name}")
+                global_ptr.linkage = 'internal'
+                global_ptr.global_constant = False
+                global_ptr.initializer = ir.Constant(element_type.as_pointer(), None)
+                self.builder.store(arr_ptr_cast, global_ptr)
+                # For string arrays, initialize each element to empty string
+                if is_string_array:
+                    empty_str_val = "\0"
+                    c_empty_str = ir.Constant(ir.ArrayType(ir.IntType(8), len(empty_str_val)),
+                                              bytearray(empty_str_val.encode("utf8")))
+                    global_empty_str = ir.GlobalVariable(self.module, c_empty_str.type, name=f"empty_str_{name}")
+                    global_empty_str.linkage = 'internal'
+                    global_empty_str.global_constant = True
+                    global_empty_str.initializer = c_empty_str
+                    empty_ptr = self.builder.bitcast(global_empty_str, element_type)
+                    # Loop to initialize
+                    idx_var = self.builder.alloca(ir.IntType(32), name=f"init_idx_{name}")
+                    self.builder.store(ir.Constant(ir.IntType(32), 0), idx_var)
+                    loop_block = self.builder.append_basic_block(f"init_loop_{name}")
+                    after_block = self.builder.append_basic_block(f"after_init_{name}")
+                    self.builder.branch(loop_block)
+                    self.builder.position_at_end(loop_block)
+                    idx = self.builder.load(idx_var)
+                    cond = self.builder.icmp_signed('<', idx, total_size)
+                    self.builder.cbranch(cond, loop_block, after_block)
+                    # Store empty_ptr at arr_ptr_cast[idx]
+                    arr_gep = self.builder.gep(arr_ptr_cast, [idx])
+                    self.builder.store(empty_ptr, arr_gep)
+                    # idx++
+                    idx_next = self.builder.add(idx, ir.Constant(ir.IntType(32), 1))
+                    self.builder.store(idx_next, idx_var)
+                    self.builder.branch(loop_block)
+                    self.builder.position_at_end(after_block)
+                # Store array info
+                self.array_info[name] = {
+                    'storage': global_ptr,
+                    'dimensions': dim_vals,  # These are LLVM values, not ints
+                    'total_size': total_size,
+                    'is_string': is_string_array,
+                    'dynamic': True
+                }
+                self.symbol_table[name] = global_ptr
 
     def _codegen_array_access(self, array_name, indices, builder=None):
         """Generate LLVM IR for array access"""
@@ -1912,33 +1979,44 @@ class LLVMCodeGenerator:
         array_info = self.array_info[array_name]
         array_storage = array_info['storage']
         dimensions = array_info['dimensions']
+        is_dynamic = array_info.get('dynamic', False)
 
         # Convert indices to 0-based and calculate offset
         if len(indices) != len(dimensions):
             raise Exception(f"Array {array_name} has {len(dimensions)} dimensions, got {len(indices)} indices")
 
-        # Calculate offset: index1 * (dim2+1) * (dim3+1) + index2 * (dim3+1) + index3
-        # Since BASIC arrays are 1-based, DIM S(3,3) creates a 4x4 array
-        offset = ir.Constant(ir.IntType(32), 0)
-        multiplier = 1
-
-        for i in range(len(indices) - 1, -1, -1):
-            # Convert 1-based index to 0-based
-            index_val = builder.fptoui(indices[i], ir.IntType(32))
-            one = ir.Constant(ir.IntType(32), 1)
-            zero_based_index = builder.sub(index_val, one)
-
-            # Add to offset
-            index_offset = builder.mul(zero_based_index, ir.Constant(ir.IntType(32), multiplier))
-            offset = builder.add(offset, index_offset)
-
-            # Update multiplier for next dimension
-            if i > 0:
-                multiplier *= (dimensions[i] + 1)
-
-        # Get element pointer
-        element_ptr = builder.gep(array_storage, [ir.Constant(ir.IntType(32), 0), offset])
-        return element_ptr
+        # For dynamic arrays, use only LLVM IR values for offset and multiplier
+        if is_dynamic:
+            offset = ir.Constant(ir.IntType(32), 0)
+            multiplier = ir.Constant(ir.IntType(32), 1)
+            for i in range(len(indices) - 1, -1, -1):
+                index_val = builder.fptoui(indices[i], ir.IntType(32))
+                one = ir.Constant(ir.IntType(32), 1)
+                zero_based_index = builder.sub(index_val, one)
+                index_offset = builder.mul(zero_based_index, multiplier)
+                offset = builder.add(offset, index_offset)
+                if i > 0:
+                    # multiplier *= (dimensions[i] + 1) where dimensions[i] is an LLVM value
+                    plus_one = builder.add(dimensions[i], one)
+                    multiplier = builder.mul(multiplier, plus_one)
+            # For dynamic arrays, array_storage is a pointer to the malloc'd array
+            arr_ptr = builder.load(array_storage)
+            element_ptr = builder.gep(arr_ptr, [offset])
+            return element_ptr
+        else:
+            # Static array logic (Python ints)
+            offset = ir.Constant(ir.IntType(32), 0)
+            multiplier = 1
+            for i in range(len(indices) - 1, -1, -1):
+                index_val = builder.fptoui(indices[i], ir.IntType(32))
+                one = ir.Constant(ir.IntType(32), 1)
+                zero_based_index = builder.sub(index_val, one)
+                index_offset = builder.mul(zero_based_index, ir.Constant(ir.IntType(32), multiplier))
+                offset = builder.add(offset, index_offset)
+                if i > 0:
+                    multiplier *= (dimensions[i] + 1)
+            element_ptr = builder.gep(array_storage, [ir.Constant(ir.IntType(32), 0), offset])
+            return element_ptr
 
     def _collect_data_values(self):
         """Collect all DATA values from the program at compile time."""
