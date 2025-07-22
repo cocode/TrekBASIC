@@ -14,7 +14,6 @@ def run_command(cmd, description):
     print("=" * len(description))
     
     try:
-        cmd += " --test-suite-dir /Users/tomhill/source/basic_test_suite"
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=60)
         output = result.stdout + result.stderr
         print(output)
@@ -173,7 +172,7 @@ def main():
             print(f"❌ LLVM test runner not found: {run_llvm_tests_path}")
             sys.exit(1)
         success, output = run_command(
-            f"python {run_llvm_tests_path}",
+            f"python {run_llvm_tests_path} --test-suite-dir {test_suite_dir}",
             "3. Running LLVM compiler test suite..."
         )
         
