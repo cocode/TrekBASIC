@@ -72,17 +72,20 @@ class Strategy:
     def _cmd_repair(self, player):
         pass
 
+    def _cmd_energy(self, player):
+        pass
+
     def get_command(self, player):
         command = self.get_command2(player)
         if command is not None:
             return command
 
+        # should not get here. Print info, and exit
         last_output = player._program_output[-1].rstrip()
         print("Last output:", last_output)
         command = self.get_command2(player)
 
         sys.exit(99)
-
 
     def get_command2(self, player):
         """
@@ -120,7 +123,7 @@ class Strategy:
             energy_start = last_output[19:]
             energy_end = energy_start.find(" ")
             energy_value = int(energy_start[:energy_end+1])
-            return self.cmd_energy(energy_value)
+            return self._cmd_energy(energy_value)
 
         raise Exception(F"Unknown prompt in trek_bot: '{last_output}'")
 
@@ -142,7 +145,7 @@ class RandomStrategy(Strategy):
     def random_command(self):
         # TODO: Need to make "XXX" (exit) command less frequent, or we will never finish a game.
         commands ="NAVSRSLRSPHATORSHEDAMCOMHLP"
-        length = len(commands)/3
+        length = len(commands)//3
         index = random.randrange(length)
         cmd = commands[index*3:index*3+3]
         #print(">> ", cmd)  # Not needed, just so I can watch the game that TrekBot is playing.
@@ -612,7 +615,7 @@ def go():
         rc = player.play_one_game()
         print(F"Game {game_round} completed with a status of {rc}. Time: {time.perf_counter() - game_time:.2f} seconds.")
     total_time = time.perf_counter() - total_time
-    print_coverage_report(player.executor._coverage, player.executor._program, lines=True)
+    print_coverage_report(player.executor._coverage, player.executor._program)
     generate_html_coverage_report(player.executor._coverage, player.executor._program, "trek_coverage_report.html")
     print(F"Elapsed time {total_time:10.1f}s. Average: {total_time/count:10.1f}s")
 

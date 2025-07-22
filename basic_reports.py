@@ -1,5 +1,5 @@
 
-def print_coverage_report(coverage, program, lines):
+def print_coverage_report(coverage, program):
     total_lines = len(program)
     total_stmts = 0
     for p in program:
