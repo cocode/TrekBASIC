@@ -21,7 +21,7 @@ OPERATORS = ["(",")","^","*","/","+","-","=",">","<","<>", ">=", "<=", ","]
 OP_FIRST = {op[0] for op in OPERATORS}
 OP_TWO = [op for op in OPERATORS if len(op) > 1]
 OP_TWO_FIRST = {op[0] for op in OP_TWO}
-BOOLEAN_OPERATORS=["AND", "OR"] # Strings that have a type of "op"
+BOOLEAN_OPERATORS=["AND", "OR"]  # Strings that have a type of "op"
 
 
 class Lexer:
