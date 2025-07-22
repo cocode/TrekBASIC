@@ -169,7 +169,7 @@ class LLVMCodeGenerator:
                 if self.debug:
                     print(f"DEBUG: Statement type: {type(stmt).__name__}, keyword: {getattr(stmt, 'keyword', None)}")
                 if hasattr(stmt, 'keyword') and getattr(stmt.keyword, 'name', None) == 'DEF':
-                    fn_name = stmt._variable  # e.g., FNA
+                    fn_name = stmt._variable.upper()  # e.g., FNA
                     if self.debug:
                         print(f"DEBUG: Found DEF statement for function {fn_name}")
                     # Create LLVM function declaration: double fn(double)
@@ -299,7 +299,7 @@ class LLVMCodeGenerator:
                 return
             for token in tokens:
                 if hasattr(token, 'type') and token.type == 'id':
-                    var_name = token.token
+                    var_name = token.token.upper()
                     if var_name.endswith('$'):
                         string_var_names.add(var_name)
                     else:
@@ -308,7 +308,7 @@ class LLVMCodeGenerator:
         for line in self.program:
             for stmt in line.stmts:
                 if isinstance(stmt, ParsedStatementLet):
-                    var_name = stmt._variable
+                    var_name = stmt._variable.upper()
                     # Extract base variable name (without array indices)
                     if '(' in var_name:
                         base_var = var_name[:var_name.find('(')].strip()
@@ -334,6 +334,7 @@ class LLVMCodeGenerator:
 
         # Allocate regular variables (numeric) - ALL as global variables (BASIC semantics)
         for var_name in var_names:
+            var_name = var_name.upper()
             global_var = ir.GlobalVariable(self.module, ir.DoubleType(), name=f"global_{var_name}")
             global_var.linkage = 'internal'
             global_var.global_constant = False
@@ -342,6 +343,8 @@ class LLVMCodeGenerator:
 
         # Allocate string variables (pointers to strings) - ALL as global variables (BASIC semantics)
         for var_name in string_var_names:
+            var_name = var_name.upper()
+
             # Initialize with empty string
             empty_str = "\0"
             c_empty = ir.Constant(ir.ArrayType(ir.IntType(8), len(empty_str)),
@@ -416,6 +419,7 @@ class LLVMCodeGenerator:
     def _initialize_string_variables(self):
         """Initialize global string variables with empty strings at runtime"""
         for var_name, var_ptr in self.symbol_table.items():
+            assert var_name[0] in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
             if var_name.endswith('$') and var_name not in self.array_info:
                 # Get the empty string for this variable
                 empty_name = f"empty_{var_name}"
@@ -435,8 +439,8 @@ class LLVMCodeGenerator:
     def _generate_user_function_bodies(self):
         """Generate bodies for user-defined functions after variables are allocated"""
         for stmt in self.user_function_defs:
-            fn_name = stmt._variable
-            arg_name = stmt._function_arg
+            fn_name = stmt._variable.upper()
+            arg_name = stmt._function_arg.upper()
             body_tokens = stmt._tokens
             llvm_fn = self.user_functions[fn_name]
 
@@ -519,7 +523,7 @@ class LLVMCodeGenerator:
     def _codegen_for(self, stmt):
         """Generate LLVM IR for a FOR loop"""
         # Get the loop variable
-        loop_var = stmt._index_clause
+        loop_var = stmt._index_clause.upper()
         var_ptr = self.symbol_table.get(loop_var)
         if not var_ptr:
             # Create global variable for loop variable (BASIC semantics)
@@ -633,6 +637,7 @@ class LLVMCodeGenerator:
             self.builder.call(self.printf, [prompt_fmt_ptr])
 
         for var_name in stmt._input_vars:
+            var_name = var_name.upper()
             if var_name.endswith('$'):
                 # String variable - read string input
                 if var_name not in self.symbol_table:
@@ -722,6 +727,7 @@ class LLVMCodeGenerator:
                 self.builder.store(input_buffer, self.symbol_table[var_name])
             else:
                 # Numeric variable - read entire line then parse number
+                var_name = var_name.upper()
                 if var_name not in self.symbol_table:
                     # Create the variable if it doesn't exist
                     global_var = ir.GlobalVariable(self.module, ir.DoubleType(), name=f"global_{var_name}")
@@ -775,7 +781,7 @@ class LLVMCodeGenerator:
                 double_fmt_ptr = self.builder.bitcast(global_double_fmt, ir.IntType(8).as_pointer())
 
                 # Use sscanf to parse the number from the string
-                var_ptr = self.symbol_table[var_name]
+                var_ptr = self.symbol_table[var_name.upper()]
                 self.builder.call(self.sscanf, [input_buffer, double_fmt_ptr, var_ptr])
 
     def _codegen_on_goto(self, stmt):
@@ -880,7 +886,7 @@ class LLVMCodeGenerator:
         self.builder.ret(ir.Constant(ir.IntType(32), 1))
 
     def _codegen_let(self, stmt):
-        var_name = stmt._variable.strip()
+        var_name = stmt._variable.strip().upper()
 
         # Check if this is an array assignment by parsing the variable name
         if '(' in var_name:
@@ -927,6 +933,7 @@ class LLVMCodeGenerator:
         else:
             # Regular variable assignment
             var_ptr = self.symbol_table.get(var_name)
+            print("Allocating variable ", var_name, var_ptr)
             if not var_ptr:
                 # Variable not pre-allocated, allocate it now as global (BASIC semantics)
                 if var_name.endswith('$'):
@@ -971,6 +978,8 @@ class LLVMCodeGenerator:
     def _do_print(self, stmt, lexer):
         """Helper method to do the actual printing"""
         for output in stmt._outputs:
+            if output in (";", ","):
+                continue  # Skip separators here (BASIC's spacing handled elsewhere)
             if isinstance(output, list):
                 # Handle concatenated parts (list of strings/expressions)
                 for part in output:
@@ -1117,7 +1126,7 @@ class LLVMCodeGenerator:
                 # Check if this is followed by parentheses
                 if i + 1 < len(tokens) and tokens[i + 1].token == '(':
                     # This could be a function call or array access
-                    identifier = token.token
+                    identifier = token.token.upper()
                     known_functions = ["SIN", "COS", "SQR", "EXP", "LOG", "ABS", "ASC", "CHR$", "SPACE$", "STR$", "LEN",
                                        "LEFT$", "RIGHT$", "MID$", "INT", "RND", "TAB", "SGN"]
                     if identifier in known_functions or identifier in self.user_functions:
@@ -1196,12 +1205,13 @@ class LLVMCodeGenerator:
                         data_stack.append(builder.load(element_ptr, name=f"load_{array_name}_element"))
                 else:
                     # Regular variable
-                    if token.token in self.array_info:
+                    token_upper = token.token.upper()
+                    if token_upper in self.array_info:
                         # Array name used as scalar - check for scalar version
-                        scalar_name = f"{token.token}_scalar"
+                        scalar_name = f"{token_upper}_scalar"
                         if scalar_name in self.symbol_table:
                             # Load the scalar version
-                            if token.token.endswith('$'):
+                            if token_upper.endswith('$'):
                                 data_stack.append(
                                     builder.load(self.symbol_table[scalar_name], name=f"load_{scalar_name}"))
                             else:
@@ -1209,7 +1219,7 @@ class LLVMCodeGenerator:
                                     builder.load(self.symbol_table[scalar_name], name=f"load_{scalar_name}"))
                         else:
                             # Initialize scalar version to 0 if not found
-                            if token.token.endswith('$'):
+                            if token_upper.endswith('$'):
                                 # String variable
                                 empty_str = "\0"
                                 c_empty = ir.Constant(ir.ArrayType(ir.IntType(8), len(empty_str)),
@@ -1232,25 +1242,25 @@ class LLVMCodeGenerator:
                                 data_stack.append(builder.load(var_ptr, name=f"load_{scalar_name}"))
                     else:
                         # Regular variable - check local vars first, then global
-                        if token.token in local_vars:
+                        if token_upper in local_vars:
                             # Local variable (function argument)
-                            data_stack.append(builder.load(local_vars[token.token], name=f"load_{token.token}"))
-                        elif token.token in self.symbol_table:
+                            data_stack.append(builder.load(local_vars[token_upper], name=f"load_{token_upper}"))
+                        elif token_upper in self.symbol_table:
                             # Global variable
-                            if token.token.endswith('$'):
+                            if token_upper.endswith('$'):
                                 # String variable - load the string pointer
                                 data_stack.append(
-                                    builder.load(self.symbol_table[token.token], name=f"load_{token.token}"))
+                                    builder.load(self.symbol_table[token_upper], name=f"load_{token_upper}"))
                             else:
                                 # Numeric variable
                                 data_stack.append(
-                                    builder.load(self.symbol_table[token.token], name=f"load_{token.token}"))
+                                    builder.load(self.symbol_table[token_upper], name=f"load_{token_upper}"))
                         else:
                             # Undefined variable - initialize to 0
-                            var_ptr = builder.alloca(ir.DoubleType(), name=token.token)
+                            var_ptr = builder.alloca(ir.DoubleType(), name=token_upper)
                             builder.store(ir.Constant(ir.DoubleType(), 0.0), var_ptr)
-                            self.symbol_table[token.token] = var_ptr
-                            data_stack.append(builder.load(var_ptr, name=f"load_{token.token}"))
+                            self.symbol_table[token_upper] = var_ptr
+                            data_stack.append(builder.load(var_ptr, name=f"load_{token_upper}"))
                 is_unary_context = False
             elif token.type == 'op':
                 current_op_token = token
@@ -2202,6 +2212,7 @@ class LLVMCodeGenerator:
     def _is_string_variable(self, var_name):
         """Check if a variable name refers to a string variable."""
         var_clean = var_name.replace(" ", "")
+        var_name = var_name.upper()
         i = var_clean.find("(")
         if i != -1:
             # Array element - check base variable name
@@ -2213,6 +2224,7 @@ class LLVMCodeGenerator:
 
     def _assign_string_variable(self, var_name, str_ptr):
         """Assign a string value to a string variable."""
+        var_name = var_name.upper()
         if self._is_array_element(var_name):
             # Array element assignment
             self._assign_array_element(var_name, str_ptr)
@@ -2230,6 +2242,8 @@ class LLVMCodeGenerator:
             self.builder.store(str_ptr, var_ptr)
 
     def _assign_numeric_variable(self, var_name, str_ptr):
+        var_name = var_name.upper()
+
         """Convert string to number and assign to numeric variable."""
         # Use sscanf to parse the number from the string
         double_fmt = "%lf\0"
@@ -2276,10 +2290,10 @@ class LLVMCodeGenerator:
     def _assign_array_element(self, var_name, value):
         """Assign a value to an array element."""
         # Parse array name and indices
+        var_name = var_name.upper()
         var_clean = var_name.replace(" ", "")
         i = var_clean.find("(")
         j = var_clean.rfind(")")
-
         array_name = var_clean[:i]
         indices_str = var_clean[i + 1:j]
 
