@@ -72,7 +72,7 @@ class Test(TestCase):
         with self.assertRaises(BasicSyntaxError):
             p = ParsedStatementNoArgs("END", "SHOULD NOT BE HERE")
 
-    def test_parsing_end(self):
+    def test_parsing_end2(self):
         p = ParsedStatementDef("DEF", "FNA(X)=X*X")
         self.assertEqual("DEF", p.keyword)
         self.assertEqual("", p.args)
