@@ -37,4 +37,4 @@ jobs:
 #        run: safety check || true  # Reports vulnerabilities but doesn't fail build
 #
       - name: Run Tests with Coverage
-        run: pytest --cov=trekbasic tests
+        run: pytest --cov=trekbasic test
