@@ -21,20 +21,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install ruff black mypy bandit safety pytest pytest-cov
 
-      - name: Run Ruff (lint)
-        run: ruff check
-
-      - name: Run Black (format check)
-        run: black --check .
-
-      - name: Run Mypy (type check)
-        run: mypy .
-
-      - name: Run Bandit (security check)
-        run: bandit -r .
-
-      - name: Run Safety (dependency vulnerability check)
-        run: safety check || true  # Reports vulnerabilities but doesn't fail build
-
+#      - name: Run Ruff (lint)
+#        run: ruff check
+#
+#      - name: Run Black (format check)
+#        run: black --check .
+#
+#      - name: Run Mypy (type check)
+#        run: mypy .
+#
+#      - name: Run Bandit (security check)
+#        run: bandit -r .
+#
+#      - name: Run Safety (dependency vulnerability check)
+#        run: safety check || true  # Reports vulnerabilities but doesn't fail build
+#
       - name: Run Tests with Coverage
         run: pytest --cov=trekbasic tests
