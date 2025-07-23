@@ -13,10 +13,8 @@ from test_runner_common import run_test_suite
 
 def llvm_command_generator(program_path):
     """Generate command to compile and run a BASIC program with LLVM using tbc.py."""
-    # Use tbc.py to compile and run the program
-    # tbc.py handles the full pipeline: BASIC -> LLVM IR -> executable -> run
-    # Since run_llvm_tests.py is run from the project directory, tbc.py is in the current directory
-    return [sys.executable, "tbc.py", program_path]
+    # Use tbc.py as a module to compile and run the program
+    return [sys.executable, "-m", "trekbasicpy.tbc", program_path]
 
 def main():
     parser = argparse.ArgumentParser(description='Run LLVM compiler tests.')
@@ -54,7 +52,7 @@ def main():
     else:
         # Run the main test suite
         if not os.path.exists(test_suite_dir):
-            print(f"Error: Test suite directory '{test_suite_dir}' does not exist")
+            print(f"Error: Test suite directory '{test_suite_dir}' does not exist. Use --test-suite-dir to specify a different directory.")
             sys.exit(1)
         success = run_test_suite(test_suite_dir, f"LLVM Compiler ({os.path.basename(test_suite_dir)})", llvm_command_generator)
         overall_success = success

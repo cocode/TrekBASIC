@@ -1,7 +1,7 @@
 from unittest import TestCase
-from basic_lexer import get_lexer
-from basic_operators import get_op, MinusMonoOp, BinOpComma
-from basic_types import lexer_token
+from trekbasicpy.basic_lexer import get_lexer
+from trekbasicpy.basic_operators import get_op, MinusMonoOp, BinOpComma
+from trekbasicpy.basic_types import lexer_token
 
 
 class Test(TestCase):

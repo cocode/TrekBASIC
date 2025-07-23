@@ -1,14 +1,14 @@
 from llvmlite import ir, binding
-from basic_parsing import (
+from trekbasicpy.basic_parsing import (
     ParsedStatementLet, ParsedStatementPrint, ParsedStatementIf,
     ParsedStatementFor, ParsedStatementNext, ParsedStatementGo,
     ParsedStatementOnGoto, ParsedStatementInput, ParsedStatementDim,
     ParsedStatementThen, ParsedStatementElse, ParsedStatementData,
     ParsedStatementRead, ParsedStatementRestore
 )
-from basic_lexer import get_lexer
-from basic_operators import get_precedence
-from basic_dialect import DIALECT
+from trekbasicpy.basic_lexer import get_lexer
+from trekbasicpy.basic_operators import get_precedence
+from trekbasicpy.basic_dialect import DIALECT
 
 
 class LLVMCodeGenerator:

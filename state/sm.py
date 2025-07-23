@@ -3,7 +3,7 @@ Experiments with state machines. Not doing anything meaningful yet.
 """
 from itertools import count
 
-from basic_utils import smart_split
+from trekbasicpy.basic_utils import smart_split
 
 grammar = ["abc", "abd", "def"]
 #

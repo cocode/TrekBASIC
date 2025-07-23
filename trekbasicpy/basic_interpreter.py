@@ -1,16 +1,15 @@
 """
 This module contains the class, Executor, that runs BASIC programs
 """
-from collections import namedtuple, defaultdict
+from collections import defaultdict, namedtuple
 import random
-from typing import Optional, TextIO, List, Tuple, Dict, Set, Any, Union
+from typing import Any, Dict, List, Optional, Set, TextIO, Tuple, Union
 
-import basic_functions
-from basic_parsing import ParsedStatementElse
-from basic_types import ProgramLine, Program, BasicInternalError, assert_syntax, BasicSyntaxError, UndefinedSymbol
-from basic_types import SymbolType, RunStatus, BasicRuntimeError, ControlLocation
-from basic_symbols import SymbolTable
-from basic_utils import TRACE_FILE_NAME
+from trekbasicpy.basic_parsing import ParsedStatementElse
+from trekbasicpy.basic_symbols import SymbolTable
+from trekbasicpy.basic_types import (BasicInternalError, BasicRuntimeError, BasicSyntaxError, ControlLocation, Program, ProgramLine, RunStatus, SymbolType, UndefinedSymbol, assert_syntax)
+from trekbasicpy.basic_utils import TRACE_FILE_NAME
+import trekbasicpy.basic_functions
 
 
 # Target of a control transfer. Used by GOTO, GOSUB, NEXT, etc.
@@ -89,7 +88,7 @@ class Executor:
                 print(F"Failed to close trace file.")
 
     def setup_program(self) -> None:
-        functions = basic_functions.PredefinedFunctions()
+        functions = trekbasicpy.basic_functions.PredefinedFunctions()
         for f in functions.functions:
             self._internal_symbols.put_symbol(f, "⌊", SymbolType.FUNCTION, arg=None)
 

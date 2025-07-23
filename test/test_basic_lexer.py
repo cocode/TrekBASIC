@@ -1,6 +1,6 @@
 from unittest import TestCase
-from basic_types import BasicSyntaxError, lexer_token
-from basic_lexer import get_lexer
+from trekbasicpy.basic_types import BasicSyntaxError, lexer_token
+from trekbasicpy.basic_lexer import get_lexer
 
 
 class TestLexer(TestCase):

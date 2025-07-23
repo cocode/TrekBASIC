@@ -8,31 +8,28 @@ n - next
 s - step
 
 """
-import os
-import sys
-import pprint
 import argparse
-import time
+import os
+import pprint
 import re
+import sys
+import time
 from typing import Optional
 
-from basic_reports import generate_html_coverage_report, print_coverage_report
-from basic_symbols import SymbolTable
-from basic_dialect import DIALECT
+from trekbasicpy.basic_dialect import DIALECT
+from trekbasicpy.basic_interpreter import Executor
+from trekbasicpy.basic_loading import load_program, tokenize, tokenize_line
+from trekbasicpy.basic_parsing import ParsedStatement, ParsedStatementIf, ParsedStatementThen
+from trekbasicpy.basic_reports import generate_html_coverage_report, print_coverage_report
+from trekbasicpy.basic_statements import eval_expression
+from trekbasicpy.basic_symbols import SymbolTable
+from trekbasicpy.basic_types import (BasicRuntimeError, BasicSyntaxError, Program, ProgramLine, RunStatus, SymbolType, UndefinedSymbol)
 
 # Add readline for command history and line editing
 try:
     import readline
 except ImportError:
     readline = None  # Windows doesn't have readline by default
-
-from basic_parsing import ParsedStatement, ParsedStatementIf, ParsedStatementThen
-from basic_types import UndefinedSymbol, BasicSyntaxError, SymbolType, ProgramLine, Program, BasicRuntimeError
-
-from basic_interpreter import Executor
-from basic_loading import load_program, tokenize, tokenize_line
-from basic_statements import eval_expression
-from basic_types import RunStatus
 
 
 class BasicShell:

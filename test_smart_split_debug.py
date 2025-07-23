@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from basic_utils import smart_split
+from trekbasicpy.basic_utils import smart_split
 
 def test_smart_split_cases():
     """Test various smart_split cases for IF THEN ELSE"""

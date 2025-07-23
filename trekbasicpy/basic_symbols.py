@@ -3,7 +3,7 @@ This handles the symbol table for the executor
 """
 import pprint
 
-from basic_types import ste, assert_syntax, SymbolType, UndefinedSymbol
+from trekbasicpy.basic_types import BasicRuntimeError, BasicSyntaxError, SymbolType, UndefinedSymbol, assert_syntax, ste
 
 
 class SymbolTable:

@@ -1,7 +1,7 @@
 import unittest
 from unittest import TestCase
-from basic_shell import BasicShell
-from basic_loading import tokenize
+from trekbasicpy.basic_shell import BasicShell
+
 
 # test renumbering empty program.
 

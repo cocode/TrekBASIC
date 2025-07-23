@@ -3,11 +3,11 @@ This module contains the code the load and parse BASIC programs
 """
 from typing import Optional
 
-from basic_dialect import DIALECT
-from basic_find_str_quotes import find_next_str_not_quoted
-from basic_types import ProgramLine, Program, BasicSyntaxError, assert_syntax
-from basic_utils import smart_split
-from basic_statements import Keywords
+from trekbasicpy.basic_dialect import DIALECT
+from trekbasicpy.basic_find_str_quotes import find_next_str_not_quoted
+from trekbasicpy.basic_statements import Keywords
+from trekbasicpy.basic_types import BasicSyntaxError, Program, ProgramLine, assert_syntax
+from trekbasicpy.basic_utils import smart_split
 
 
 def tokenize_statements(commands_text: list[str]):

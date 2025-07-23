@@ -19,7 +19,7 @@ exe="${base}"
 
 echo "Generating LLVM IR from $basfile → $llfile"
 # If basic.py writes to stdout LLVM IR, redirect; otherwise adapt as needed
-python basic.py "$basfile" > "$llfile"
+python -m trekbasic.basic "$basfile" > "$llfile"
 
 echo "Compiling $llfile → $exe"
 clang "$llfile" -o "$exe"

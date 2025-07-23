@@ -4,7 +4,7 @@ Definitions for built-in functions.
 import random
 from math import sin, cos, sqrt, log, exp
 
-import basic_operators as bo
+import trekbasicpy.basic_operators as bo
 
 
 class PredefinedFunctions:

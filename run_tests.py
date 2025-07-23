@@ -12,7 +12,7 @@ from test_runner_common import run_test_suite
 
 def python_command_generator(program_path):
     """Generate command to run a BASIC program with the Python interpreter."""
-    return [sys.executable, "basic.py", program_path]
+    return [sys.executable, "-m", "trekbasicpy.basic", program_path]
 
 def main():
     parser = argparse.ArgumentParser(description='Run BASIC interpreter tests.')
@@ -43,7 +43,7 @@ def main():
     else:
         # Run the main test suite
         if not os.path.exists(test_suite_dir):
-            print(f"Error: Test suite directory '{test_suite_dir}' does not exist")
+            print(f"Error: Test suite directory '{test_suite_dir}' does not exist. Use --test-suite-dir to specify a different directory.")
             sys.exit(1)
         success = run_test_suite(test_suite_dir, f"Python Interpreter ({os.path.basename(test_suite_dir)})", python_command_generator)
         overall_success = success

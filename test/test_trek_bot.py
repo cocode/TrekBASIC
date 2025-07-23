@@ -1,12 +1,10 @@
-from math import pi, atan2
 from unittest import TestCase
 import types
-import unittest
 
-import trek_bot
-from basic_interpreter import Executor
-from basic_loading import load_program, tokenize
-from trek_bot import CheatStrategy, Player, compute_course
+import trekbasicpy.trek_bot as trek_bot
+from trekbasicpy.basic_interpreter import Executor
+from trekbasicpy.basic_loading import tokenize
+from trekbasicpy.trek_bot import CheatStrategy, Player, compute_course
 
 
 class TestCheatStrategy(TestCase):
@@ -142,7 +140,7 @@ class TestCheatStrategy(TestCase):
         course_str = strat._cmd_torpedos(player=None)
         course = float(course_str)
         # Expected course should be about 6.4 (dy=-3,dx=6)
-        from trek_bot import compute_course
+        from trekbasicpy.trek_bot import compute_course
         expected = compute_course(-3,6)
         self.assertAlmostEqual(expected, course, places=4)
 

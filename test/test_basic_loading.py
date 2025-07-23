@@ -1,10 +1,10 @@
 from unittest import TestCase
 
-from basic_statements import Keywords
-from basic_types import ProgramLine, lexer_token
-from basic_loading import tokenize_line, load_program, tokenize, preprocess_then_else
-from basic_parsing import ParsedStatementIf
-from basic_interpreter import Executor
+from trekbasicpy.basic_statements import Keywords
+from trekbasicpy.basic_types import ProgramLine, lexer_token
+from trekbasicpy.basic_loading import tokenize_line, load_program, preprocess_then_else
+from trekbasicpy.basic_parsing import ParsedStatementIf
+from trekbasicpy.basic_interpreter import Executor
 
 
 class Test(TestCase):

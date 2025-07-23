@@ -1,5 +1,5 @@
 from unittest import TestCase
-import basic_statements
+
 
 class Test(TestCase):
     def test_statements(self):

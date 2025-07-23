@@ -8,14 +8,14 @@ IF X>YANDX<ZTHEN100
 I think you have to know that Y is a variable, and can't be longer than one letter, you can't
 just grab sequences of letters.
 """
-from basic_types import lexer_token, BasicSyntaxError, NUMBERS, LETTERS
-import basic_functions
+from trekbasicpy.basic_types import BasicSyntaxError, LETTERS, NUMBERS, lexer_token
+import trekbasicpy.basic_functions
 
 OPERATORS = "()^*/+-=><,#"
 BOOLEAN_OPERATORS=["AND", "OR"]
 
 
-functions = basic_functions.PredefinedFunctions()
+functions = trekbasicpy.basic_functions.PredefinedFunctions()
 BUILT_IN_FUNCTIONS=sorted([ key for key in functions.functions])
 FN_OPERATORS=["FN"+chr(c) for c in range(ord("A"), ord("Z"))]
 # Operators made from letters, not symbols.

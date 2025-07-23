@@ -1,8 +1,8 @@
 from unittest import TestCase
-from basic_expressions import Expression
-from basic_lexer import get_lexer
-from basic_types import ste, BasicSyntaxError, SymbolType
-from basic_symbols import SymbolTable
+from trekbasicpy.basic_expressions import Expression
+from trekbasicpy.basic_lexer import get_lexer
+from trekbasicpy.basic_types import BasicSyntaxError, SymbolType
+from trekbasicpy.basic_symbols import SymbolTable
 
 
 class Test(TestCase):

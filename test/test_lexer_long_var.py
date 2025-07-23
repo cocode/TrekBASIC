@@ -1,6 +1,6 @@
 from unittest import TestCase
-from basic_types import BasicSyntaxError, lexer_token
-from basic_lexer_long_var import LexerModernLongVar  # Direct import of the modern lexer
+from trekbasicpy.basic_types import BasicSyntaxError, lexer_token
+from trekbasicpy.basic_lexer_long_var import LexerModernLongVar  # Direct import of the modern lexer
 
 class TestLongVarLexer(TestCase):
     def setUp(self):

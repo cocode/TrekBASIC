@@ -1,11 +1,9 @@
 from io import StringIO
-from unittest import TestCase, mock
-import sys
+from unittest import mock
 
-from basic_interpreter import Executor
-from basic_types import BasicSyntaxError
-from basic_loading import tokenize
-from basic_utils import TRACE_FILE_NAME
+from trekbasicpy.basic_interpreter import Executor
+from trekbasicpy.basic_loading import tokenize
+from trekbasicpy.basic_utils import TRACE_FILE_NAME
 from test.test_case_base import TestCaseBase
 
 

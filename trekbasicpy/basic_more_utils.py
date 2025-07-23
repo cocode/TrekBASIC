@@ -1,5 +1,5 @@
-from basic_statements import Keywords
-from basic_types import assert_syntax, LETTERS, BasicSyntaxError, NUMBERS
+from trekbasicpy.basic_statements import Keywords
+from trekbasicpy.basic_types import BasicSyntaxError, LETTERS, NUMBERS, assert_syntax
 
 
 def _find_next_command(statement: str) -> tuple[str, bool]:

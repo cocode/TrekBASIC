@@ -1,14 +1,15 @@
 """
 This file contains the classes used to represent parsed statements.
 """
-from typing import List, Tuple, Optional, Union, Any, Dict
-from basic_lexer import get_lexer
-from basic_types import tokens_to_str, NUMBERS
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-from basic_types import is_valid_identifier
-from basic_types import assert_syntax, BasicSyntaxError
-from basic_expressions import Expression
-from basic_utils import smart_split
+from trekbasicpy.basic_expressions import Expression
+from trekbasicpy.basic_types import NUMBERS, BasicSyntaxError, assert_syntax, is_valid_identifier, tokens_to_str
+from trekbasicpy.basic_utils import smart_split
+from trekbasicpy.basic_types import lexer_token
+from trekbasicpy.basic_lexer import get_lexer
+
+from trekbasicpy.basic_types import ProgramLine
 import copy
 
 

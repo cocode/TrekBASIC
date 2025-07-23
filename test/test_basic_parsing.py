@@ -1,8 +1,8 @@
 from unittest import TestCase
 
-from basic_statements import Keywords
-from basic_types import BasicSyntaxError
-from basic_parsing import ParsedStatementFor, ParsedStatementOnGoto, ParsedStatementInput, ParsedStatementNext, \
+from trekbasicpy.basic_statements import Keywords
+from trekbasicpy.basic_types import BasicSyntaxError
+from trekbasicpy.basic_parsing import ParsedStatementFor, ParsedStatementOnGoto, ParsedStatementInput, ParsedStatementNext, \
     ParsedStatementGo, ParsedStatementNoArgs, ParsedStatementDef, ParsedStatementDim
 
 

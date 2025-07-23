@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from basic_shell import BasicShell
+from trekbasicpy.basic_shell import BasicShell
 
 
 class TestBasicShell(TestCase):

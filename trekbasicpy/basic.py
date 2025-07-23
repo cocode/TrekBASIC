@@ -9,10 +9,10 @@ import time
 
 from typing import Optional, TextIO
 
-from basic_types import BasicSyntaxError, RunStatus, Program
-from basic_interpreter import Executor
-from basic_loading import load_program
-from basic_utils import TRACE_FILE_NAME
+from trekbasicpy.basic_interpreter import Executor
+from trekbasicpy.basic_loading import load_program
+from trekbasicpy.basic_types import BasicSyntaxError, RunStatus, Program
+from trekbasicpy.basic_utils import TRACE_FILE_NAME
 
 # Constants
 BASIC_FILE_EXTENSION = ".bas"

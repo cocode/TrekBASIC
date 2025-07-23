@@ -4,20 +4,16 @@ that runs the program (Executor)
 """
 from enum import Enum
 
-from basic_dialect import DIALECT
-from basic_types import BasicSyntaxError, assert_syntax, is_valid_identifier
-from basic_types import SymbolType, RunStatus, BasicRuntimeError
+from trekbasicpy.basic_dialect import DIALECT
+from trekbasicpy.basic_interpreter import Executor
+from trekbasicpy.basic_parsing import (
+    ParsedStatement, ParsedStatementData, ParsedStatementDef, ParsedStatementDim, ParsedStatementElse, ParsedStatementFor, ParsedStatementGo, ParsedStatementIf, ParsedStatementInput, ParsedStatementLet, ParsedStatementNext, ParsedStatementNoArgs, ParsedStatementOnGoto, ParsedStatementPrint, ParsedStatementRead, ParsedStatementRem, ParsedStatementRestore, ParsedStatementThen, ParsedStatementTrace
+)
+from trekbasicpy.basic_types import BasicRuntimeError, BasicSyntaxError, RunStatus, SymbolType, assert_syntax, is_valid_identifier
+from trekbasicpy.basic_utils import TRACE_FILE_NAME
+from trekbasicpy.basic_lexer import get_lexer
+from trekbasicpy.basic_expressions import Expression
 
-from basic_parsing import ParsedStatement, ParsedStatementIf, ParsedStatementFor, ParsedStatementOnGoto, \
-    ParsedStatementTrace, ParsedStatementElse, ParsedStatementThen, ParsedStatementRem
-from basic_parsing import ParsedStatementLet, ParsedStatementNoArgs, ParsedStatementDef, ParsedStatementPrint
-from basic_parsing import ParsedStatementGo, ParsedStatementDim
-from basic_parsing import ParsedStatementInput, ParsedStatementNext
-from basic_parsing import ParsedStatementData, ParsedStatementRead, ParsedStatementRestore
-from basic_lexer import get_lexer
-from basic_expressions import Expression
-from basic_utils import TRACE_FILE_NAME
-from basic_interpreter import Executor
 
 def stmt_rem(executor: Executor, stmt):
     """
@@ -343,7 +339,7 @@ def stmt_read(executor, stmt):
     """
     Read data values from DATA statements and assign to variables.
     """
-    from basic_parsing import ParsedStatementRead
+    from trekbasicpy.basic_parsing import ParsedStatementRead
     
     for var_name in stmt._variables:
         # Get the next data value
@@ -389,7 +385,7 @@ def stmt_restore(executor, stmt):
     """
     Reset the data pointer to beginning or to a specific line.
     """
-    from basic_parsing import ParsedStatementRestore
+    from trekbasicpy.basic_parsing import ParsedStatementRestore
     executor.restore_data(stmt._line_number)
 
 

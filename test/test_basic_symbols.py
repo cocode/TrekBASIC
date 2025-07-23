@@ -1,6 +1,6 @@
 from unittest import TestCase
-from basic_types import SymbolType
-from basic_symbols import SymbolTable
+from trekbasicpy.basic_types import SymbolType
+from trekbasicpy.basic_symbols import SymbolTable
 
 
 class TestSymbolTable(TestCase):

@@ -30,11 +30,11 @@ plan to ensure full compatibility.
 
 ### Interpreted
 
-python basic.py programs/superstartrek.bas
+ python -m trekbasicpy.basic programs/superstartrek.bas
 
 ### Compiled 
 
-python tbc.py programs/superstartrek.bas
+python -m trekbasicpy.tbc programs/superstartrek.bas
 
 Note that tbc.py just generates LLVM IR code, and uses clang to compile it. You'll need to have clang installed.
 

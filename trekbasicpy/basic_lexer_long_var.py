@@ -1,5 +1,5 @@
-from basic_types import lexer_token, BasicSyntaxError, NUMBERS, LETTERS
-import basic_functions
+from trekbasicpy.basic_types import BasicSyntaxError, LETTERS, NUMBERS, lexer_token
+import trekbasicpy.basic_functions
 
 # Symbolic operators
 OPERATORS = {"(", ")", "^", "*", "/", "+", "-", "=", ">", "<", ",", "#"}
@@ -7,7 +7,7 @@ OPERATORS = {"(", ")", "^", "*", "/", "+", "-", "=", ">", "<", ",", "#"}
 # Text operators (must be surrounded by whitespace or token boundaries)
 BOOLEAN_OPERATORS = ["AND", "OR", "MOD"]
 
-functions = basic_functions.PredefinedFunctions()
+functions = trekbasicpy.basic_functions.PredefinedFunctions()
 BUILT_IN_FUNCTIONS = sorted([key.upper() for key in functions.functions])
 
 RESERVED_WORDS = set(BOOLEAN_OPERATORS + BUILT_IN_FUNCTIONS)

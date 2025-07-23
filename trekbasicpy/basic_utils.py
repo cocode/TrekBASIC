@@ -81,4 +81,4 @@ def print_formatted(program, f = sys.stdout):
     for line in lines:
         print(line)
 
-TRACE_FILE_NAME="tracefile.txt"
+TRACE_FILE_NAME= "../tracefile.txt"

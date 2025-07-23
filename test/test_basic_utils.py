@@ -1,6 +1,7 @@
 from unittest import TestCase
 
-from basic_utils import smart_split, format_program
+from trekbasicpy.basic_utils import smart_split
+
 
 class Test(TestCase):
 

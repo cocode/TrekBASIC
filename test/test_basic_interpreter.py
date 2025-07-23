@@ -3,15 +3,13 @@ Some basic tests. It's not ideal, we have some test of loading, and some tests o
 """
 
 from io import StringIO
-from unittest import TestCase
-import sys
 from math import e
 
-from basic_dialect import DIALECT
-from basic_interpreter import Executor
-from basic_statements import is_valid_identifier
-from basic_types import SymbolType, RunStatus, lexer_token, BasicSyntaxError, BasicRuntimeError
-from basic_loading import tokenize
+from trekbasicpy.basic_dialect import DIALECT
+from trekbasicpy.basic_interpreter import Executor
+from trekbasicpy.basic_statements import is_valid_identifier
+from trekbasicpy.basic_types import SymbolType, RunStatus, lexer_token, BasicSyntaxError, BasicRuntimeError
+from trekbasicpy.basic_loading import tokenize
 from test.test_case_base import TestCaseBase
 
 

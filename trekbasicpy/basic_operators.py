@@ -8,11 +8,10 @@ Implementation for basic operators, such as add, subtract, etc.
 from collections import namedtuple
 from enum import Enum
 
-from basic_dialect import DIALECT
-from basic_types import lexer_token, assert_syntax, SymbolType, BasicSyntaxError, BasicRuntimeError
-
-import basic_expressions
-import basic_functions
+from trekbasicpy.basic_dialect import DIALECT
+from trekbasicpy.basic_types import BasicRuntimeError, BasicSyntaxError, SymbolType, assert_syntax, lexer_token
+import trekbasicpy.basic_expressions
+import trekbasicpy.basic_functions
 
 
 
@@ -108,7 +107,7 @@ class FuncMonoOp(MonoOp):
     handles user defined functions.
     """
     def eval1(self, first, *, op):
-        e = basic_expressions.Expression()
+        e = trekbasicpy.basic_expressions.Expression()
         symbols = op.symbols.get_nested_scope()
         symbols.put_symbol(op.arg, first, SymbolType.VARIABLE, arg=None)
         tokens = op.value
@@ -269,7 +268,7 @@ def get_op(token):
     :param token: May be an OP_TOKEN, or a lexer_token # TODO Should subclass, maybe.
     :return: An instance of a class that handles that operation.
     """
-    functions = basic_functions.PredefinedFunctions()
+    functions = trekbasicpy.basic_functions.PredefinedFunctions()
 
     if token.type == SymbolType.FUNCTION:# and token.token.startswith("FN"):
         if token.token in functions.functions:

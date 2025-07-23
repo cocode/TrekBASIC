@@ -1,6 +1,6 @@
 import unittest
 
-from basic_find_str_quotes import find_next_str_not_quoted
+from trekbasicpy.basic_find_str_quotes import find_next_str_not_quoted
 
 
 class TestFindNextStrNotQuoted(unittest.TestCase):

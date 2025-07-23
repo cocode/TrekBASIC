@@ -2,15 +2,14 @@
 This selects between lexer implementations.
 """
 
-# basic_lexer.py
-import basic_lexer_old_style
-import basic_lexer_long_var
-from basic_dialect import DIALECT
+from trekbasicpy.basic_dialect import DIALECT
+import trekbasicpy.basic_lexer_long_var
+import trekbasicpy.basic_lexer_old_style
 
 # Available lexers mapped by name (uppercase)
 _LEXER_MAP = {
-    "OLD": basic_lexer_old_style.LexerOldStyle,
-    "NEW": basic_lexer_long_var.LexerModernLongVar,
+    "OLD": trekbasicpy.basic_lexer_old_style.LexerOldStyle,
+    "NEW": trekbasicpy.basic_lexer_long_var.LexerModernLongVar,
 }
 
 def set_lexer(option: str):

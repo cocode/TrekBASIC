@@ -1,11 +1,10 @@
 """
 This module parses expressions
 """
-
 from typing import List, Optional
-from basic_types import lexer_token, BasicSyntaxError, assert_syntax
-from basic_types import OP_TOKEN, UNARY_MINUS, ARRAY_ACCESS, SymbolType, UndefinedSymbol
-from basic_symbols import SymbolTable
+
+from trekbasicpy.basic_symbols import SymbolTable
+from trekbasicpy.basic_types import (ARRAY_ACCESS, OP_TOKEN, UNARY_MINUS, BasicSyntaxError, SymbolType, UndefinedSymbol, assert_syntax, lexer_token)
 
 # =============================================================================
 # CONSTANTS
@@ -50,7 +49,7 @@ class Expression:
         Raises:
             BasicSyntaxError: If operator evaluation fails
         """
-        from basic_operators import get_op
+        from trekbasicpy.basic_operators import get_op
 
         assert_syntax(len(op_stack) > 0, "No operator to execute")
         
@@ -118,7 +117,7 @@ class Expression:
         Raises:
             BasicSyntaxError: On unbalanced parentheses or operator errors
         """
-        from basic_operators import get_precedence
+        from trekbasicpy.basic_operators import get_precedence
         
         # Handle unary minus: convert '-' to unary minus in unary context
         operator_token = current_token.token
