@@ -7,6 +7,11 @@ import argparse
 import subprocess
 import sys
 import re
+import os
+env = dict(os.environ)
+env["COVERAGE_PROCESS_START"] = ".coveragerc"
+
+
 
 def run_command(cmd, description):
     """Run a command and return (success, output, test_count)"""
@@ -14,7 +19,7 @@ def run_command(cmd, description):
     print("=" * len(description))
     
     try:
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=60)
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=60, env=env)
         output = result.stdout + result.stderr
         print(output)
         
@@ -75,8 +80,8 @@ def main():
                        help='Run only BASIC interpreter test suite')
     parser.add_argument('--llvm-tests', '-l', action='store_true',
                        help='Run only LLVM compiler test suite')
-    parser.add_argument('--test-suite-dir', "-t", type=str, default='test_suite',
-                       help='Path to the BASIC test suite directory (default: test_suite)')
+    parser.add_argument('--test-suite-dir', "-t", type=str, default='~/source/basic_test_suite',
+                       help='Path to the BASIC test suite directory (default: ~/source/basic_test_suite)')
     
     args = parser.parse_args()
     
@@ -118,7 +123,7 @@ def main():
     # 1. Run unit tests
     if run_unit:
         success, output = run_command(
-            "python -m unittest discover -s . -p 'test_*.py' -v",
+            F"{sys.executable} -m unittest discover -s . -p 'test_*.py' -v",
             "1. Running unit tests..."
         )
         
@@ -143,7 +148,7 @@ def main():
             print(f"❌ Interpreter test runner not found: {run_tests_path}")
             sys.exit(1)
         success, output = run_command(
-            f"python {run_tests_path} --test-suite-dir {test_suite_dir}",
+            f"{sys.executable} {run_tests_path} --test-suite-dir {test_suite_dir}",
             "2. Running BASIC interpreter test suite..."
         )
         interpreter_tests = extract_suite_test_count(output)
@@ -172,10 +177,9 @@ def main():
             print(f"❌ LLVM test runner not found: {run_llvm_tests_path}")
             sys.exit(1)
         success, output = run_command(
-            f"python {run_llvm_tests_path} --test-suite-dir {test_suite_dir}",
+            f"{sys.executable} {run_llvm_tests_path} --test-suite-dir {test_suite_dir}",
             "3. Running LLVM compiler test suite..."
         )
-        
         llvm_tests = extract_suite_test_count(output)
         llvm_failures = extract_suite_test_failures(output)
         total_tests += llvm_tests
