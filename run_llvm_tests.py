@@ -14,6 +14,7 @@ from test_runner_common import run_test_suite
 def llvm_command_generator(program_path):
     """Generate command to compile and run a BASIC program with LLVM using tbc.py."""
     # Use tbc.py as a module to compile and run the program
+    # Note: Coverage only applies to the compilation process, not the compiled executable
     return [sys.executable, "-m", "trekbasicpy.tbc", program_path]
 
 def main():
