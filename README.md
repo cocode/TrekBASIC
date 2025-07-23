@@ -12,11 +12,15 @@ I have achieved that goal.
 
 ## TrekBasic Family
 TrekBasic is part of the TrekBasic family of BASIC programming tools.
-* [TrekBasic](https://github.com/cocode/TrekBASIC) - Basic compiler and interpreter in Python
-* [TrekBasicJ](https://github.com/cocode/TrekBasicJ) - Basic compiler and interpreter in Java
-* [BasicRS](https://github.com/cocode/BasicRS) - Basic compiler written in Rust
-* [BasicTestSuite](https://github.com/cocode/BasicTestSuite) - A test suite of BASIC Programs
-* [TrekBot](https://github.com/cocode/TrekBot) - A tool to exercise the superstartrek program
+TrekBasic is part of the TrekBasic family of BASIC programming tools.
+
+| LOGO                                                                                                                                           | Tool | Description | Language | Interpreter | Compiler |
+|------------------------------------------------------------------------------------------------------------------------------------------------|------|-------------|----------|-------------|-------------|
+| <img src="https://raw.githubusercontent.com/cocode/TrekBASIC/refs/heads/master/images/TrekBasicLogo.png" alt="Logo" width="50" height="25">    |[TrekBasic](https://github.com/cocode/TrekBASIC) | Basic compiler and interpreter | Python | Yes | Yes |
+| <img src="https://raw.githubusercontent.com/cocode/TrekBasicJ/main/images/logo7.png" alt="Logo" width="50" height="25">                        |[TrekBasicJ](https://github.com/cocode/TrekBasicJ)|Basic compiler and interpreter|Java|Yes|Yes|
+| <img src="https://raw.githubusercontent.com/cocode/BasicRS/master/images/logo2.png" alt="Logo" width="50" height="25">                         |[BasicRS](https://github.com/cocode/BasicRS)|Basic interpreter|Rust|Yes|pending|
+| <img src="https://raw.githubusercontent.com/cocode/BasicTestSuite/main/images/BasicTestSuiteLogo3.png" alt="Logo" width="50" height="25"> |[BasicTestSuite](https://github.com/cocode/BasicTestSuite)|A test suite for Basic|BASIC|-|-|
+| <img src="https://raw.githubusercontent.com/cocode/TrekBot/master/images/LogoTrans.png" alt="Logo" width="50" height="25">                     |[TrekBot](https://github.com/cocode/TrekBot)|A tool to exercise the superstartrek program|Rust|-|-|
 
 All versions, interpreted and compiled, are intended to by byte-by-byte compatible, but are not
 there yet - but they are close. TrekBot and BasicTestSuite are part of the
