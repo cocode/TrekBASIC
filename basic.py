@@ -1,16 +1,17 @@
 """
 Main program for running a basic program from the command line.
 """
-import os
-import sys
 import argparse
+import os
 import pprint
+import sys
 import time
+
 from typing import Optional, TextIO
 
+from basic_types import BasicSyntaxError, RunStatus, Program
 from basic_interpreter import Executor
 from basic_loading import load_program
-from basic_types import BasicSyntaxError, RunStatus, Program
 from basic_utils import TRACE_FILE_NAME
 
 # Constants
