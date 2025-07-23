@@ -1,7 +1,13 @@
 [run]
 branch = True
-source = trekbasic
+source = trekbasicpy
+parallel = True
 
 [report]
 show_missing = True
 skip_covered = True
+
+[paths]
+source =
+    trekbasicpy
+    */site-packages/trekbasicpy
