@@ -74,10 +74,7 @@ def tokenize_line(program_line: str) -> Optional[ProgramLine]:
         return None
 
     # Get the line number
-    try:
-        number, partial = program_line.split(" ", 1)
-    except ValueError as v:
-        raise BasicSyntaxError("Syntax Error in: " + program_line) from v
+    number, partial = program_line.split(" ", 1)
     assert_syntax(str.isdigit(number), F"Invalid line number : {number} in {program_line}")
     number = int(number)
     # Parse the remainder of the line.
