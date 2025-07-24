@@ -10,13 +10,16 @@ import glob
 env = dict(os.environ)
 env["COVERAGE_PROCESS_START"] = ".coveragerc"
 
-def run_with_coverage(cmd, description):
+def run_with_coverage(cmd_args, description):
     """Run a command with coverage and return success status"""
     print(f"\n{description}")
     print("=" * len(description))
     
-    coverage_cmd = [sys.executable, "-m", "coverage", "run", "--parallel-mode"] + cmd.split()
-    
+    # coverage_cmd = [sys.executable, "-m", "coverage", "run", "--parallel-mode"] + cmd.split()
+
+    coverage_cmd = [sys.executable, "-m", "coverage", "run", "--parallel-mode"] + cmd_args
+
+    print(f"Running {' '.join(coverage_cmd)}")
     try:
         result = subprocess.run(
             coverage_cmd,
@@ -25,7 +28,7 @@ def run_with_coverage(cmd, description):
             timeout=60,
             env=env
         )
-        print(result.stdout)
+        print("RESULT: ", result.stdout)
         if result.stderr:
             print(result.stderr)
         return result.returncode == 0
@@ -57,7 +60,7 @@ def run_basic_tests_with_coverage(test_suite_dir):
         print(f"Testing {bas_name}...", end=" ")
         
         # Run the BASIC file directly with coverage
-        cmd = f"-m trekbasicpy.basic {bas_file}"
+        cmd = ["-m",  "trekbasicpy.basic", bas_file]
         success = run_with_coverage(cmd, f"Running {bas_name}")
         
         if success:
@@ -87,7 +90,7 @@ def main():
     
     # Run unit tests
     success1 = run_with_coverage(
-        "-m unittest discover -s . -p 'test_*.py' -v",
+        ["-m", "unittest", "discover", "-s", "test", "-p", "test_*.py", "-v"],
         "1. Running unit tests..."
     )
     
@@ -95,10 +98,12 @@ def main():
     success2 = run_basic_tests_with_coverage(test_suite_dir)
     
     # Run LLVM tests (without coverage since they create native executables)
-    success3 = run_with_coverage(
-        f"run_llvm_tests.py --test-suite-dir {test_suite_dir}",
-        "3. Running LLVM tests..."
-    )
+    # We should get coverage data on the file coverage.py, but we don't currently
+    # even check code in that directory. As written below, it doens't change the coverage stats at all.
+    # success3 = run_with_coverage(
+    #     ["run_llvm_tests.py", "--test-suite-dir", test_suite_dir],
+    #     "3. Running LLVM tests..."
+    # )
     
     # Combine coverage data
     print("\nCombining coverage data...")
