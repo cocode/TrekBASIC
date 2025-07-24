@@ -9,7 +9,8 @@ from trekbasicpy.basic_interpreter import Executor
 from trekbasicpy.basic_parsing import (
     ParsedStatement, ParsedStatementData, ParsedStatementDef, ParsedStatementDim, ParsedStatementElse, ParsedStatementFor, ParsedStatementGo, ParsedStatementIf, ParsedStatementInput, ParsedStatementLet, ParsedStatementNext, ParsedStatementNoArgs, ParsedStatementOnGoto, ParsedStatementPrint, ParsedStatementRead, ParsedStatementRem, ParsedStatementRestore, ParsedStatementThen, ParsedStatementTrace
 )
-from trekbasicpy.basic_types import BasicRuntimeError, BasicSyntaxError, RunStatus, SymbolType, assert_syntax, is_valid_identifier
+from trekbasicpy.basic_types import BasicRuntimeError, BasicSyntaxError, RunStatus, SymbolType, assert_syntax, \
+    is_valid_identifier, is_line_number
 from trekbasicpy.basic_utils import TRACE_FILE_NAME
 from trekbasicpy.basic_lexer import get_lexer
 from trekbasicpy.basic_expressions import Expression
@@ -91,7 +92,7 @@ def _handle_goto_gosub(executor, stmt: ParsedStatementGo, op_name: str, jump_fun
     else:
         # Handle regular GOTO/GOSUB
         destination = stmt.destination
-        assert_syntax(str.isdigit(destination), F"{op_name} target is not an int ")
+        assert_syntax(is_line_number(destination), F"{op_name} target is not an int ")
         jump_func(int(destination))
 
 

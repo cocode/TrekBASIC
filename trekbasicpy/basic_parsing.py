@@ -4,12 +4,11 @@ This file contains the classes used to represent parsed statements.
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from trekbasicpy.basic_expressions import Expression
-from trekbasicpy.basic_types import NUMBERS, BasicSyntaxError, assert_syntax, is_valid_identifier, tokens_to_str
+from trekbasicpy.basic_types import NUMBERS, BasicSyntaxError, assert_syntax, is_valid_identifier, tokens_to_str, \
+    is_line_number
 from trekbasicpy.basic_utils import smart_split
-from trekbasicpy.basic_types import lexer_token
 from trekbasicpy.basic_lexer import get_lexer
 
-from trekbasicpy.basic_types import ProgramLine
 import copy
 
 
@@ -230,7 +229,7 @@ class ParsedStatementGo(ParsedStatement):
             # Regular GOTO/GOSUB with single destination
             self._is_computed = False
             self.destination = args
-            assert_syntax(str.isdigit(self.destination), F"GOTO/GOSUB target is not an int ")
+            assert_syntax(is_line_number(self.destination), F"GOTO/GOSUB target is not an int ")
 
     def __str__(self) -> str:
         if hasattr(self, '_is_computed') and self._is_computed:
@@ -279,7 +278,7 @@ class ParsedStatementOnGoto(ParsedStatement):
         lines2 = []
         for line in lines:
             line = line.strip()
-            assert_syntax(str.isdigit(line), F"Invalid line {line} for target of ON GOTO/GOSUB")
+            assert_syntax(is_line_number(line), F"Invalid line {line} for target of ON GOTO/GOSUB")
             line = int(line)
             lines2.append(line)  # Why are these ints?
         self._target_lines: List[int] = lines2

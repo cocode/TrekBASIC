@@ -6,7 +6,7 @@ from typing import Optional
 from trekbasicpy.basic_dialect import DIALECT
 from trekbasicpy.basic_find_str_quotes import find_next_str_not_quoted
 from trekbasicpy.basic_statements import Keywords
-from trekbasicpy.basic_types import BasicSyntaxError, Program, ProgramLine, assert_syntax
+from trekbasicpy.basic_types import BasicSyntaxError, Program, ProgramLine, assert_syntax, is_line_number
 from trekbasicpy.basic_utils import smart_split
 
 
@@ -42,7 +42,7 @@ def tokenize_statements(commands_text: list[str]):
             cmd = Keywords.LET
 
             if list_of_statements:
-                if list_of_statements[-1].keyword == Keywords.THEN and str.isdigit(command):
+                if list_of_statements[-1].keyword == Keywords.THEN and is_line_number(command):
                     cmd = Keywords.GOTO
 
             parser_for_keyword = cmd.value.get_parser_class()
@@ -75,7 +75,7 @@ def tokenize_line(program_line: str) -> Optional[ProgramLine]:
 
     # Get the line number
     number, partial = program_line.split(" ", 1)
-    assert_syntax(str.isdigit(number), F"Invalid line number : {number} in {program_line}")
+    assert_syntax(is_line_number(number), F"Invalid line number : {number} in {program_line}")
     number = int(number)
     # Parse the remainder of the line.
     list_of_statements = tokenize_remaining_line(partial, number)

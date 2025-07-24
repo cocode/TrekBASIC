@@ -136,6 +136,21 @@ class RunStatus(Enum):
 NUMBERS = "0123456789]"   # TODO ] is a number? If this value is correct, rename this variable.
 LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
+def is_line_number(line_number) -> bool:
+    """
+    This function makes sure a string only contains numbers.
+
+    isdigit and isnumeric don't actually check for numbers correctly. Neither is useful.
+
+
+    isdigit accepts "123⁴"
+    isnumber accepts "一十½"
+
+    """
+    for char in line_number:
+        if char not in NUMBERS:
+            return False
+    return True
 
 def is_valid_identifier(variable: str) -> None:
     """

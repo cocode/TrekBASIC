@@ -23,7 +23,8 @@ from trekbasicpy.basic_parsing import ParsedStatement, ParsedStatementIf, Parsed
 from trekbasicpy.basic_reports import generate_html_coverage_report, print_coverage_report
 from trekbasicpy.basic_statements import eval_expression
 from trekbasicpy.basic_symbols import SymbolTable
-from trekbasicpy.basic_types import (BasicRuntimeError, BasicSyntaxError, Program, ProgramLine, RunStatus, SymbolType, UndefinedSymbol)
+from trekbasicpy.basic_types import (BasicRuntimeError, BasicSyntaxError, Program, ProgramLine, RunStatus, SymbolType,
+                                     UndefinedSymbol, is_line_number)
 
 # Add readline for command history and line editing
 try:
@@ -179,7 +180,7 @@ class BasicShell:
             print(line)
 
     def get_line(self, line_number: str)-> Optional[int]:
-        if not line_number.isnumeric():
+        if not is_line_number(line_number):
             print(F"Invalid line number {line_number}")
             self.usage("list")
             return None
@@ -633,7 +634,7 @@ class BasicShell:
         if len(args) == 0: # Got nothing but whitespace.
             self.usage("break")
             return
-        if str.isdigit(args[0]):
+        if is_line_number(args[0]):
             if len(args) == 1:
                 offset = 0
             else:
