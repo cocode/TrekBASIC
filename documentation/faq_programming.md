@@ -80,3 +80,10 @@ A LINE is made up of multiple STATEMENTS, each one beginning with a KEYWORD.
 ## Is there more information available?
 We built this off information I found on the web, so, yes.
 See the file references.md, there's a lot.
+
+## Code Coverage
+
+run
+```
+./run_coverage_tests.py ~/source/basic_test_suite
+```
