@@ -1,13 +1,31 @@
+import os
 from io import StringIO
 from unittest import mock
 
+from trekbasicpy.basic import find_program_file
 from trekbasicpy.basic_interpreter import Executor
 from trekbasicpy.basic_loading import tokenize
 from trekbasicpy.basic_utils import TRACE_FILE_NAME
 from test.test_case_base import TestCaseBase
+import tempfile
 
 
 class Test(TestCaseBase):
+    def test_find_program_file(self) -> None:
+        with tempfile.NamedTemporaryFile(suffix=".bas", delete=True) as temp_file:
+            print(f"Temporary file created: {temp_file.name}")
+            temp_file.write(b'10 PRINT "HELLO"\n20 END\n')
+            temp_file.flush()
+            path_no_ext, _ = os.path.splitext(temp_file.name)
+            xx = find_program_file(path_no_ext)
+            self.assertEqual(temp_file.name, xx)
+            # does_not_exist = path_no_ext+"XXXCCCVVBB"  # Does not end with .bas
+            # xx = find_program_file(does_not_exist)
+            # self.assertEqual(does_not_exist, xx)
+
+
+
+
     # def assert_value(self, executor:Executor, symbol:str, expected_value):
     #     value = executor.get_symbol(symbol)
     #     self.assertEqual(expected_value, value)
