@@ -129,10 +129,6 @@ def tokenize_remaining_line(partial: str, number: int) -> list:
     except BasicSyntaxError as bse:
         # Annotate it with the line number and rethrow
         raise BasicSyntaxError(bse.message, number)
-    except ValueError as ve:
-        # Annotate it with the line number and rethrow
-        error = BasicSyntaxError(ve, line_number=number)
-        raise error from ve
     return list_of_statements
 
 
