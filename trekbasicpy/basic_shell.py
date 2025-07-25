@@ -357,6 +357,14 @@ class BasicShell:
                     return
                 DIALECT._lexer_selected = option
             print(f"Lexer set to {DIALECT._lexer_selected}")
+        elif args[0].upper() == "UPPER":
+            if len(args) >= 2:
+                option = args[1].upper()
+                if option not in {"TRUE", "FALSE"}:
+                    print("OPTION UPPER must be TRUE or FALSE")
+                    return
+                DIALECT.UPPERCASE_INPUT = 1 if option.upper() == "TRUE" else 0
+            print(f"Uppercase all input set to {DIALECT.UPPERCASE_INPUT}")
         else:
             print("Unknown argument for OPTION command.")
 
