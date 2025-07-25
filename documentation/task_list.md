@@ -142,5 +142,20 @@ More modern syntax requires spaces or word boundaries. So, FORI is bad, but "I=3
 ### Sym command
 We should print all Xs on sym X, not require the user to select the type.
 
-# get rid of asserts
+## get rid of asserts
 These are fine when developing, but they should now all be exceptions that we handle properly.
+
+## Ambiguity
+what does the following mean?
+100 LET A=1
+112 LET B=2
+120 LET C=A=B
+125 PRINT A,B,C
+130 END
+
+What does that mean?
+a) Invalid, as we don't have boolean operators in expression in basic, only in IF / THEN
+b) C gets true if A is equal to B 
+c) The value of B is put into A, then put into c (A=B;C=A) (DARTHMOUTH?)
+
+currently we are b).
