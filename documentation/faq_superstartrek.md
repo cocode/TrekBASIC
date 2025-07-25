@@ -1,7 +1,8 @@
 
 # Game Frequently Asked Questions
 
-Full direction can be found here; https://coding-horror.github.io/basic-computer-games/84_Super_Star_Trek/javascript/index.html
+Full directions for the game can be found here:
+https://coding-horror.github.io/basic-computer-games/84_Super_Star_Trek/javascript/index.html
 
 ## Short directions
 
@@ -17,7 +18,7 @@ quadrants you have visited or scanned.
 Move around the map, shooting Klingons with commands **PHA**sers or **TOR**pedoes. If you run low on energy or 
 take damage, find a starbase to recharge.
 
-If you don't raise **SHE**ilds first, you'll die at the first shot from a Klingon,
+If you don't raise **SHE**ilds first, you'll die at the first shot from a Klingon.
 
 The game is turn limited, so don't waste too much time wandering around.
 
