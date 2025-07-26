@@ -143,9 +143,9 @@ class LexerOldStyle:
 
 
 if __name__ == '__main__':
-    p = Lexer()
-    tokens = p.lex("XRND")
-    # tokens = p.lex("IFX>YANDQ1<7")
+    p = LexerOldStyle()
+    # tokens = p.lex("XRND")
+    tokens = p.lex("IFX>YANDQ1<7")
     for t in tokens:
-        print("Token: ", t)
+        print("\tToken: ", t)
     #print(p.consume_from(TEXT_OPERATORS, "AND ABC"))

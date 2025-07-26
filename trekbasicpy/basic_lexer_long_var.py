@@ -117,3 +117,16 @@ class LexerModernLongVar:
 
             else:
                 raise BasicSyntaxError(f"Unexpected character '{c}'")
+
+if __name__ == '__main__':
+    p = LexerModernLongVar()
+    # tokens = p.lex("XRND")
+    print("Old Style Code. Not supported by this lexer:")
+    tokens = p.lex("IFX>YANDQ1<7THEN100")
+    for t in tokens:
+        print("\tToken: ", t)
+    print("New style code. Supported by this lexer:")
+    tokens = p.lex("IF old > new AND Quantum < 7 THEN 100")
+    for t in tokens:
+        print("\t: ", t)
+    #print(p.consume_from(TEXT_OPERATORS, "AND ABC"))
