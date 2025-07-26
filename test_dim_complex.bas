@@ -3,6 +3,7 @@
 30 B = 15
 40 C = 7
 50 REM This should parse correctly: MAX(A,B) and MIN(C,A) as separate dimensions
+55 REM But it doesn't. If I find a real world case, then I will worry about it: TODO:  DIM U(MAX(A,B), MIN(C,A))
 60 DIM X(3,4), Y(A,B), Z(5,6)
 70 PRINT "DIM with multi-dimensional arrays works!"
 80 REM Set some values to verify the arrays were created properly
