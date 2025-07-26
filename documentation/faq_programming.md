@@ -131,7 +131,7 @@ Against the interpreter:
 
 ```./run_all_tests.py -u```
 
-No unit test are currently availabe for the compiler. Note the compiler
+No unit tests are currently available for the compiler. Note the compiler
 uses the same lexing/parsing etc. Only the codegen is different. 
 This is a lack, but not as bad as it might sound.
 
@@ -143,7 +143,19 @@ python -m unittest test.test_basic_cov.TestBasicModuleCoverage.test_execute_prog
 
 ## Code Coverage
 
-run
+Note that there are two kinds of code coverage: coverage of the python code running the interpreter,
+and coverage of the basic program being run. The latter is handled in basic_shell.py with the coverage
+command.
+
+For getting coverage on the python code, run
 ```
 ./run_coverage_tests.py ~/source/basic_test_suite
 ```
+This will run all unit tests, and the BASIC language tests, and shows what percentage of the
+python code is covered by the test suites.
+
+The ***basic_test_suite***, is a separate project, see README.md for a link. 
+
+You can optionally run
+```coverage html```
+for a formatted report that ends up in *htmlcov/index.html*
