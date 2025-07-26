@@ -110,7 +110,7 @@ def main() -> None:
     else:
         run_status, executor = execute_program(program, enable_timing=args.time)
     
-    print(f"Program completed with a status of {run_status}")
+    print(f"\nProgram completed with a status of {run_status}")
     
     # Dump symbols if requested
     if args.symbols:

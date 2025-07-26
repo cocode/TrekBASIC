@@ -165,7 +165,17 @@ class Executor:
             except BasicRuntimeError as bre:
                 self._run = RunStatus.END_ERROR_RUNTIME
                 raise BasicRuntimeError(str(bre), current.line) from bre
+            except BasicInternalError as e:
+                print("BasicInternalError*******************************************************")
+                print(F"\t{s}", file=self._trace_file_like)
+                self._run = RunStatus.END_ERROR_INTERNAL
+                raise BasicInternalError(F"Internal error in line {current.line}: {e}") from e
+            except EOFError as e:
+                self._run = RunStatus.END_OF_PROGRAM
+                return self._run
             except Exception as e:
+                print("Exception*******************************************************")
+                print(F"\t{s}", file=self._trace_file_like)
                 self._run = RunStatus.END_ERROR_INTERNAL
                 raise BasicInternalError(F"Internal error in line {current.line}: {e}") from e
 
