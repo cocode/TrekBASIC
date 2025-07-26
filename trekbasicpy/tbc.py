@@ -1,6 +1,12 @@
 """
 TrekBasic Compiler (tbc.py) - Compile and run BASIC programs using LLVM
 """
+# /// script
+# requires-python = ">=3.13"
+# dependencies = [
+# "llvmlite"
+# ]
+# ///
 import sys
 import os
 import argparse

@@ -32,6 +32,16 @@ plan to ensure full compatibility.
 ```python -m trekbasicpy.basic programs/superstartrek.bas```
 
 
+
+#### uv
+uv is a newer tool for python packaging. With uv, you don't have to set up a virtual environment.
+
+if you have uv installed, you can do:
+
+```PYTHONPATH=. uv run --no-project trekbasicpy/basic.py programs/superstartrek.bas```
+
+
+
 ### Compiled 
 
 ```python -m trekbasicpy.tbc programs/superstartrek.bas```
