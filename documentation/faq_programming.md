@@ -135,6 +135,11 @@ No unit test are currently availabe for the compiler. Note the compiler
 uses the same lexing/parsing etc. Only the codegen is different. 
 This is a lack, but not as bad as it might sound.
 
+### Run one unit test
+
+```
+python -m unittest test.test_basic_cov.TestBasicModuleCoverage.test_execute_program_runtime_error -v
+```
 
 ## Code Coverage
 
