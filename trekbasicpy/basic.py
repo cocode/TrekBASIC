@@ -56,6 +56,7 @@ def load_program_with_error_handling(program_path: str) -> Program:
     except ValueError as value_error:
         print(f"Value Error {value_error}")
         sys.exit(EXIT_ERROR)
+#We are failing two tests in the compiled version implemented in codegen.py. The problem appears to be that the basic interpreter returns 2 on an exception, but the compiler returns 1 on all errors. We want to make the generated program return EXIT_ERROR.
 
 
 def execute_program(program: Program, trace_file: Optional[TextIO] = None, 
@@ -69,7 +70,7 @@ def execute_program(program: Program, trace_file: Optional[TextIO] = None,
         run_status = executor.run_program()
     except BasicSyntaxError as runtime_error:
         print(f"{runtime_error.message} in line {runtime_error.line_number} of file.")
-        sys.exit(EXIT_ERROR)
+        return RunStatus.END_ERROR_SYNTAX, executor
     
     if enable_timing and start_time is not None:
         end_time = time.time()

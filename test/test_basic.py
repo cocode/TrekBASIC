@@ -19,9 +19,11 @@ class Test(TestCaseBase):
             path_no_ext, _ = os.path.splitext(temp_file.name)
             xx = find_program_file(path_no_ext)
             self.assertEqual(temp_file.name, xx)
-            # does_not_exist = path_no_ext+"XXXCCCVVBB"  # Does not end with .bas
-            # xx = find_program_file(does_not_exist)
-            # self.assertEqual(does_not_exist, xx)
+            does_not_exist = path_no_ext+"XXXCCCVVBB"  # Does not end with .bas
+            xx = find_program_file(does_not_exist)
+            self.assertEqual(does_not_exist, xx)
+
+        print("test_basic passed.")
 
 
 
