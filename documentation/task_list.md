@@ -158,3 +158,8 @@ b) C gets true if A is equal to B
 c) The value of B is put into A, then put into c (A=B;C=A) (DARTHMOUTH?)
 
 currently we are b).
+
+### Benchmarks in Basic
+Anything in BASIC is runnable on all versions, and should be moved to the basic_test_suite.
+
+Benchmark all probably could be used for tests.
