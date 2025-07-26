@@ -3,7 +3,7 @@
 # <img src="images/TrekBasicLogo.png" alt="Logo" width="50" height="25"> TrekBasic
 
 
-TrekBASIC is now both a full BASIC interpreter, written in Python, and a BASIC compiler, via LLVM.
+TrekBASIC is both a full BASIC interpreter, written in Python, and a BASIC compiler, via LLVM.
 
 My goal was to be able to play the old [Super Star Trek game](https://en.wikipedia.org/wiki/Star_Trek_(1971_video_game)),
 which was written in BASIC.
@@ -11,7 +11,6 @@ which was written in BASIC.
 I have achieved that goal.
 
 ## TrekBasic Family
-TrekBasic is part of the TrekBasic family of BASIC programming tools.
 TrekBasic is part of the TrekBasic family of BASIC programming tools.
 
 | LOGO                                                                                                                                           | Tool | Description | Language | Interpreter | Compiler |
@@ -30,37 +29,17 @@ plan to ensure full compatibility.
 
 ### Interpreted
 
- python -m trekbasicpy.basic programs/superstartrek.bas
+```python -m trekbasicpy.basic programs/superstartrek.bas```
+
 
 ### Compiled 
 
-python -m trekbasicpy.tbc programs/superstartrek.bas
+```python -m trekbasicpy.tbc programs/superstartrek.bas```
 
 Note that tbc.py just generates LLVM IR code, and uses clang to compile it. You'll need to have clang installed.
 
-# Justification
-
-I considered simply porting Star Trek to Python, but 
-writing an interpreter sounded like more fun.
-
-# Versions
-
-There are several versions of Star Trek available. 
-
-## Currently Supported
-
-TrekBASIC currently runs only programs/superstartrek.bas
-
-* supertrek: http://www.vintage-basic.net/bcg/superstartrek.bas
-
-It's not that we don't want to add support for other versions of Star Trek, it's that other versions of Star Trek
-require other, incompatible basic interpreters/compilers. It's not a matter of needing more features, it's a matter
-of need different versions of existing features. (e.g. array indexes start at zero instead of one)
-
-## Other Versions
-* startrek.bas: http://www.bobsoremweb.com/startrek.html
-* https://github.com/RC2014Z80/RC2014/blob/master/BASIC-Programs/Super%20Startrek/startrek.bas
-* https://github.com/lwiest/BASICCompiler/blob/master/samples/STARTREK.BAS
+# Documentation
+See the documentation folder for more docs and development info.
 
 # Features
 
@@ -104,4 +83,22 @@ I have not implemented an editor in basic_shell. You can input individual lines,
 While the old-style line-by-line editing might be nostalgic, modern editors are *so* much better. 
 You can edit in your favorite editor, and paste in changes to the shell, or just run them directly.
 
+# Justification
 
+I considered simply porting Star Trek to Python, but 
+writing an interpreter sounded like more fun.
+
+## Currently Supported
+
+TrekBASIC currently runs only programs/superstartrek.bas
+
+* supertrek: http://www.vintage-basic.net/bcg/superstartrek.bas
+
+It's not that we don't want to add support for other versions of Star Trek, it's that other versions of Star Trek
+require other, incompatible basic interpreters/compilers. It's not a matter of needing more features, it's a matter
+of need different versions of existing features. (e.g. array indexes start at zero instead of one)
+
+## Other Versions
+* http://www.bobsoremweb.com/startrek.html
+* https://github.com/RC2014Z80/RC2014/blob/master/BASIC-Programs/Super%20Startrek/startrek.bas
+* https://github.com/lwiest/BASICCompiler/blob/master/samples/STARTREK.BAS

@@ -6,10 +6,8 @@ See also future.md
 * can't take an expression
 * when it throws an exception, it's not properly wrapped.It looks like it gets caught and rethrown twice. Should only be once.
 
-### Else
-Else is not yet impleted.
-### Renumber 
-Renumber is not working correctly
+
+
 ### stmts command
 The 'stmts' command prints an extra : before the goto on something simple like "100 if x=1 then goto 100"
 ### READ vs INPUT
