@@ -447,6 +447,8 @@ class ParsedStatementPrint(ParsedStatement):
                 self._outputs.append(arg)
         return
 
+    # TODO: This needs to be with other parsing code. We have different dialects, but
+    # This is embedding parsing in a different file and implementation
     def split_print_arguments(self, line: str) -> list[str]:
         args = []
         current = ''
