@@ -184,7 +184,9 @@ def stmt_let(executor, stmt:ParsedStatementLet):
 
 def stmt_clear(executor, stmt):
     # Clear statement removes all variables.
-    # Not to be confused with the CLEAR commannd in basic shell.
+    # Not to be confused with the CLEAR command in basic shell.
+    # The original clear command allocates memory space, but since we
+    # have a million times as much space now days, we won't bother with that.
     executor.init_symbols()
 
 
