@@ -1,11 +1,11 @@
 
-name: Unit Tests
+name: Compiler Integration Tests
 
 on:
   workflow_dispatch:  # Allows manual trigger via GitHub web UI
 
 jobs:
-  quality-checks:
+  compiler-integration-tests:
     runs-on: ubuntu-latest
 
     steps:
@@ -17,5 +17,5 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Run Unit Tests
+      - name: Run Compiler Integration Tests
         run: ./run_all_tests.py -u
