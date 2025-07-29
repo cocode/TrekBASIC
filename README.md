@@ -1,7 +1,9 @@
 
 
 # <img src="images/TrekBasicLogo.png" alt="Logo" width="50" height="25"> TrekBasic
+
 ![UnitTests](https://github.com/cocode/TrekBASIC/actions/workflows/unit_tests.yml/badge.svg?nocache=1)
+
 TrekBASIC is both a full BASIC interpreter, written in Python, and a BASIC compiler, via LLVM.
 
 My goal was to be able to play the old [Super Star Trek game](https://en.wikipedia.org/wiki/Star_Trek_(1971_video_game)),
