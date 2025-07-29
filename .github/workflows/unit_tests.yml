@@ -19,4 +19,3 @@ jobs:
 
       - name: Run Unit Tests with Coverage
         run: ./run_all_tests.py -u
-        working-directory: TrekBasic
