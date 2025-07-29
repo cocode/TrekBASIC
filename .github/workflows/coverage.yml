@@ -25,8 +25,8 @@ jobs:
           ls -l
           ls -l ..
           ./run_coverage_tests.py  BasicTestSuite
-          coverage xml            # generates coverage.xml for codecov
-          coverage report         # shows coverage in workflow logs
+          coverage xml
+          coverage report   --fail-under=60
       
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
