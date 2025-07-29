@@ -1,5 +1,5 @@
 
-name: Run Unit Tests Manually
+name: Unit Tests
 
 on:
   workflow_dispatch:  # Allows manual trigger via GitHub web UI
