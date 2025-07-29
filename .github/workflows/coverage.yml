@@ -19,13 +19,7 @@ jobs:
 
        - name: Create coverage config
          run: |
-           cat > .coveragerc << EOF
-[run]
-omit = trekbasicpy/trek_bot.py
-
-[report]
-fail_under = 50
-EOF
+           printf '[run]\nomit = trekbasicpy/trek_bot.py\n\n[report]\nfail_under = 50\n' > .coveragerc
 	   cat .coveragerc
 
       - name: Clone BasicTestSuite
