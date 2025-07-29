@@ -1,0 +1,25 @@
+name: Integration Tests
+
+on:
+  workflow_dispatch:  # Allows manual trigger via GitHub web UI
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout this repository
+        uses: actions/checkout@v3
+
+      - name: Clone BasicTestSuite
+        run: git clone https://github.com/cocode/BasicTestSuite
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+
+      - name: Run the Basic Test Suite against the interpreter 
+        run: ./run_all_tests.py -i -t ../BasicTestSuite
+
+
