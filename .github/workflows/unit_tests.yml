@@ -17,10 +17,5 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install coverage llvmlite
-
       - name: Run Tests with Coverage
         run: ./run_all_tests -u
