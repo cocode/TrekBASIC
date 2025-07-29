@@ -2,7 +2,8 @@
 
 # <img src="images/TrekBasicLogo.png" alt="Logo" width="50" height="25"> TrekBasic
 
-![UnitTests](https://github.com/cocode/TrekBASIC/actions/workflows/unit_tests.yml/badge.svg?nocache=1)
+![UnitTests](https://github.com/cocode/TrekBASIC/actions/workflows/unit_tests.yml/badge.svg)
+![InterpreterTests](https://github.com/cocode/TrekBASIC/actions/workflows/interpreter-tests.yml/badge.svg)
 
 TrekBASIC is both a full BASIC interpreter, written in Python, and a BASIC compiler, via LLVM.
 
