@@ -24,7 +24,7 @@ jobs:
         run: |
           ls -l
           ls -l ..
-          ./run_coverage_tests.py  ../BasicTestSuite
+          ./run_coverage_tests.py  BasicTestSuite
           coverage xml            # generates coverage.xml for codecov
           coverage report         # shows coverage in workflow logs
       
