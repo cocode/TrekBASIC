@@ -2,7 +2,7 @@ name: Tests
 on: [push, pull_request]
 
 jobs:
-  test:
+  code-coverage:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
