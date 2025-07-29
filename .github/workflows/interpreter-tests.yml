@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Debug: Show working directory and contents
+      - name: Debug Show working directory and contents
         run: |
           echo "== CURRENT DIRECTORY =="
           pwd
