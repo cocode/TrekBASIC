@@ -19,7 +19,6 @@ jobs:
         with:
           python-version: '3.13'
 
-
       - name: Debug: Show working directory and contents
         run: |
           echo "== CURRENT DIRECTORY =="
@@ -29,7 +28,5 @@ jobs:
           echo "== PARENT DIR CONTENTS =="
           ls -al ..
 
-      - name: Run the Basic Test Suite against the interpreter 
-        run: ./run_all_tests.py -i -t ../BasicTestSuite
-
-
+      - name: Run the Basic Test Suite against the interpreter
+        run: ./run_all_tests.py -i -t BasicTestSuite
