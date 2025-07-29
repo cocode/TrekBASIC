@@ -17,10 +17,10 @@ jobs:
           pip install coverage llvmlite
 
 
-       - name: Create coverage config
-         run: |
-           printf '[run]\nomit = trekbasicpy/trek_bot.py\n\n[report]\nfail_under = 50\n' > .coveragerc
-           cat .coveragerc
+      - name: Create coverage config
+        run: |
+          printf '[run]\nomit = trekbasicpy/trek_bot.py\n\n[report]\nfail_under = 50\n' > .coveragerc
+          cat .coveragerc
 
       - name: Clone BasicTestSuite
         run: git clone https://github.com/cocode/BasicTestSuite
