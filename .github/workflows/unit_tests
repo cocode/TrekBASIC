@@ -1,1 +1,25 @@
 
+name: Run Unit Tests Manually
+
+on:
+  workflow_dispatch:  # Allows manual trigger via GitHub web UI
+
+jobs:
+  quality-checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install coverage llvmlite
+
+        run: ./run_all_tests -u
