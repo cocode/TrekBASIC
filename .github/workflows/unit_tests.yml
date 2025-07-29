@@ -17,5 +17,6 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Run Tests with Coverage
+      - name: Run Unit Tests with Coverage
         run: ./run_all_tests -u
+        working-directory: TrekBasic
