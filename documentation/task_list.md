@@ -1,43 +1,34 @@
 # Task List
 
 ### Fix tests.
-It looks like @EXPECT_EXIT_CODE=2 is not working in the compiler, so two tests are not passing.
-
+It looks like @EXPECT_EXIT_CODE=2 is not working in the compiler, so two tests are not passing. Fixed?
 
 ### Else
-I don't believe that two ELSEs on one line work.
+I don't believe that two ELSEs on one line work. Write a test.
 
 ### stmts command
 The 'stmts' command prints an extra : before the goto on something simple like "100 if x=1 then goto 100"
 
 ### format command
-Only basic support. For statement supports format, nothing else does.
+Only basic support. *FOR* statement supports format, nothing else does.
 Need a format_expression command. Should put spaces around everything.
 could we just parse the __str__ output?
+
 ### READ vs INPUT
 Looks like Dartmouth basic uses READ instead of INPUT. We could add that without conflict. If the semantics are the
 same, we could just alias.
 
 ### Escaped quotes
 Should I support \" in Strings? I don't recall older basics doing that. 
-No, I taking that out, as that's a python convention, not a BASIC convention. 
+No, I am taking that out, as that's a python convention, not a BASIC convention. 
 
 ### Benchmark timing for llvm code.
 Don't want to count startup time.
 
 # ValueError
 In basic loading. I think it's been rethrown twice.
-And has the wrong line number. (file line)
+And has the wrong line number. (file line). How to repreduce?
 
-# Done. 
-When single stepping in basic_shell, the list
-command should indicate the next instruction
-with a "*" or something
-
-# Fix Parsing
-We partially fixed parsing with inserting colons to force 
-statement boundaries, but the real answer is a proper pull parser.
-That will fix the rem issue, below, as well.
 
 ### Features
 Add a watch commmand, so someone can edit in the editor of their choice, and TrekBasic will reload it automatically.
@@ -53,7 +44,7 @@ recommended:  watchdog library
 - Files affected: `basic_parsing.py` lines ~230 and ~280 
 
 ### Support more built-in functions
-fir example: LOG10. We can now add more functions easily in basic_functions.py
+For example: LOG10. We can now add more functions easily in basic_functions.py
 Do this on an as-needed basis, don't just throw everything in.
 
 ### Warn on Exit if Edited
@@ -61,87 +52,50 @@ Now that we can add/replace lines in the shell, we should warn before exiting, i
 
 ### Done
 Support "OPTION BASE"
-Add OPTION BASE statement to set the starting index of array variables as either 0 or 1
-Found in GWBASIC
 
-### Refactor Program
-Convert the list[ProgramLine] to a "Program" class. Done. 
+Add OPTION BASE statement to set the starting index of array variables as either 0 or 1. Found in GWBASIC. 
 
-
-### Fix This
-COMMAND ^DTraceback (most recent call last):
-  File "/Users/tomhill/PycharmProjects/TrekBasic/basic_interpreter.py", line 152, in run_program
-    execution_function(self, s)
-    ~~~~~~~~~~~~~~~~~~^^^^^^^^^
-  File "/Users/tomhill/PycharmProjects/TrekBasic/basic_statements.py", line 250, in stmt_input
-    result = executor.do_input()
-  File "/Users/tomhill/PycharmProjects/TrekBasic/basic_interpreter.py", line 454, in do_input
-    response = input()
-EOFError
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/Users/tomhill/PycharmProjects/TrekBasic/basic_shell.py", line 861, in <module>
-    debugger.do_command()
-    ~~~~~~~~~~~~~~~~~~~^^
-  File "/Users/tomhill/PycharmProjects/TrekBasic/basic_shell.py", line 852, in do_command
-    function(self, args)
-    ~~~~~~~~^^^^^^^^^^^^
-  File "/Users/tomhill/PycharmProjects/TrekBasic/basic_shell.py", line 434, in cmd_run
-    self.cmd_continue(None)
-    ~~~~~~~~~~~~~~~~~^^^^^^
-  File "/Users/tomhill/PycharmProjects/TrekBasic/basic_shell.py", line 404, in cmd_continue
-    rc = self.executor.run_program(self._breakpoints, self._data_breakpoints, single_step=single_step)
-  File "/Users/tomhill/PycharmProjects/TrekBasic/basic_interpreter.py", line 164, in run_program
-    raise BasicInternalError(F"Internal error in line {current.line}: {e}")
-basic_types.BasicInternalError: Internal error in line 1000:
+We currently support this, and other, OPTION commands in basic_shell.py, but
+do not yet allow it in program code. It should be easy to add, but adding that makes that basic 
+program incompatible. Maybe we should have config files? if you have basprogram.bas, then 
+maybe basprogram.json specifies the dialect?
 
 ### Restructure
-Move all basic.*py files to subdirectory
-Move all remaining tests in ./* to approriate test dir
+Move all remaining tests in ./* to approriate test dir or to the test_suite
 
-### Fix all TODOs
+### Fix all TODOs in the Code
 
 ### Make basic.py and tbc.py runnable
-Add shebang line. But it still won't be runnable outside of the venv.
+Add shebang line. But it still won't be runnable outside of the venv. Maybe use UV?
 
 ### Publish to pypi
+Package things properly.
 
 ### Limits
 Put a limit on the size of all dynamic objects, strings, arrays. What else? these should be settable in doskect.py
+### Put a limit on the size of all dymnamic objects, strings, arrays. What else?
+
 
 ### Call
 Add a call statement, to invoke other basic prograns. This will give us some
 modularity, Otherwise everything is global in BASIC. 
 
-### Put a limit on the size of all dymnamic objects, strings, arrays. What else?
-
-### Every rethrown exception should have "from e"
-
-### test_suite
-Test suite is now a standalone project, but we still point to our local copy. We need to merge
-all the individual tests suites in TrekBasic, TrekBasicJ BasicRS into the test suite project.
+### Every reraised exception should have "from e"
 
 ### Lexing
-It looks like we lex expression every time we get to them. We should do it on load. 
-
-### PRINT statements 
-I think print statments in BasicRS support , in addition to ; to join outputs, and TrekBasic doesn't.
-Need to pick one. 
+It looks like we lex expressions every time we get to them, at least in some cases. We should do it 
+once on load.
 
 ### Print statements
-We are failing two tests. Print using, and tabs, which just aren't supported yet.
+We are failing two tests. Print using, and tabs, which just aren't supported yet in TrekBasicPy
 
-### Lexing modern Basic
-We currently parse the star trek version of basic and that means "FORI=ATOBSTEPC" is valid,
-
-More modern syntax requires spaces or word boundaries. So, FORI is bad, but "I=3"
+### Support More Versions of BASIC
+We have basic_dialect.py, and swappable lexers. Do we need more?
 
 ### Sym command
 We should print all Xs on sym X, not require the user to select the type.
 
-## get rid of asserts
+## Get rid of asserts
 These are fine when developing, but they should now all be exceptions that we handle properly.
 
 ## Ambiguity
@@ -162,4 +116,4 @@ currently we are b).
 ### Benchmarks in Basic
 Anything in BASIC is runnable on all versions, and should be moved to the basic_test_suite.
 
-Benchmark all probably could be used for tests.
+We have a benchmark directory, all of them probably could be used for tests.
