@@ -22,4 +22,5 @@ jobs:
           python -m pip install --upgrade pip
           pip install coverage llvmlite
 
+      - name: Run Tests with Coverage
         run: ./run_all_tests -u
