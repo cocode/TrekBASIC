@@ -12,10 +12,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Clone BasicTestSuite
+        run: git clone https://github.com/cocode/BasicTestSuite
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.13'
 
       - name: Run Compiler Integration Tests
-        run: ./run_all_tests.py -l
+        run: ./run_all_tests.py -l -t BasicTestSuite
