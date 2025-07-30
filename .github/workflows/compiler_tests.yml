@@ -18,4 +18,4 @@ jobs:
           python-version: '3.13'
 
       - name: Run Compiler Integration Tests
-        run: ./run_all_tests.py -u
+        run: ./run_all_tests.py -l
