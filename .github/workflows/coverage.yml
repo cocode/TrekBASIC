@@ -1,5 +1,6 @@
 name: Code Coverage
-on: [push, pull_request]
+on:
+  workflow_dispatch:  # Allows manual trigger via GitHub web UI
 
 jobs:
   code-coverage:
