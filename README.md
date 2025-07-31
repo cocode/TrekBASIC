@@ -7,12 +7,17 @@
 ![Compiler](https://github.com/cocode/TrekBASIC/actions/workflows/compiler_tests.yml/badge.svg)
 ![Code Coverage](https://img.shields.io/badge/dynamic/xml?color=green&label=Coverage&query=%2F%2F*%5B%40class%3D%27pc_cov%27%5D%2Ftext%28%29&url=https%3A%2F%2Fcocode.github.io%2FTrekBASIC%2Findex.html)
 
-TrekBASIC is both a full BASIC interpreter, written in Python, and a BASIC compiler, via LLVM.
+TrekBASIC is both a full [BASIC](https://en.wikipedia.org/wiki/BASIC) interpreter, written in Python, and a BASIC compiler, via LLVM.
 
 My goal was to be able to play the old [Super Star Trek game](https://en.wikipedia.org/wiki/Star_Trek_(1971_video_game)),
-which was written in BASIC.
+which was written in BASIC. I have achieved that goal. 
 
-I have achieved that goal.
+TrekBasic is a full BASIC implementation, you should be able to run other programs. 
+The challenge with older programs is there are so many different versions of BASIC. **BASIC**ly, every machine had its own version of BASIC,
+and every operating system did as well. 
+
+TrekBasic uses dialects to support different versions of BASIC. This cannot cover every case but makes it easy to adapt TrekBasic to your program, 
+rather than having to adapt your existing program to some arbitrary version of basic.
 
 ## TrekBasic Family
 TrekBasic is part of the TrekBasic family of BASIC programming tools.
