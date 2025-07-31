@@ -7,7 +7,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
+        with:
+          persist-credentials: false
+        
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -31,20 +33,20 @@ jobs:
           ls -l
           ls -l ..
           ./run_coverage_tests.py BasicTestSuite || true
-          coverage xml
           coverage report || true
-          
-      - name: Run tests with coverage
-        run: |
-          ls -l
-          ls -l ..
-          ./run_coverage_tests.py BasicTestSuite || true
-          coverage xml
-          coverage report || true
-          coverage html  # <-- generates htmlcov/
+          coverage html
 
       - name: Save HTML coverage report as artifact
         uses: actions/upload-artifact@v4
         with:
           name: html-coverage-report
           path: htmlcov/
+
+      - name: Deploy coverage to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./htmlcov
+          destination_dir: coverage
+          publish_branch: gh-pages
+          force_orphan: true
