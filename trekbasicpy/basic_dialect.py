@@ -45,5 +45,10 @@ class BasicDialect(object):
     # Current lexer
     _lexer_selected = "OLD"  # Default to legacy lexer
 
+    # Other variants seen, that we don't yet support
+    # automatic string conversion "ITEM #" + 1, vs. calling this an error.
+    # implicit concatenation "hello"A$   # We have code for this, but it is not complete.
+
+
 
 DIALECT = BasicDialect()
