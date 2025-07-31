@@ -22,13 +22,13 @@ rather than having to adapt your existing program to some arbitrary version of b
 ## TrekBasic Family
 TrekBasic is part of the TrekBasic family of BASIC programming tools.
 
-| LOGO                                                                                                                                           | Tool | Description | Language | Interpreter | Compiler |
-|------------------------------------------------------------------------------------------------------------------------------------------------|------|-------------|----------|-------------|-------------|
-| <img src="https://raw.githubusercontent.com/cocode/TrekBASIC/refs/heads/master/images/TrekBasicLogo.png" alt="Logo" width="50" height="25">    |[TrekBasic](https://github.com/cocode/TrekBASIC) | Basic compiler and interpreter | Python | Yes | Yes |
-| <img src="https://raw.githubusercontent.com/cocode/TrekBasicJ/main/images/logo7.png" alt="Logo" width="50" height="25">                        |[TrekBasicJ](https://github.com/cocode/TrekBasicJ)|Basic compiler and interpreter|Java|Yes|Yes|
-| <img src="https://raw.githubusercontent.com/cocode/BasicRS/master/images/logo2.png" alt="Logo" width="50" height="25">                         |[BasicRS](https://github.com/cocode/BasicRS)|Basic interpreter|Rust|Yes|pending|
-| <img src="https://raw.githubusercontent.com/cocode/BasicTestSuite/main/images/BasicTestSuiteLogo3.png" alt="Logo" width="50" height="25"> |[BasicTestSuite](https://github.com/cocode/BasicTestSuite)|A test suite for Basic|BASIC|-|-|
-| <img src="https://raw.githubusercontent.com/cocode/TrekBot/master/images/LogoTrans.png" alt="Logo" width="50" height="25">                     |[TrekBot](https://github.com/cocode/TrekBot)|A tool to exercise the superstartrek program|Rust|-|-|
+| LOGO                                                                                                                                           | Project                                                    | Description | Language | Interpreter | Compiler |
+|------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------|-------------|----------|-------------|----------|
+| <img src="https://raw.githubusercontent.com/cocode/TrekBASIC/refs/heads/master/images/TrekBasicLogo.png" alt="Logo" width="50" height="25">    | [TrekBasic](https://github.com/cocode/TrekBASIC)           |Basic compiler and interpreter| Python | Yes | Yes      |
+| <img src="https://raw.githubusercontent.com/cocode/TrekBasicJ/main/images/logo7.png" alt="Logo" width="50" height="25">                        | [TrekBasicJ](https://github.com/cocode/TrekBasicJ)         |Basic compiler and interpreter|Java|Yes| Yes      |
+| <img src="https://raw.githubusercontent.com/cocode/BasicRS/master/images/logo2.png" alt="Logo" width="50" height="25">                         | [BasicRS](https://github.com/cocode/BasicRS)               |Basic compiler and interpreter|Rust|Yes| Yes      |
+| <img src="https://raw.githubusercontent.com/cocode/BasicTestSuite/main/images/BasicTestSuiteLogo3.png" alt="Logo" width="50" height="25"> | [BasicTestSuite](https://github.com/cocode/BasicTestSuite) |A test suite for Basic|BASIC|-| -        |
+| <img src="https://raw.githubusercontent.com/cocode/TrekBot/master/images/LogoTrans.png" alt="Logo" width="50" height="25">                     | [TrekBot](https://github.com/cocode/TrekBot)               |A tool to exercise the superstartrek program|Rust|-| -        |
 
 All versions, interpreted and compiled, are intended to by byte-by-byte compatible, but are not
 there yet - but they are close. TrekBot and BasicTestSuite are part of the
@@ -116,8 +116,3 @@ TrekBASIC currently runs only programs/superstartrek.bas
 It's not that we don't want to add support for other versions of Star Trek, it's that other versions of Star Trek
 require other, incompatible basic interpreters/compilers. It's not a matter of needing more features, it's a matter
 of need different versions of existing features. (e.g. array indexes start at zero instead of one)
-
-## Other Versions
-* http://www.bobsoremweb.com/startrek.html
-* https://github.com/RC2014Z80/RC2014/blob/master/BASIC-Programs/Super%20Startrek/startrek.bas
-* https://github.com/lwiest/BASICCompiler/blob/master/samples/STARTREK.BAS
