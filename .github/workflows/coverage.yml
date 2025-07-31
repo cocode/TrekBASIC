@@ -2,9 +2,17 @@ name: Code Coverage
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   code-coverage:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
         
@@ -12,17 +20,17 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
-
+          
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install coverage llvmlite
-
+          
       - name: Create coverage config
         run: |
           printf '[run]\nomit = trekbasicpy/trek_bot.py\n\n[report]\nfail_under = 50\n' > .coveragerc
           cat .coveragerc
-
+          
       - name: Clone BasicTestSuite
         run: git clone https://github.com/cocode/BasicTestSuite
       
@@ -33,24 +41,28 @@ jobs:
           ./run_coverage_tests.py BasicTestSuite || true
           coverage report || true
           coverage html
-
+          
       - name: Save HTML coverage report as artifact
         uses: actions/upload-artifact@v4
         with:
           name: html-coverage-report
           path: htmlcov/
-
+          
       - name: Debug coverage output
         run: |
           echo "Files in htmlcov/"
           ls -lh htmlcov
           echo "Files in htmlcov root:"
           find htmlcov -type f
-
-      - name: Deploy coverage to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
+          
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+        
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./htmlcov
-          publish_branch: gh-pages
-          force_orphan: true
+          path: ./htmlcov
+          
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
