@@ -56,3 +56,6 @@ jobs:
           publish_dir: ./htmlcov
           publish_branch: gh-pages
           force_orphan: true
+          user_name: github-actions
+          user_email: github-actions@github.com
+          
