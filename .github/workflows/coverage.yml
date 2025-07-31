@@ -41,6 +41,20 @@ jobs:
           ./run_coverage_tests.py BasicTestSuite || true
           coverage report || true
           coverage html
+
+      - name: Track coverage over time
+        run: |
+          # Extract coverage percentage from the report
+          COVERAGE=$(coverage report --format=total)
+          DATE=$(date -u +"%Y-%m-%d")
+          echo "$DATE,$COVERAGE" >> coverage_history.csv
+    
+          # Commit the updated history file
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add coverage_history.csv
+          git diff --cached --quiet || git commit -m "Update coverage history: $COVERAGE% on $DATE"
+          git push  
           
       - name: Save HTML coverage report as artifact
         uses: actions/upload-artifact@v4
