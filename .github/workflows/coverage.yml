@@ -42,6 +42,13 @@ jobs:
           name: html-coverage-report
           path: htmlcov/
 
+      - name: Debug coverage output
+        run: |
+          echo "Files in htmlcov/"
+          ls -lh htmlcov
+          echo "Files in htmlcov root:"
+          find htmlcov -type f
+    
       - name: Deploy coverage to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
