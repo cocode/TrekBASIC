@@ -19,7 +19,7 @@ env["COVERAGE_PROCESS_START"] = ".coveragerc"
 
 
 from trekbasicpy.basic_loading import load_program
-from trekbasicpy.basic_types import BasicSyntaxError
+from trekbasicpy.basic_types import BasicSyntaxError, ExitCode
 from llvm.codegen import generate_llvm_ir
 
 def main():
@@ -44,7 +44,7 @@ def main():
         program = load_program(args.program)
     except BasicSyntaxError as bse:
         print(f"Syntax Error: {bse.message} in line {bse.line_number}")
-        sys.exit(1)
+        sys.exit(ExitCode.ERROR_SYNTAX.value)
     except FileNotFoundError as f:
         print(f"File not found: {f}")
         sys.exit(1)
@@ -136,6 +136,9 @@ def main():
         
         sys.exit(exit_code)
         
+    except BasicSyntaxError as bse:
+        print(f"Syntax Error: {bse.message} in line {bse.line_number}")
+        sys.exit(ExitCode.ERROR_SYNTAX.value)
     except Exception as e:
         print(f"Compilation error: {e}")
         sys.exit(1)

@@ -11,14 +11,11 @@ from typing import Optional, TextIO
 
 from trekbasicpy.basic_interpreter import Executor
 from trekbasicpy.basic_loading import load_program
-from trekbasicpy.basic_types import BasicSyntaxError, RunStatus, Program
+from trekbasicpy.basic_types import BasicSyntaxError, RunStatus, Program, ExitCode
 from trekbasicpy.basic_utils import TRACE_FILE_NAME
 
 # Constants
 BASIC_FILE_EXTENSION = ".bas"
-EXIT_SUCCESS = 0
-EXIT_STOP = 1
-EXIT_ERROR = 2
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -49,13 +46,13 @@ def load_program_with_error_handling(program_path: str) -> Program:
         return load_program(program_path)
     except BasicSyntaxError as syntax_error:
         print(f"{syntax_error.message} in line {syntax_error.line_number} of file.")
-        sys.exit(EXIT_ERROR)
+        sys.exit(ExitCode.ERROR_SYNTAX.value)
     except FileNotFoundError as file_error:
         print(f"File not found {file_error}")
-        sys.exit(EXIT_ERROR)
+        sys.exit(ExitCode.ERROR_INTERNAL.value)
     except ValueError as value_error:
         print(f"Value Error {value_error}")
-        sys.exit(EXIT_ERROR)
+        sys.exit(ExitCode.ERROR_INTERNAL.value)
 #We are failing two tests in the compiled version implemented in codegen.py. The problem appears to be that the basic interpreter returns 2 on an exception, but the compiler returns 1 on all errors. We want to make the generated program return EXIT_ERROR.
 
 
@@ -88,11 +85,18 @@ def dump_symbol_table(executor: Executor) -> None:
 def determine_exit_code(run_status: RunStatus) -> int:
     """Determine the appropriate exit code based on run status."""
     if run_status in [RunStatus.END_OF_PROGRAM, RunStatus.END_CMD]:
-        return EXIT_SUCCESS
+        return ExitCode.SUCCESS.value
     elif run_status == RunStatus.END_STOP:
-        return EXIT_STOP
+        return ExitCode.STOP.value
+    elif run_status == RunStatus.END_ERROR_SYNTAX:
+        return ExitCode.ERROR_SYNTAX.value
+    elif run_status == RunStatus.END_ERROR_RUNTIME:
+        return ExitCode.ERROR_RUNTIME.value
+    elif run_status == RunStatus.END_ERROR_INTERNAL:
+        return ExitCode.ERROR_INTERNAL.value
     else:
-        return EXIT_ERROR
+        # Fallback for any other status (BREAK_*, RUN, etc.)
+        return ExitCode.ERROR_INTERNAL.value
 
 
 def main() -> None:

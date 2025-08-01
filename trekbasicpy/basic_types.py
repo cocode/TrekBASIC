@@ -133,6 +133,14 @@ class RunStatus(Enum):
     BREAK_STEP = auto()
 
 
+class ExitCode(Enum):
+    SUCCESS = 0
+    STOP = 1
+    ERROR_SYNTAX = 2
+    ERROR_RUNTIME = 3
+    ERROR_INTERNAL = 4
+
+
 NUMBERS = "0123456789]"   # TODO ] is a number? If this value is correct, rename this variable.
 LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 

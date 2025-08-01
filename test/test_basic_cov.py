@@ -41,7 +41,7 @@ class TestBasicModuleCoverage(unittest.TestCase):
         self.assertEqual(basic.determine_exit_code(RunStatus.END_CMD), 0)
         self.assertEqual(basic.determine_exit_code(RunStatus.END_STOP), 1)
         # TODO: These should be 2 and 3, not 2 and 2.  Change that at some point.
-        self.assertEqual(basic.determine_exit_code(RunStatus.END_ERROR_RUNTIME), 2)
+        self.assertEqual(basic.determine_exit_code(RunStatus.END_ERROR_RUNTIME), 3)
         self.assertEqual(basic.determine_exit_code(RunStatus.END_ERROR_SYNTAX), 2)
 
 
