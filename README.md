@@ -5,8 +5,7 @@
 ![UnitTests](https://github.com/cocode/TrekBASIC/actions/workflows/unit_tests.yml/badge.svg)
 ![Interpreter](https://github.com/cocode/TrekBASIC/actions/workflows/interpreter-tests.yml/badge.svg)
 ![Compiler](https://github.com/cocode/TrekBASIC/actions/workflows/compiler_tests.yml/badge.svg)
-![Code Coverage](https://img.shields.io/badge/dynamic/xml?logo=github&color=green&label=Coverage&query=%2F%2F*%5B%40class%3D%27pc_cov%27%5D%2Ftext%28%29&url=https%3A%2F%2Fcocode.github.io%2FTrekBASIC%2Findex.html)
-
+![Code Coverage](https://img.shields.io/badge/dynamic/xml?logo=github&color=%2328a745&labelColor=%2324292F&label=Coverage&query=%2F%2F*%5B%40class%3D%27pc_cov%27%5D%2Ftext%28%29&url=https%3A%2F%2Fcocode.github.io%2FTrekBASIC%2Findex.html)
 TrekBASIC is both a full [BASIC](https://en.wikipedia.org/wiki/BASIC) interpreter, written in Python, and a BASIC compiler, via LLVM.
 
 My goal was to be able to play the old [Super Star Trek game](https://en.wikipedia.org/wiki/Star_Trek_(1971_video_game)),
