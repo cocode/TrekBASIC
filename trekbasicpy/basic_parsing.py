@@ -524,8 +524,8 @@ class ParsedStatementTrace(ParsedStatement):
     """
     def __init__(self, keyword: 'Keywords', args: str) -> None:
         super().__init__(keyword, "")
-        args = args.strip()
-        valid = ["on", "off"]
+        args = args.strip().upper()
+        valid = ["ON", "OFF"]
         if args not in valid:
             raise BasicSyntaxError(F"Arguments to trace must be one of {valid}, but got {args}")
         self.state = args

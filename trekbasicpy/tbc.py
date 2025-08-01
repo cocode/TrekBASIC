@@ -80,7 +80,7 @@ def main():
         
         # Step 3: Compile LLVM IR to executable
         print(f"Compiling to executable...")
-        compile_cmd = ["clang", "-o", executable_file, ll_file, "-lm"]
+        compile_cmd = ["clang", "-O2", "-o", executable_file, ll_file, "-lm"]
         result = subprocess.run(compile_cmd, capture_output=True, text=True, env=env)
         
         if result.returncode != 0:
