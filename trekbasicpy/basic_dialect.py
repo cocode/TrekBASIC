@@ -49,6 +49,9 @@ class BasicDialect(object):
     # automatic string conversion "ITEM #" + 1, vs. calling this an error.
     # implicit concatenation "hello"A$   # We have code for this, but it is not complete.
     # Does referencing an undefined numeric variable return 0, or throw an error?
+    # With "On X gosub 10,20,30" an error of x is not in [1,2,3] or does it just fall through
+    #   It looks like superstartrek expects "just fall through".
+    #   ON GOTO index 91 is out of range (1-6) in line 7350 of file.
 
 
 
