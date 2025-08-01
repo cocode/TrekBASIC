@@ -431,20 +431,8 @@ class ParsedStatementPrint(ParsedStatement):
             if len(arg) == 0:
                 continue
                 
-            # Check if this argument contains concatenated parts
-            if '"' in arg:
-                # Parse concatenated strings and expressions
-                parts = parse_concatenated_parts(arg)
-                # Group concatenated parts together to preserve original format
-                if len(parts) > 1:
-                    # Multiple parts means this was concatenated - store as a group
-                    self._outputs.append(parts)
-                else:
-                    # Single part, just append normally
-                    self._outputs.append(parts[0])
-            else:
-                # Simple expression
-                self._outputs.append(arg)
+            # All arguments are expressions - let the expression evaluator handle them
+            self._outputs.append(arg)
         return
 
     # TODO: This needs to be with other parsing code. We have different dialects, but

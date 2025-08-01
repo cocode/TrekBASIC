@@ -39,28 +39,17 @@ def stmt_print(executor: Executor, stmt: ParsedStatementPrint) -> None:
             # BASIC semicolon separator — no extra spacing
             continue
 
-        # Handle value (expression or string or concat group)
-        if isinstance(arg, list):
-            # Concatenated parts: e.g., "Hello" + A$
-            for part in arg:
-                if part.startswith('"') and part.endswith('"'):
-                    executor.do_print(part[1:-1], end='')
-                else:
-                    v = eval_expression(executor._symbols, part)
-                    if isinstance(v, (int, float)):
-                        executor.do_print(f" {v:g} ", end='')  # space around numbers
-                    else:
-                        executor.do_print(str(v), end='')
+        # Handle expression (string literal or computed expression)
+        if arg.startswith('"') and arg.endswith('"'):
+            # String literal - print without quotes
+            executor.do_print(arg[1:-1], end='')
         else:
-            # Single string or expression
-            if arg.startswith('"') and arg.endswith('"'):
-                executor.do_print(arg[1:-1], end='')
+            # Expression - evaluate and print
+            v = eval_expression(executor._symbols, arg)
+            if isinstance(v, (int, float)):
+                executor.do_print(f" {v:g} ", end='')  # space around numbers
             else:
-                v = eval_expression(executor._symbols, arg)
-                if isinstance(v, (int, float)):
-                    executor.do_print(f" {v:g} ", end='')
-                else:
-                    executor.do_print(str(v), end='')
+                executor.do_print(str(v), end='')
 
     if not stmt._no_cr:
         executor.do_print("")  # Final newline unless suppressed
