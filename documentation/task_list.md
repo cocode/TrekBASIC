@@ -4,7 +4,7 @@
 It looks like @EXPECT_EXIT_CODE=2 is not working in the compiler, so two tests are not passing. Fixed?
 
 ### Else
-I don't believe that two ELSEs on one line work. Write a test.
+I don't believe that two ELSEs on one line work. Write a test. working here, not in rust
 
 ### stmts command
 The 'stmts' command prints an extra : before the goto on something simple like "100 if x=1 then goto 100"
@@ -71,6 +71,9 @@ Add shebang line. But it still won't be runnable outside of the venv. Maybe use 
 ### Publish to pypi
 Package things properly.
 
+https://medium.com/@blackary/publishing-a-python-package-from-github-to-pypi-in-2024-a6fb8635d45d
+
+
 ### Limits
 Put a limit on the size of all dynamic objects, strings, arrays. What else? these should be settable in basic_dialect.py
 
@@ -99,7 +102,7 @@ What about cases like put_symbol, where the arguments should have been validated
 stack, and the assert is a last minute check?
 
 ## Ambiguity
-what does the following mean?
+What does the following mean?
 100 LET A=1
 112 LET B=2
 120 LET C=A=B
@@ -115,7 +118,12 @@ currently we are b).
 
 Should this be handled with a dialect?
 
-### Benchmarks in Basic
-Anything in BASIC is runnable on all versions, and should be moved to the basic_test_suite.
-
+## Benchmarks in Basic
 We have a benchmark directory, all of them probably could be used for tests.
+
+Anything in BASIC that is runnable on all TrekBasic versions could be included in the
+basic_suite.
+
+## Packaging
+This is an unrealistic goal, but these days a language does not stand alone. It needs a package manager.
+**cargo** from Rust is a good example of this. 
