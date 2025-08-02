@@ -72,9 +72,7 @@ Add shebang line. But it still won't be runnable outside of the venv. Maybe use 
 Package things properly.
 
 ### Limits
-Put a limit on the size of all dynamic objects, strings, arrays. What else? these should be settable in doskect.py
-### Put a limit on the size of all dymnamic objects, strings, arrays. What else?
-
+Put a limit on the size of all dynamic objects, strings, arrays. What else? these should be settable in basic_dialect.py
 
 ### Call
 Add a call statement, to invoke other basic prograns. This will give us some
@@ -83,7 +81,7 @@ modularity, Otherwise everything is global in BASIC.
 ### Every reraised exception should have "from e"
 
 ### Lexing
-It looks like we lex expressions every time we get to them, at least in some cases. We should do it 
+It looks like we lex expressions every time we get to them, at least in some cases with expressions. We should do it 
 once on load.
 
 ### Print statements
@@ -97,6 +95,8 @@ We should print all Xs on sym X, not require the user to select the type.
 
 ## Get rid of asserts
 These are fine when developing, but they should now all be exceptions that we handle properly.
+What about cases like put_symbol, where the arguments should have been validated way up the call
+stack, and the assert is a last minute check?
 
 ## Ambiguity
 what does the following mean?
@@ -112,6 +112,8 @@ b) C gets true if A is equal to B
 c) The value of B is put into A, then put into c (A=B;C=A) (DARTHMOUTH?)
 
 currently we are b).
+
+Should this be handled with a dialect?
 
 ### Benchmarks in Basic
 Anything in BASIC is runnable on all versions, and should be moved to the basic_test_suite.
