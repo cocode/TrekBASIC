@@ -86,7 +86,7 @@ See the documentation directory for more information.
 
 TrekBasic requires python 3
 
-    python basic.py programs/superstartrek.bas
+    python -m trekbasicpy.basic programs/superstartrek.bas
 
 *HINT* If you don't put your shields up, the first hit will kill you! :-)
 
@@ -94,7 +94,7 @@ TrekBasic requires python 3
 
 If you want the development environment, similar to what you would have had with a command line BASIC
 
-    python basic_shell.py
+    python -m trekbasicpy.basic_shell
 
 Use "help" to get available commands, like "load programs/superstartrek.abs" and "run". 
 
