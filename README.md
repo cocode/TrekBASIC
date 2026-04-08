@@ -109,10 +109,10 @@ writing an interpreter sounded like more fun.
 
 ## Currently Supported
 
-TrekBASIC currently runs only programs/superstartrek.bas
+TrekBASIC currently runs only the version of StarTrek found in programs/superstartrek.bas
 
 * supertrek: http://www.vintage-basic.net/bcg/superstartrek.bas
 
 It's not that we don't want to add support for other versions of Star Trek, it's that other versions of Star Trek
 require other, incompatible basic interpreters/compilers. It's not a matter of needing more features, it's a matter
-of need different versions of existing features. (e.g. array indexes start at zero instead of one)
+of needing different versions of existing features. (e.g. array indexes start at zero instead of one)
